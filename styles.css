@@ -477,6 +477,55 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   .gene-row-count { display: none; }
 }
 
+/* ── SNP BLOCKS & FREQUENCY TABLE ───────────────── */
+.snp-block {
+  border-left: 2px solid var(--line-strong);
+  padding: 14px 0 14px 20px;
+  margin-bottom: 20px;
+}
+.snp-block:last-child { margin-bottom: 0; }
+.snp-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-bottom: 6px;
+}
+.snp-meta-item {
+  font-family: var(--mono); font-size: 11px; color: var(--faint);
+}
+.freq-table {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  font-family: var(--mono); font-size: 11.5px;
+}
+.freq-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.freq-row:last-child { border-bottom: none; }
+.freq-row--total {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+}
+.freq-pop { color: var(--faint); font-size: 10.5px; letter-spacing: 0.03em; }
+.freq-row--total .freq-pop { color: var(--muted); }
+.freq-data { font-size: 11px; }
+.freq-link {
+  color: var(--faint); text-decoration: none; font-size: 13px;
+  text-align: right; display: block;
+  transition: color 0.12s;
+}
+.freq-link:hover { color: var(--accent); }
+@media (max-width: 600px) {
+  .freq-row { grid-template-columns: 110px 1fr 22px; font-size: 10px; }
+}
+
 /* ── GENE PAGE EXTRAS ────────────────────────────── */
 .gene-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .gene-tag {

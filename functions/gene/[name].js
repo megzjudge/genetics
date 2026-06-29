@@ -58,7 +58,19 @@ export async function onRequestGet({ params, env }) {
       SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC
     `).bind(geneName).all(),
     env.genetic.prepare(`
-      SELECT * FROM genes WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC
+      SELECT g.*, (
+        SELECT json_group_array(json_object(
+          'population', f.population, 'pop_type', f.pop_type,
+          'sample_size', f.sample_size,
+          'allele1', f.allele1, 'allele1_freq', f.allele1_freq,
+          'allele2', f.allele2, 'allele2_freq', f.allele2_freq,
+          'geno_hom1', f.geno_hom1, 'geno_het', f.geno_het, 'geno_hom2', f.geno_hom2
+        ))
+        FROM snp_frequencies f WHERE f.rsid = g.rsid
+        ORDER BY f.pop_type = 'Total' DESC, f.population ASC
+      ) AS freq_json
+      FROM genes g WHERE g.gene_name = ?
+      ORDER BY g.magnitude IS NULL, g.magnitude DESC
     `).bind(geneName).all(),
   ]);
 
@@ -140,19 +152,39 @@ ${nav()}
       <h2 class="studies-heading">My Variants<span class="section-count">${snps.length}</span></h2>
       ${snps.length === 0
         ? `<p class="empty-state">No variant data entered yet.</p>`
-        : `<div class="snp-table-wrap"><table class="snp-table">
-          <thead><tr>
-            <th>rsID</th><th>Genotype</th><th>Chr</th><th>Magnitude</th><th>Status</th><th>Notes</th>
-          </tr></thead>
-          <tbody>${snps.map(s => `<tr>
-            <td><a class="rsid-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(s.rsid)}" target="_blank" rel="noopener">${esc(s.rsid)}</a></td>
-            <td class="snp-genotype">${esc(s.genotype || "—")}</td>
-            <td>${esc(s.chromosome || "—")}</td>
-            <td>${s.magnitude != null ? s.magnitude : "—"}</td>
-            <td><span class="snp-status snp-status--${esc(s.status || "pending")}">${esc(s.status || "pending")}</span></td>
-            <td class="snp-notes">${esc(s.notes || "")}</td>
-          </tr>`).join("")}</tbody>
-        </table></div>`}
+        : snps.map(s => {
+            const freqs = (() => { try { return JSON.parse(s.freq_json || "[]"); } catch(e) { return []; } })();
+            const a1 = freqs[0]?.allele1 || "";
+            const a2 = freqs[0]?.allele2 || "";
+            return `<div class="snp-block">
+          <div class="snp-row">
+            <a class="rsid-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(s.rsid)}" target="_blank" rel="noopener">${esc(s.rsid)}</a>
+            <span class="snp-genotype">${esc(s.genotype || "—")}</span>
+            ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}</span>` : ""}
+            ${s.magnitude != null ? `<span class="snp-meta-item">Mag ${s.magnitude}</span>` : ""}
+            <span class="snp-status snp-status--${esc(s.status || "pending")}">${esc(s.status || "pending")}</span>
+          </div>
+          ${s.notes ? `<p class="snp-notes">${esc(s.notes)}</p>` : ""}
+          ${freqs.length > 0 ? `<div class="freq-table">
+            ${freqs.map(f => {
+              const fa1 = f.allele1 || "?", fa2 = f.allele2 || "?";
+              const a1pct = f.allele1_freq != null ? Math.round(f.allele1_freq * 100) + "%" : null;
+              const a2pct = f.allele2_freq != null ? Math.round(f.allele2_freq * 100) + "%" : null;
+              const hom1  = f.geno_hom1 != null ? Math.round(f.geno_hom1 * 100) + "%" : null;
+              const het   = f.geno_het  != null ? Math.round(f.geno_het  * 100) + "%" : null;
+              const hom2  = f.geno_hom2 != null ? Math.round(f.geno_hom2 * 100) + "%" : null;
+              const allelePart = (a1pct && a2pct) ? `${fa1} ${a1pct} / ${fa2} ${a2pct}` : "";
+              const genoPart   = (hom1 && het && hom2) ? `${fa1+fa1} ${hom1} / ${fa1+fa2}&amp;${fa2+fa1} ${het} / ${fa2+fa2} ${hom2}` : "";
+              const nPart      = f.sample_size ? `n=${Number(f.sample_size).toLocaleString()}` : "";
+              return `<div class="freq-row${f.pop_type === "Total" ? " freq-row--total" : ""}">
+                <span class="freq-pop">${esc(f.population)}</span>
+                <span class="freq-data">${[allelePart, genoPart, nPart].filter(Boolean).join(" | ")}</span>
+                <a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(s.rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>
+              </div>`;
+            }).join("")}
+          </div>` : ""}
+        </div>`;
+          }).join("")}
     </div>
 
     <div class="studies-section gene-section">
