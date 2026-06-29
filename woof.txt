@@ -1,5 +1,3 @@
-
-
 Easy Testing (1–23)
 
     1. Gilbert Syndrome — UGT1A9 rs4124874 TG — Blood biochemistry test (bilirubin levels)
@@ -26,8 +24,6 @@ Easy Testing (1–23)
     22. Charcot-Marie-Tooth Disease Type 4H — FGD4 rs138160928 CA — Nerve conduction studies
     23. Thrombophilia Due To Protein S Deficiency — PROS1 rs115491294 AG — Coagulation profile
        
-       
-
 Moderate Testing (24–44)
 
     24. Pancreatitis — PRSS1 rs202003805 CT — Pancreatic enzyme blood test, imaging
@@ -50,9 +46,7 @@ Moderate Testing (24–44)
     41. Craniosynostosis Syndrome — (no gene) rs758524862 GA — Imaging (CT scan)
     42. Congenital Bilateral Aplasia Of Vas Deferens — CFTR-AS1 rs1800095 GA — Semen analysis
     43. Acrodermatitis Continua Suppurativa Of Hallopeau (various SNPs) — IL36RN — Skin biopsy
-    44. Autosomal Recessive Nonsyndromic Hearing Loss 7 — TMC1 rs71507808 AG — Audiometry
-       
-       
+    44. Autosomal Recessive Nonsyndromic Hearing Loss 7 — TMC1 rs71507808 AG — Audiometry  
 
 Difficult Testing (45–59)
 
