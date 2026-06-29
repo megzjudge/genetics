@@ -1,0 +1,31 @@
+x SLC19A1 (Reduced Folate Carrier 1 / RFC1): The primary transporter for reduced folates (like 5-methyl-THF) into cells at neutral pH. 
+x FOLR1, x FOLR2 x, FOLR3 x (Folate Receptors alpha, beta, gamma): High-affinity receptors that mediate folate uptake via endocytosis, crucial in the placenta, kidneys, and choroid plexus. 
+SLC46A1 (Proton-Coupled Folate Transporter / PCFT): Essential for intestinal folate absorption and transport across the choroid plexus; functions optimally at acidic pH. 
+SLC25A32 (Mitochondrial Folate Transporter / MFT): Transports folates across the inner mitochondrial membrane, linking cytosolic and mitochondrial folate pools. 
+ABCC2 (MRP2): Involved in the efflux (export) of folates and antifolates from cells, particularly in the liver and kidney.
+DHFR (Dihydrofolate Reductase): Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis. 
+SHMT1 and SHMT2 (Serine Hydroxymethyltransferase 1 & 2): Convert serine and THF into glycine and 5,10-methylene-THF (cytosolic and mitochondrial isoforms, respectively). 
+x MTHFR (Methylenetetrahydrofolate Reductase): Irreversibly converts 5,10-methylene-THF to 5-methyl-THF, the primary circulating form of folate used for homocysteine remethylation. 
+MTHFD1, MTHFD2, MTHFD2L, MTHFD1L: Multifunctional enzymes (dehydrogenase, cyclohydrolase, and formyl-THF synthetase) that drive the interconversion of various THF derivatives in the cytosol and mitochondria. 
+MTR (Methionine Synthase): Uses 5-methyl-THF to convert homocysteine into methionine (requires Vitamin B12). 
+MTRR (Methionine Synthase Reductase): Regenerates active Vitamin B12 for the MTR enzyme, essential for continuous folate cycling. 
+TYMS (Thymidylate Synthase): Uses 5,10-methylene-THF to convert dUMP to dTMP (thymidine) for DNA synthesis, producing DHF as a byproduct. 
+ALDH1L1 and ALDH1L2 (10-Formyltetrahydrofolate Dehydrogenase): Convert 10-formyl-THF to THF and CO2, regulating the folate pool size.
+MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Involved in the metabolism of 5-formyl-THF (folinic acid). 
+FPGS (Folylpolyglutamate Synthase): Adds glutamate tails to folate (polyglutamation), trapping it inside the cell and increasing its affinity for metabolic enzymes. 
+GGH (Gamma-Glutamyl Hydrolase): Removes glutamate tails from polyglutamated folates, allowing them to exit the cell or be absorbed in the intestine. 
+TCN2 (Transcobalamin II): Transports Vitamin B12, which is an obligate cofactor for the folate-dependent enzyme MTR; deficiency functionally traps folate. 
+FOLH1 (Folate Hydrolase 1 / GCPII): Cleaves dietary folate polyglutamates in the intestine to allow absorption. 
+CBS (Cystathionine Beta-Synthase): Diverts homocysteine away from the folate-dependent remethylation pathway toward transsulfuration; functionally linked to folate status. 
+SLC19A2 and SLC19A3: Members of the same transporter family as SLC19A1.  While they primarily transport thiamine (Vitamin B1), they are structurally homologous and mutations can present with megaloblastic anemia symptoms that mimic folate deficiency. 
+ABCC1, ABCC3, ABCC4 through ABCC6: Along with ABCC2, these multidrug resistance proteins can export folates and antifolates from cells, influencing intracellular retention. 
+GART (Phosphoribosylglycinamide Formyltransferase): Uses 10-formyl-THF for purine synthesis. 
+ATIC (5-Aminoimidazole-4-Carboxamide Ribonucleotide Formyltransferase/IMP Cyclohydrolase): Uses 10-formyl-THF for the final steps of purine synthesis.
+MTFMT (Mitochondrial Methionyl-tRNA Formyltransferase): Uses 10-formyl-THF to formylate mitochondrial tRNA. 
+FTCD (Formiminotransferase Cyclodeaminase): Deficiency leads to glutamate formiminotransferase deficiency, causing folate trapping and elevated FIGLU.
+ADA, AK2, DCLRE1C, RAG1, RAG2: While primarily immune genes, their deficiency (SCID) can present with secondary folate deficiency and megaloblastic anemia, complicating the clinical picture. 
+CUBN (Cubilin): Involved in the absorption of the Vitamin B12-Intrinsic Factor complex; essential because B12 deficiency functionally traps folate (the "methyl trap"). 
+MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Mutations cause a rare neurodevelopmental disorder with microcephaly and seizures due to defective 5-formyl-THF metabolism. 
+FTCD (Formiminotransferase Cyclodeaminase): Defects cause glutamate formiminotransferase deficiency, leading to folate "trapping" and elevated FIGLU.
+MTHFD1 (Methylenetetrahydrofolate Dehydrogenase 1): Rare recessive mutations cause a syndrome of combined immunodeficiency, megaloblastic anemia, and hyperhomocysteinemia. 
+PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms. 
