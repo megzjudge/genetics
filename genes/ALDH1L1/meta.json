@@ -1,7 +1,0 @@
-{
-  "name": "ALDH1L1",
-  "fullName": "10-Formyltetrahydrofolate Dehydrogenase (Cytosolic)",
-  "description": "Converts 10-formyl-THF to THF and CO2 in the cytosol, regulating the folate pool size.",
-  "group": "Folate Metabolism",
-  "hasSnps": false
-}
