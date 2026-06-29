@@ -1,0 +1,73 @@
+
+
+Easy Testing (1–23)
+
+    1. Gilbert Syndrome — UGT1A9 rs4124874 TG — Blood biochemistry test (bilirubin levels)
+    2. Hemochromatosis Type 1 — HFE rs1799945 CG — Serum iron studies
+    3. Variegate Porphyria — HFE rs1799945 CG — Porphyrin urine test
+    4. Diabetes Mellitus Type 1 — INS rs3842753 TG — Autoantibody blood test
+    5. Type 2 Diabetes Mellitus — SLC2A2 rs5398 GA — Blood glucose / HbA1c test
+    6. Insulin-Resistant Diabetes Mellitus — INSR rs547131375 AC — Insulin resistance blood panel
+    7. Acrodermatitis Continua Suppurativa Of Hallopeau — IL36RN rs2472188 CG — Skin biopsy
+    8. Lip And Oral Cavity Carcinoma — MMP2 rs243865 CT — Biopsy (easy accessible lesion)
+    9. Leukemia, Acute Lymphocytic, Susceptibility To, 2 — IKZF1 rs11978267 AG — Blood smear and CBC
+    10. Osteoglophonic Dysplasia — FGFR1 rs758524862 AG — X-rays, clinical exam
+    11. Tooth Agenesis, Selective, 4 — WNT10A rs190527122 GA — Clinical dental exam
+    12. Spherocytosis — ANK1 rs117516263 GA — Blood smear, osmotic fragility test
+    13. Ectopia Lentis et Pupillae — ADAMTSL4-AS2 rs41317525 GA — Eye exam
+    14. Optic Atrophy 3 — OPA3 rs576104602 TC — Eye exam / OCT
+    15. Retinitis Pigmentosa — (no gene) rs76537883 CT — Eye exam / ERG
+    16. Charcot-Marie-Tooth Disease Type 4C — SH3TC2 rs189701174 CT — Nerve conduction studies
+    17. Congenital Microvillous Atrophy — SNHG22 rs112174362 GT — Intestinal biopsy
+    18. Congenital Bilateral Aplasia Of Vas Deferens From CFTR Mutation — CFTR-AS1 rs1800095 GA — Sweat chloride test
+    19. Ellis-Van Creveld Syndrome — EVC rs546318095 CA — Clinical exam and X-rays
+    20. Skin/Hair/Eye Pigmentation 3 — TYR rs1042602 CA — Clinical exam
+    21. Oculocutaneous Albinism Type 1B — TYR rs1042602 CA — Clinical exam
+    22. Charcot-Marie-Tooth Disease Type 4H — FGD4 rs138160928 CA — Nerve conduction studies
+    23. Thrombophilia Due To Protein S Deficiency — PROS1 rs115491294 AG — Coagulation profile
+       
+       
+
+Moderate Testing (24–44)
+
+    24. Pancreatitis — PRSS1 rs202003805 CT — Pancreatic enzyme blood test, imaging
+    25. Myeloproliferative Neoplasm, Unclassifiable — ITPKB rs6667260 CC — Bone marrow aspirate (moderate)
+    26. Sarcotubular Myopathy — TRIM32 rs3747835 CT — Muscle biopsy (moderate)
+    27. Alpha-1-Antitrypsin Deficiency — SERPINA1 rs200945035 TC — Blood alpha-1 antitrypsin level
+    28. Atypical Hemolytic-Uremic Syndrome With Thrombomodulin Anomaly — THBD rs3176124 GA — Kidney function tests
+    29. Spondylocostal Dysostosis 2, Autosomal Recessive — MESP2 rs113097169 GA — X-rays, clinical exam
+    30. Neuropathy, Hereditary Sensory And Autonomic, Type 2A — WNK1 rs56015776 AG — Nerve conduction studies
+    31. Hypogonadotropic Hypogonadism 2 — GNRHR rs758524862 AG — Hormone profile blood test
+    32. Qualitative Or Quantitative Defects Of Delta-Sarcoglycan — SGCD rs549743616 CT — Muscle biopsy
+    33. Congenital Myasthenic Syndrome 2A — CHRNB1 rs772731018 GA — Electromyography (EMG)
+    34. Autosomal Recessive Limb-Girdle Muscular Dystrophy Type 2D — SGCA rs201486782 ID — Muscle biopsy
+    35. Bilateral Microtia-Deafness-Cleft Palate Syndrome — HOXA2 rs566719577 AG — Clinical exam, hearing test
+    36. Autism Spectrum Disorders (Hereditary Attention Deficit-Hyperactivity Disorder) — SLC2A9 rs1967551 TC — Neuropsychological testing
+    37. Autosomal Dominant Pseudohypoaldosteronism Type 1 — KLHL3 rs147517371 DI — Electrolyte testing
+    38. Combined Immunodeficiency Due To ORAI1 Deficiency — ORAI1 ID — Immunoglobulin levels
+    39. Autism Spectrum Disorders (Hereditary Attention Deficit-Hyperactivity Disorder; Schizophrenia) — SLC2A9 rs6283 CT — Neuropsychological testing
+    40. Trigonocephaly 1 — FGFR2 rs758524862 GA — Imaging (CT scan)
+    41. Craniosynostosis Syndrome — (no gene) rs758524862 GA — Imaging (CT scan)
+    42. Congenital Bilateral Aplasia Of Vas Deferens — CFTR-AS1 rs1800095 GA — Semen analysis
+    43. Acrodermatitis Continua Suppurativa Of Hallopeau (various SNPs) — IL36RN — Skin biopsy
+    44. Autosomal Recessive Nonsyndromic Hearing Loss 7 — TMC1 rs71507808 AG — Audiometry
+       
+       
+
+Difficult Testing (45–59)
+
+    45. Leukemia, Acute Lymphocytic, Susceptibility To, 2 (other SNP) — IKZF1 rs4132601 TG — Bone marrow biopsy
+    46. Charcot-Marie-Tooth Disease Type 4H — FGD4 rs138160928 CA — Nerve biopsy (rare)
+    47. Crigler-Najjar Syndrome Types 1 & II — UGT1A9 rs4124874 TG — Liver biopsy
+    48. Spherocytosis — ANK1 rs117516263 GA — Bone marrow biopsy (if severe)
+    49. 3-Methylglutaconic Aciduria Type 3 — OPA3 rs576104602 TC — Muscle biopsy
+    50. Pancreatitis (less common SNPs) — PRSS1 multiple SNPs — Pancreatic biopsy (rare)
+    51. Sarcotubular Myopathy — TRIM32 rs3747835 CT — Muscle biopsy (invasive)
+    52. Congenital Microvillous Atrophy (other SNP) — SNHG22 rs3208550 AC — Intestinal biopsy (invasive)
+    53. Leukemia, Acute Lymphocytic — IKZF1 rs11978267 AG — Bone marrow biopsy
+    54. Autism Spectrum Disorders — BAIAP2 multiple SNPs — Functional brain imaging (research)
+    55. Hereditary Attention Deficit-Hyperactivity Disorder (various) — SLC2A9 rs6283 CT — Neuropsychological plus functional tests
+    56. Qualitative Or Quantitative Defects Of Delta-Sarcoglycan — SGCD rs549743616 CT — Muscle biopsy
+    57. Inborn Genetic Diseases — PIEZO1 rs748155949 GC — Specialized tissue biopsy
+    58. Multiple Epiphyseal Dysplasia Type 4 — SLC26A2 rs72832119 GA — Bone biopsy
+    59. Sulfate Transporter-Related Osteochondrodysplasia — SLC26A2 rs72832119 GA — Bone biopsy
