@@ -1,7 +1,0 @@
-{
-  "name": "RAG1",
-  "fullName": "Recombination Activating Gene 1",
-  "description": "Initiates V(D)J recombination; deficiency (Omenn syndrome/SCID) can present with secondary folate deficiency.",
-  "group": "Folate Metabolism",
-  "hasSnps": true
-}
