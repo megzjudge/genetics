@@ -3,9 +3,443 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin | Genetics</title>
+  <title>Admin | Megan Judge Genetics</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .admin-tabs { display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:32px; }
+    .admin-tab { font-family:var(--mono); font-size:12px; padding:10px 20px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; transition:color .12s,border-color .12s; }
+    .admin-tab:hover { color:var(--ink); }
+    .admin-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .admin-panel { display:none; }
+    .admin-panel.active { display:block; }
+    .admin-form label { display:block; font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+    .admin-form input, .admin-form select, .admin-form textarea {
+      width:100%; background:var(--card); border:1px solid var(--line); border-radius:4px;
+      padding:9px 12px; color:var(--ink); font-family:var(--mono); font-size:13px; margin-bottom:18px;
+    }
+    .admin-form textarea { min-height:140px; resize:vertical; font-family:var(--serif); font-size:14.5px; line-height:1.65; }
+    .admin-form textarea.mono { font-family:var(--mono); font-size:13px; min-height:80px; }
+    .admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus { outline:none; border-color:var(--accent); }
+    .admin-form .field-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .admin-form .field-row .field { display:flex; flex-direction:column; }
+    .admin-form .field label { margin-bottom:5px; }
+    .admin-form .field input, .admin-form .field select { margin-bottom:0; }
+    .admin-table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:32px; }
+    .admin-table th { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--faint); padding:8px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+    .admin-table td { padding:10px 12px; border-bottom:1px solid var(--line); color:var(--muted); vertical-align:top; }
+    .admin-table tr:hover td { background:var(--surface); }
+    .admin-table .gene-sym { font-family:var(--mono); font-weight:600; color:var(--accent); font-size:13px; }
+    .btn-danger { background:transparent; border:1px solid rgba(248,113,113,.3); color:#f87171; font-family:var(--mono); font-size:11px; padding:4px 10px; border-radius:3px; cursor:pointer; transition:background .12s; }
+    .btn-danger:hover { background:rgba(248,113,113,.1); }
+    .btn-sm { font-family:var(--mono); font-size:11px; padding:5px 14px; background:var(--accent); color:#071e12; border:none; border-radius:3px; cursor:pointer; font-weight:500; }
+    .btn-sm:hover { opacity:.85; }
+    .section-divider { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:32px 0 16px; padding-bottom:10px; border-bottom:1px solid var(--line); }
+    /* Password gate */
+    #auth-gate { position:fixed; inset:0; background:var(--bg); z-index:200; display:flex; align-items:center; justify-content:center; }
+    .auth-box { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:44px 40px; width:100%; max-width:360px; }
+    .auth-box h2 { font-family:var(--serif); font-size:22px; font-weight:600; margin:0 0 8px; }
+    .auth-box p { font-size:13px; color:var(--muted); margin:0 0 24px; }
+    .auth-box input { width:100%; background:var(--bg); border:1px solid var(--line); border-radius:4px; padding:10px 14px; color:var(--ink); font-family:var(--mono); font-size:14px; margin-bottom:14px; }
+    .auth-box input:focus { outline:none; border-color:var(--accent); }
+    .auth-box button { width:100%; background:var(--accent); color:#071e12; font-family:var(--mono); font-size:13px; font-weight:600; padding:11px; border:none; border-radius:4px; cursor:pointer; }
+    .auth-box .auth-err { font-family:var(--mono); font-size:12px; color:#f87171; margin-top:10px; display:none; }
+    @media (max-width:600px) {
+      .admin-form .field-row { grid-template-columns:1fr; }
+      .auth-box { margin:16px; padding:32px 24px; }
+    }
+  </style>
 </head>
 <body>
-  <!-- TODO: admin panel -->
+
+<!-- PASSWORD GATE -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <h2>Admin</h2>
+    <p>Enter your AUTH password to continue.</p>
+    <input type="password" id="auth-input" placeholder="Password" autocomplete="current-password">
+    <button onclick="tryAuth()">Sign in →</button>
+    <p class="auth-err" id="auth-err">Incorrect password.</p>
+  </div>
+</div>
+
+<header class="site-nav">
+  <a class="nav-brand" href="/">
+    <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
+    Megan Judge
+  </a>
+  <nav class="nav-links">
+    <a href="/basics">Basics</a>
+    <a href="/group/folate-metabolism">Genes</a>
+    <a href="/" class="nav-external">← Site</a>
+  </nav>
+</header>
+
+<main>
+  <div class="admin-body">
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('genes')">Genes</button>
+      <button class="admin-tab" onclick="switchTab('snp')">Add SNP</button>
+      <button class="admin-tab" onclick="switchTab('study')">Add Study</button>
+      <button class="admin-tab" onclick="switchTab('export')">Export</button>
+    </div>
+
+    <!-- TAB: GENES -->
+    <div id="panel-genes" class="admin-panel active">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="gene-count"></span>
+        <button class="btn-sm" onclick="toggleAddGene()">+ Add Gene</button>
+      </div>
+
+      <div id="add-gene-form" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:28px">
+        <p class="section-divider" style="margin-top:0">New Gene</p>
+        <div class="admin-form">
+          <div class="field-row">
+            <div class="field">
+              <label>Gene Name (e.g. MTHFR)</label>
+              <input type="text" id="new-gene-name" placeholder="SLC19A1" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div class="field">
+              <label>Group</label>
+              <select id="new-gene-group"></select>
+            </div>
+          </div>
+          <label>Full Name</label>
+          <input type="text" id="new-gene-fullname" placeholder="Reduced Folate Carrier 1 (RFC1)">
+          <label>Description</label>
+          <textarea id="new-gene-desc" class="mono" placeholder="One sentence describing the gene's role."></textarea>
+          <div style="display:flex;gap:10px">
+            <button class="btn-sm" onclick="addGene()">Save Gene</button>
+            <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="toggleAddGene()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <table class="admin-table" id="gene-table">
+        <thead><tr>
+          <th>Gene</th><th>Full Name</th><th>Group</th><th></th>
+        </tr></thead>
+        <tbody id="gene-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- TAB: ADD SNP -->
+    <div id="panel-snp" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Add Variant / SNP</p>
+      <div class="admin-form">
+        <label>Gene</label>
+        <select id="snp-gene"></select>
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field">
+            <label>rsID</label>
+            <input type="text" id="snp-rsid" placeholder="rs1801133">
+          </div>
+          <div class="field">
+            <label>Genotype</label>
+            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+          </div>
+        </div>
+        <div style="height:18px"></div>
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field">
+            <label>Chromosome</label>
+            <input type="text" id="snp-chr" placeholder="1">
+          </div>
+          <div class="field">
+            <label>Magnitude</label>
+            <input type="number" id="snp-mag" placeholder="2.5" step="0.1">
+          </div>
+        </div>
+        <div style="height:18px"></div>
+        <label>Status</label>
+        <select id="snp-status">
+          <option value="pending">Pending</option>
+          <option value="good">Good</option>
+          <option value="bad">Bad</option>
+          <option value="neutral">Neutral</option>
+        </select>
+        <label>Notes</label>
+        <textarea id="snp-notes" class="mono" placeholder="Any additional context about this variant."></textarea>
+        <button class="btn-sm" onclick="addSnp()">Save Variant</button>
+      </div>
+    </div>
+
+    <!-- TAB: ADD STUDY -->
+    <div id="panel-study" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Add Curated Study</p>
+      <div class="admin-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Gene</label>
+            <select id="study-gene"></select>
+          </div>
+          <div class="field">
+            <label>rsID (optional)</label>
+            <input type="text" id="study-rsid" placeholder="rs1801133">
+          </div>
+        </div>
+        <label>Study Snippet</label>
+        <textarea id="study-snippet" placeholder="Paste the excerpt from the study here — this appears in italics on the gene page."></textarea>
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field">
+            <label>Authors</label>
+            <input type="text" id="study-authors" placeholder="Smith J et al.">
+          </div>
+          <div class="field">
+            <label>Year</label>
+            <input type="number" id="study-year" placeholder="2023" min="1950" max="2099">
+          </div>
+        </div>
+        <div style="height:18px"></div>
+        <label>Title</label>
+        <input type="text" id="study-title" placeholder="Study title">
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field">
+            <label>URL</label>
+            <input type="url" id="study-url" placeholder="https://pubmed.ncbi.nlm.nih.gov/...">
+          </div>
+          <div class="field">
+            <label>DOI</label>
+            <input type="text" id="study-doi" placeholder="10.1234/example">
+          </div>
+        </div>
+        <div style="height:18px"></div>
+        <button class="btn-sm" onclick="addStudy()">Save Study</button>
+      </div>
+    </div>
+
+    <!-- TAB: EXPORT -->
+    <div id="panel-export" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Export Gene Data as CSV</p>
+      <div class="admin-form">
+        <label>Gene</label>
+        <select id="export-gene"></select>
+        <button class="btn-sm" onclick="exportCsv()">Download CSV</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>Admin · Megan Judge Genetics</span>
+    <button onclick="signOut()" style="background:none;border:none;font-family:var(--mono);font-size:11px;color:var(--faint);cursor:pointer">Sign out</button>
+  </div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+  let TOKEN = "";
+  let geneList = [];
+  let groupList = [];
+
+  // ── Auth ──────────────────────────────────────────
+  function tryAuth() {
+    const pw = document.getElementById("auth-input").value.trim();
+    if (!pw) return;
+    TOKEN = pw;
+    apiFetch("/api/genes")
+      .then(r => {
+        if (r.ok) {
+          document.getElementById("auth-gate").style.display = "none";
+          init();
+        } else {
+          document.getElementById("auth-err").style.display = "block";
+          TOKEN = "";
+        }
+      })
+      .catch(() => {
+        document.getElementById("auth-err").style.display = "block";
+        TOKEN = "";
+      });
+  }
+
+  document.getElementById("auth-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") tryAuth();
+  });
+
+  function signOut() {
+    TOKEN = "";
+    location.reload();
+  }
+
+  // ── API helpers ───────────────────────────────────
+  function apiFetch(path, opts = {}) {
+    opts.headers = opts.headers || {};
+    if (TOKEN) opts.headers["Authorization"] = "Bearer " + TOKEN;
+    return fetch(path, opts);
+  }
+
+  function toast(msg, err = false) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast" + (err ? " err" : "");
+    el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 3000);
+  }
+
+  // ── Init ──────────────────────────────────────────
+  function init() {
+    Promise.all([
+      apiFetch("/api/genes").then(r => r.json()),
+      apiFetch("/api/groups").then(r => r.json()),
+    ]).then(([genes, groups]) => {
+      geneList = genes.genes || genes || [];
+      groupList = groups.groups || groups || [];
+      renderGeneTable();
+      populateGeneSelects();
+      populateGroupSelect();
+    });
+  }
+
+  // ── Tabs ──────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".admin-panel").forEach(p => p.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("panel-" + name).classList.add("active");
+  }
+
+  // ── Genes tab ─────────────────────────────────────
+  function renderGeneTable() {
+    document.getElementById("gene-count").textContent = geneList.length + " genes";
+    const tbody = document.getElementById("gene-tbody");
+    tbody.innerHTML = geneList.map(g => `
+      <tr>
+        <td><span class="gene-sym"><a href="/gene/${g.gene_name}" target="_blank" style="color:var(--accent);text-decoration:none">${g.gene_name}</a></span></td>
+        <td style="font-size:12px">${g.full_name || ""}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--faint)">${g.group_name || "—"}</td>
+        <td><button class="btn-danger" onclick="deleteGene('${g.gene_name}')">Delete</button></td>
+      </tr>
+    `).join("");
+  }
+
+  function populateGeneSelects() {
+    const opts = geneList.map(g => `<option value="${g.gene_name}">${g.gene_name}</option>`).join("");
+    ["snp-gene","study-gene","export-gene"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = opts;
+    });
+  }
+
+  function populateGroupSelect() {
+    const el = document.getElementById("new-gene-group");
+    if (el) el.innerHTML = groupList.map(g => `<option value="${g.id}">${g.name}</option>`).join("");
+  }
+
+  function toggleAddGene() {
+    const f = document.getElementById("add-gene-form");
+    f.style.display = f.style.display === "none" ? "block" : "none";
+  }
+
+  function addGene() {
+    const body = {
+      gene_name:  document.getElementById("new-gene-name").value.trim().toUpperCase(),
+      full_name:  document.getElementById("new-gene-fullname").value.trim(),
+      description: document.getElementById("new-gene-desc").value.trim(),
+      group_id:   document.getElementById("new-gene-group").value,
+    };
+    if (!body.gene_name || !body.full_name) return toast("Gene name and full name required.", true);
+    apiFetch("/api/gene", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(async r => {
+      if (r.ok) {
+        toast("Gene saved.");
+        toggleAddGene();
+        ["new-gene-name","new-gene-fullname","new-gene-desc"].forEach(id => document.getElementById(id).value = "");
+        init();
+      } else {
+        const d = await r.json().catch(() => ({}));
+        toast("Error: " + (d.error || r.status), true);
+      }
+    });
+  }
+
+  function deleteGene(name) {
+    if (!confirm(`Delete ${name} and all its studies, alerts, and SNPs? This cannot be undone.`)) return;
+    apiFetch(`/api/gene/${name}`, { method: "DELETE" }).then(r => {
+      if (r.ok) { toast("Deleted."); init(); }
+      else toast("Delete failed.", true);
+    });
+  }
+
+  // ── SNP tab ───────────────────────────────────────
+  function addSnp() {
+    const body = {
+      gene_name:  document.getElementById("snp-gene").value,
+      rsid:       document.getElementById("snp-rsid").value.trim(),
+      genotype:   document.getElementById("snp-genotype").value.trim().toUpperCase(),
+      chromosome: document.getElementById("snp-chr").value.trim(),
+      magnitude:  parseFloat(document.getElementById("snp-mag").value) || null,
+      status:     document.getElementById("snp-status").value,
+      notes:      document.getElementById("snp-notes").value.trim(),
+    };
+    if (!body.rsid) return toast("rsID is required.", true);
+    apiFetch("/api/snp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(async r => {
+      if (r.ok) {
+        toast("Variant saved.");
+        ["snp-rsid","snp-genotype","snp-chr","snp-mag","snp-notes"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("snp-status").value = "pending";
+      } else {
+        const d = await r.json().catch(() => ({}));
+        toast("Error: " + (d.error || r.status), true);
+      }
+    });
+  }
+
+  // ── Study tab ─────────────────────────────────────
+  function addStudy() {
+    const body = {
+      gene_name: document.getElementById("study-gene").value,
+      rsid:      document.getElementById("study-rsid").value.trim() || null,
+      snippet:   document.getElementById("study-snippet").value.trim(),
+      authors:   document.getElementById("study-authors").value.trim(),
+      year:      parseInt(document.getElementById("study-year").value) || null,
+      title:     document.getElementById("study-title").value.trim(),
+      url:       document.getElementById("study-url").value.trim() || null,
+      doi:       document.getElementById("study-doi").value.trim() || null,
+    };
+    if (!body.snippet) return toast("Snippet is required.", true);
+    apiFetch("/api/study", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(async r => {
+      if (r.ok) {
+        toast("Study saved.");
+        ["study-rsid","study-snippet","study-authors","study-year","study-title","study-url","study-doi"]
+          .forEach(id => document.getElementById(id).value = "");
+      } else {
+        const d = await r.json().catch(() => ({}));
+        toast("Error: " + (d.error || r.status), true);
+      }
+    });
+  }
+
+  // ── Export tab ────────────────────────────────────
+  function exportCsv() {
+    const gene = document.getElementById("export-gene").value;
+    if (!gene) return;
+    apiFetch(`/api/export/${gene}`)
+      .then(r => r.blob())
+      .then(blob => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = gene + "_export.csv";
+        a.click();
+      });
+  }
+</script>
+
 </body>
 </html>

@@ -3,9 +3,212 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Learn Genetics | Megan Judge</title>
+  <title>Genetics Basics — Genes, SNPs, Alleles &amp; Haplogroups | Megan Judge</title>
+  <meta name="description" content="A plain-language guide to genes, SNPs, alleles, what binds to them, and haplogroups — written for anyone new to genetics.">
+  <meta name="author" content="Megan Judge">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://genetics.jdge.cc/basics">
+  <meta property="og:title" content="Genetics Basics | Megan Judge">
+  <meta property="og:description" content="Genes, SNPs, alleles, haplogroups — explained without the jargon.">
+  <meta property="og:url" content="https://genetics.jdge.cc/basics">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://genetics.jdge.cc/images/icon_full.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Genetics Basics | Megan Judge">
+  <meta name="twitter:image" content="https://genetics.jdge.cc/images/icon_full.png">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <!-- TODO: educational basics page -->
+
+<header class="site-nav">
+  <a class="nav-brand" href="/">
+    <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
+    Megan Judge
+  </a>
+  <nav class="nav-links">
+    <a href="/basics">Basics</a>
+    <a href="/group/folate-metabolism">Genes</a>
+    <a href="https://research.jdge.cc" class="nav-external">Research →</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="basics-hero">
+    <div class="basics-hero-inner">
+      <p class="hero-eyebrow">Start here</p>
+      <h1 style="font-size:clamp(36px,5vw,58px);font-weight:700;letter-spacing:-0.03em;line-height:1.1;margin:0 0 18px">
+        The basics, without the jargon.
+      </h1>
+      <p style="font-size:clamp(15px,1.8vw,17px);color:var(--muted);line-height:1.65;margin:0 0 36px;max-width:560px">
+        Genes, SNPs, alleles, what binds to them, and haplogroups —
+        explained at a level that makes the rest of this site make sense.
+      </p>
+      <img src="/images/doctor_genes_thumbnail.png"
+           alt="Doctor with DNA helix"
+           loading="lazy"
+           style="max-height:300px;border-radius:8px;object-fit:cover;display:block">
+    </div>
+  </section>
+
+  <div class="basics-body">
+
+    <h2>What is a Gene?</h2>
+    <p>
+      Your DNA is a molecule shaped like a twisted ladder — the famous double helix — and it runs about
+      three billion rungs long. Stretched out, the DNA in a single human cell would be roughly two metres.
+      It's packed into 23 pairs of chromosomes, tucked into the nucleus of almost every cell in your body.
+    </p>
+    <p>
+      A <strong>gene</strong> is a specific stretch of that DNA that carries the instructions for making
+      something useful — usually a protein. Proteins do almost everything in the body: they form structures,
+      carry molecules, speed up chemical reactions, and regulate other genes. You have roughly 20,000–25,000
+      genes, though they only account for about 2% of your total DNA. The rest regulates them, or has
+      functions we're still figuring out.
+    </p>
+    <p>
+      Think of it this way: if your DNA is a library, chromosomes are the bookshelves, and genes are
+      individual chapters. Each chapter contains the blueprint for one specific protein.
+      You carry two copies of every chromosome (one from each parent), which means two copies of every gene.
+      Those two copies aren't always identical — and that's where things get interesting.
+    </p>
+
+    <h2>What is an SNP?</h2>
+    <p>
+      DNA is written in a four-letter alphabet: A, T, C, and G (the nucleotide bases). A
+      <strong>Single Nucleotide Polymorphism</strong> — pronounced <em>"snip"</em>, abbreviated SNP —
+      is a single-letter swap at one position in the sequence. For example, where most people have a C,
+      you might have a T. That one-letter difference is an SNP.
+    </p>
+    <p>
+      SNPs are incredibly common. Humans differ from each other at roughly 4–5 million positions across
+      the genome. Most of those differences are completely silent — they sit in regions that don't code
+      for anything critical, or the swap doesn't change how the resulting protein folds. But some SNPs
+      matter a great deal. The MTHFR C677T variant (rsID: rs1801133), for example, is a single C→T swap
+      that reduces the enzyme's efficiency by 30–70%, affecting how your body processes folate.
+    </p>
+    <div class="callout">
+      Most people carry thousands of SNPs. The vast majority are completely silent —
+      background noise in a genome that's 99.9% identical between any two humans.
+      The interesting ones are the exceptions.
+    </div>
+    <p>
+      Each SNP has a unique reference ID called an <strong>rsID</strong> (reference SNP ID), assigned
+      by the NCBI dbSNP database. These look like rs1801133, rs1805087, rs4846048. They're how researchers
+      and databases refer to specific positions in the genome consistently across studies.
+    </p>
+
+    <h2>What is an Allele?</h2>
+    <p>
+      An <strong>allele</strong> is the specific version of a gene — or a specific letter at a position —
+      that you actually carry. Because you have two copies of every chromosome, you have two alleles at
+      every position: one inherited from your mother, one from your father.
+    </p>
+    <p>
+      If both copies are the same (e.g. CC at a given SNP position), you're <strong>homozygous</strong>
+      at that position. If they differ (e.g. CT), you're <strong>heterozygous</strong>. This matters
+      because many variants only show significant effects when homozygous — carrying two copies of the
+      less common allele. Heterozygous carriers often land somewhere in between.
+    </p>
+
+    <figure style="margin:32px 0">
+      <img src="/images/How_Genes_Work.jpg"
+           alt="How genes work — four allele types diagram"
+           loading="lazy"
+           style="width:100%;border-radius:6px;display:block">
+      <figcaption style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px">
+        Source: <a href="https://my.clevelandclinic.org/health/body/dna" target="_blank" rel="noopener" style="color:var(--faint);text-decoration:underline">Cleveland Clinic</a>
+      </figcaption>
+    </figure>
+
+    <p>
+      The diagram above illustrates how dominant and recessive alleles interact. A <strong>dominant</strong>
+      allele expresses itself even when only one copy is present. A <strong>recessive</strong> allele only
+      shows up when both copies carry it. Most SNPs studied in modern genetics don't follow simple
+      dominant/recessive rules — they're <strong>additive</strong>, meaning each copy of the variant
+      adds a small amount of effect, or <strong>codominant</strong>, where both alleles contribute.
+    </p>
+
+    <h2>What Binds to Alleles?</h2>
+    <p>
+      DNA isn't just passively sitting there. It's constantly being read, regulated, switched on and off.
+      Several types of molecules interact with it directly.
+    </p>
+    <p>
+      <strong>Transcription factors</strong> are proteins that bind to specific DNA sequences near a gene
+      and either activate or suppress its expression. Think of them as switches. A small change in the
+      binding site sequence — from an SNP, for example — can mean a transcription factor no longer
+      recognises it, changing how much of a protein gets made.
+    </p>
+    <p>
+      <strong>Methylation</strong> is a chemical modification where a methyl group (CH₃) is attached
+      directly to a cytosine base in the DNA. Methylated regions are generally silenced — the gene
+      doesn't get read. This is part of epigenetics: changes in gene expression that don't alter the
+      underlying DNA sequence. Crucially, methylation depends heavily on folate metabolism. Folate
+      (vitamin B9) feeds into a pathway that produces SAM (S-adenosylmethionine), the universal
+      methyl donor. If your MTHFR or MTR enzymes are impaired, SAM production drops and methylation
+      across the whole genome is affected.
+    </p>
+    <div class="callout">
+      This is why the MTHFR gene matters so much in folate research. Poor methylation from
+      MTHFR variants doesn't just affect one gene — it affects gene expression across the
+      whole genome, and influences everything from neurotransmitter synthesis to DNA repair.
+    </div>
+    <p>
+      <strong>Hormones</strong> such as oestrogen, testosterone, and cortisol bind to receptor proteins
+      that then act as transcription factors. This is why hormone levels can have broad effects on
+      gene expression, and why SNPs in receptor genes (like oestrogen receptor alpha, ESR1) can
+      alter sensitivity to hormonal signals.
+    </p>
+    <p>
+      <strong>Drugs and antifolates</strong> work by mimicking or blocking the natural molecules
+      that bind to gene products. Methotrexate, for instance, blocks DHFR (dihydrofolate reductase)
+      by fitting into the same binding site as dihydrofolate — jamming the folate cycle and stopping
+      rapidly dividing cells. Your SNPs in DHFR, TYMS, and related genes affect how well
+      (or poorly) antifolate drugs work in your body.
+    </p>
+
+    <h2>What is a Haplogroup?</h2>
+    <p>
+      As humans migrated out of Africa over tens of thousands of years, populations became geographically
+      separated. Over time, each group accumulated its own set of SNPs — small mutations that arose and
+      spread within that group but not others. A <strong>haplogroup</strong> is a cluster of such
+      SNPs that are reliably inherited together (because they sit close together on the chromosome
+      and rarely get separated by recombination). It acts as a genetic fingerprint for an ancestral
+      lineage.
+    </p>
+    <p>
+      There are two main types. <strong>Mitochondrial haplogroups</strong> trace your maternal line:
+      mitochondrial DNA is passed only from mother to child, so it accumulates mutations linearly
+      through the maternal lineage without being shuffled by recombination. Mitochondrial haplogroups
+      have letter-based names like H, J, T, U — H is the most common in Europeans.
+      <strong>Y-chromosome haplogroups</strong> trace the paternal line in men, in the same way.
+    </p>
+    <div class="callout">
+      Haplogroups don't tell you what your genes do — they tell you where your ancestors came from.
+      They're population genetics, not functional genetics. Knowing you're haplogroup H1a tells you
+      about migration patterns 10,000 years ago, not about your health.
+    </div>
+    <p>
+      Where haplogroups become relevant to functional genetics is in population frequency data.
+      An SNP that's common in one haplogroup may be rare in another, which affects how we interpret
+      its significance. This is why this site uses Caucasian population frequencies from NCBI
+      as the reference — it's the population context that matches the data.
+    </p>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>Megan Judge · Personal Genomics</span>
+    <div style="display:flex;gap:20px">
+      <a href="https://hereditary.substack.com">Hereditary →</a>
+      <a href="https://research.jdge.cc">Research Alerts →</a>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>
