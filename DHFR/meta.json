@@ -1,0 +1,7 @@
+{
+  "name": "DHFR",
+  "fullName": "Dihydrofolate Reductase",
+  "description": "Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

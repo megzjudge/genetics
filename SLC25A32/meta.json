@@ -1,0 +1,7 @@
+{
+  "name": "SLC25A32",
+  "fullName": "Mitochondrial Folate Transporter (MFT)",
+  "description": "Transports folates across the inner mitochondrial membrane, linking cytosolic and mitochondrial folate pools.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

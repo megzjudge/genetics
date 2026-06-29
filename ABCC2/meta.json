@@ -1,0 +1,7 @@
+{
+  "name": "ABCC2",
+  "fullName": "Multidrug Resistance Protein 2 (MRP2)",
+  "description": "Involved in the efflux (export) of folates and antifolates from cells, particularly in the liver and kidney.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

@@ -1,0 +1,7 @@
+{
+  "name": "SLC19A2",
+  "fullName": "Thiamine Transporter 1 (SLC19A2)",
+  "description": "Primarily transports thiamine (Vitamin B1); structurally homologous to SLC19A1 and mutations can mimic folate deficiency.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

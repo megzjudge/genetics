@@ -1,0 +1,7 @@
+{
+  "name": "ABCC1",
+  "fullName": "Multidrug Resistance Protein 1 (MRP1)",
+  "description": "Multidrug resistance protein that can export folates and antifolates from cells, influencing intracellular retention.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

@@ -1,0 +1,7 @@
+{
+  "name": "SLC19A1",
+  "fullName": "Reduced Folate Carrier 1 (RFC1)",
+  "description": "The primary transporter for reduced folates (like 5-methyl-THF) into cells at neutral pH.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

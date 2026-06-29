@@ -1,0 +1,7 @@
+{
+  "name": "ABCC5",
+  "fullName": "Multidrug Resistance Protein 5 (MRP5)",
+  "description": "Multidrug resistance protein that can export folates and antifolates from cells.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

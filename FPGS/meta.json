@@ -1,0 +1,7 @@
+{
+  "name": "FPGS",
+  "fullName": "Folylpolyglutamate Synthase",
+  "description": "Adds glutamate tails to folate (polyglutamation), trapping it inside the cell and increasing its affinity for metabolic enzymes.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

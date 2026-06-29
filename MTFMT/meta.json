@@ -1,0 +1,7 @@
+{
+  "name": "MTFMT",
+  "fullName": "Mitochondrial Methionyl-tRNA Formyltransferase",
+  "description": "Uses 10-formyl-THF to formylate mitochondrial tRNA, essential for mitochondrial protein synthesis initiation.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

@@ -1,0 +1,7 @@
+{
+  "name": "FOLH1",
+  "fullName": "Folate Hydrolase 1 (GCPII)",
+  "description": "Cleaves dietary folate polyglutamates in the intestine to allow absorption.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

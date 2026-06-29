@@ -1,0 +1,7 @@
+{
+  "name": "GGH",
+  "fullName": "Gamma-Glutamyl Hydrolase",
+  "description": "Removes glutamate tails from polyglutamated folates, allowing them to exit the cell or be absorbed in the intestine.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

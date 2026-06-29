@@ -1,0 +1,7 @@
+{
+  "name": "AK2",
+  "fullName": "Adenylate Kinase 2",
+  "description": "Primarily an immune gene; deficiency (reticular dysgenesis) can present with secondary folate deficiency.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

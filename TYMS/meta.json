@@ -1,0 +1,7 @@
+{
+  "name": "TYMS",
+  "fullName": "Thymidylate Synthase",
+  "description": "Uses 5,10-methylene-THF to convert dUMP to dTMP (thymidine) for DNA synthesis, producing DHF as a byproduct.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}
