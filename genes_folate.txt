@@ -23,8 +23,8 @@ GART (Phosphoribosylglycinamide Formyltransferase): Uses 10-formyl-THF for purin
 ATIC (5-Aminoimidazole-4-Carboxamide Ribonucleotide Formyltransferase/IMP Cyclohydrolase): Uses 10-formyl-THF for the final steps of purine synthesis.
 MTFMT (Mitochondrial Methionyl-tRNA Formyltransferase): Uses 10-formyl-THF to formylate mitochondrial tRNA. 
 FTCD (Formiminotransferase Cyclodeaminase): Deficiency leads to glutamate formiminotransferase deficiency, causing folate trapping and elevated FIGLU.
-ADA, AK2, DCLRE1C, RAG1, RAG2: While primarily immune genes, their deficiency (SCID) can present with secondary folate deficiency and megaloblastic anemia, complicating the clinical picture. 
-CUBN (Cubilin): Involved in the absorption of the Vitamin B12-Intrinsic Factor complex; essential because B12 deficiency functionally traps folate (the "methyl trap"). 
-MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Mutations cause a rare neurodevelopmental disorder with microcephaly and seizures due to defective 5-formyl-THF metabolism. 
-FTCD (Formiminotransferase Cyclodeaminase): Defects cause glutamate formiminotransferase deficiency, leading to folate "trapping" and elevated FIGLU.
-x PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms. 
+x ADA, x AK2, DCLRE1C, RAG1, RAG2: While primarily immune genes, their deficiency (SCID) can present with secondary folate deficiency and megaloblastic anemia, complicating the clinical picture. 
+x CUBN (Cubilin): Involved in the absorption of the Vitamin B12-Intrinsic Factor complex; essential because B12 deficiency functionally traps folate (the "methyl trap"). 
+x MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Mutations cause a rare neurodevelopmental disorder with microcephaly and seizures due to defective 5-formyl-THF metabolism. 
+x FTCD (Formiminotransferase Cyclodeaminase): Defects cause glutamate formiminotransferase deficiency, leading to folate "trapping" and elevated FIGLU.
+x PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms.
