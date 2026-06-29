@@ -1,7 +1,0 @@
-{
-  "name": "MTRR",
-  "fullName": "Methionine Synthase Reductase",
-  "description": "Regenerates active Vitamin B12 for the MTR enzyme, essential for continuous folate cycling.",
-  "group": "Folate Metabolism",
-  "hasSnps": true
-}
