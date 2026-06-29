@@ -1,0 +1,7 @@
+{
+  "name": "ABCC4",
+  "fullName": "Multidrug Resistance Protein 4 (MRP4)",
+  "description": "Multidrug resistance protein that can export folates and antifolates from cells.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

@@ -1,0 +1,7 @@
+{
+  "name": "MTHFR",
+  "fullName": "Methylenetetrahydrofolate Reductase",
+  "description": "Irreversibly converts 5,10-methylene-THF to 5-methyl-THF, the primary circulating form of folate used for homocysteine remethylation.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

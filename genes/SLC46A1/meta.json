@@ -1,0 +1,7 @@
+{
+  "name": "SLC46A1",
+  "fullName": "Proton-Coupled Folate Transporter (PCFT)",
+  "description": "Essential for intestinal folate absorption and transport across the choroid plexus; functions optimally at acidic pH.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

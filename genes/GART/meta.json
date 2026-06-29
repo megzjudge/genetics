@@ -1,0 +1,7 @@
+{
+  "name": "GART",
+  "fullName": "Phosphoribosylglycinamide Formyltransferase",
+  "description": "Uses 10-formyl-THF for purine synthesis.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

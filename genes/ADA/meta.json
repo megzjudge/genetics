@@ -1,0 +1,7 @@
+{
+  "name": "ADA",
+  "fullName": "Adenosine Deaminase",
+  "description": "Primarily an immune gene; deficiency (ADA-SCID) can present with secondary folate deficiency and megaloblastic anemia.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

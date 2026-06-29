@@ -1,0 +1,7 @@
+{
+  "name": "CBS",
+  "fullName": "Cystathionine Beta-Synthase",
+  "description": "Diverts homocysteine away from the folate-dependent remethylation pathway toward transsulfuration; functionally linked to folate status.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

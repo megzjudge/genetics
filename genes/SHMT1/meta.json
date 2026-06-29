@@ -1,0 +1,7 @@
+{
+  "name": "SHMT1",
+  "fullName": "Serine Hydroxymethyltransferase 1 (Cytosolic)",
+  "description": "Converts serine and THF into glycine and 5,10-methylene-THF in the cytosol.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

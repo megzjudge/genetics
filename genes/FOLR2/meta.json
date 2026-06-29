@@ -1,0 +1,7 @@
+{
+  "name": "FOLR2",
+  "fullName": "Folate Receptor Beta",
+  "description": "High-affinity folate receptor (beta isoform) mediating folate uptake via endocytosis.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

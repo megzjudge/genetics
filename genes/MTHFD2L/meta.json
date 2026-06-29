@@ -1,0 +1,7 @@
+{
+  "name": "MTHFD2L",
+  "fullName": "Methylenetetrahydrofolate Dehydrogenase 2-Like (Mitochondrial)",
+  "description": "Mitochondrial isoform of MTHFD2, involved in NAD-dependent THF derivative interconversion.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

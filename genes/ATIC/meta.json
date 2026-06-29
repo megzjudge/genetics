@@ -1,0 +1,7 @@
+{
+  "name": "ATIC",
+  "fullName": "5-Aminoimidazole-4-Carboxamide Ribonucleotide Formyltransferase/IMP Cyclohydrolase",
+  "description": "Uses 10-formyl-THF for the final steps of purine synthesis.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

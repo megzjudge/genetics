@@ -1,0 +1,7 @@
+{
+  "name": "ABCC6",
+  "fullName": "Multidrug Resistance Protein 6 (MRP6)",
+  "description": "Multidrug resistance protein that can export folates and antifolates from cells.",
+  "group": "Folate Metabolism",
+  "hasSnps": false
+}

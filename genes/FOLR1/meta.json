@@ -1,0 +1,7 @@
+{
+  "name": "FOLR1",
+  "fullName": "Folate Receptor Alpha",
+  "description": "High-affinity receptor mediating folate uptake via endocytosis, crucial in the placenta, kidneys, and choroid plexus.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}

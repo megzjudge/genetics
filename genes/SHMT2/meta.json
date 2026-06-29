@@ -1,0 +1,7 @@
+{
+  "name": "SHMT2",
+  "fullName": "Serine Hydroxymethyltransferase 2 (Mitochondrial)",
+  "description": "Converts serine and THF into glycine and 5,10-methylene-THF in the mitochondria.",
+  "group": "Folate Metabolism",
+  "hasSnps": true
+}
