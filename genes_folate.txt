@@ -28,4 +28,4 @@ CUBN (Cubilin): Involved in the absorption of the Vitamin B12-Intrinsic Factor c
 MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Mutations cause a rare neurodevelopmental disorder with microcephaly and seizures due to defective 5-formyl-THF metabolism. 
 FTCD (Formiminotransferase Cyclodeaminase): Defects cause glutamate formiminotransferase deficiency, leading to folate "trapping" and elevated FIGLU.
 MTHFD1 (Methylenetetrahydrofolate Dehydrogenase 1): Rare recessive mutations cause a syndrome of combined immunodeficiency, megaloblastic anemia, and hyperhomocysteinemia. 
-PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms. 
+x PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms. 
