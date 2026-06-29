@@ -152,6 +152,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   min-height: 420px;
   overflow: hidden;
 }
+.statement-img a {
+  display: block; position: absolute; inset: 0;
+}
 .statement-img img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
@@ -210,31 +213,36 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 
 .group-card {
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 6px; padding: 26px;
-  display: flex; flex-direction: column; gap: 14px;
-  text-decoration: none; color: var(--ink);
+  border-radius: 6px; overflow: hidden;
+  display: flex; flex-direction: column;
   transition: border-color 0.14s, transform 0.14s;
 }
-a.group-card:hover {
+.group-card:not(.soon):hover {
   border-color: var(--accent);
   transform: translateY(-2px);
 }
 .group-card.soon { opacity: 0.38; pointer-events: none; }
 
 /* Card thumbnail image */
+.group-card-img-wrap { display: block; flex-shrink: 0; }
 .group-card-img {
-  margin: -26px -26px 18px;
-  border-radius: 5px 5px 0 0;
-  overflow: hidden;
-  height: 155px;
-  flex-shrink: 0;
+  height: 155px; overflow: hidden; flex-shrink: 0;
+  margin: 0; border-radius: 0;
+  position: relative;
 }
 .group-card-img img {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
   transition: transform 0.3s ease;
 }
-a.group-card:hover .group-card-img img { transform: scale(1.03); }
+.group-card:not(.soon):hover .group-card-img img { transform: scale(1.03); }
+
+/* Card text area */
+.group-card-text {
+  padding: 20px 26px 26px;
+  display: flex; flex-direction: column; gap: 14px;
+  text-decoration: none; color: var(--ink); flex: 1;
+}
 
 .group-card-head {
   display: flex; align-items: flex-start;
@@ -301,19 +309,6 @@ a.group-card:hover .group-card-img img { transform: scale(1.03); }
 @media (max-width: 600px) {
   .how-section { padding: 52px 18px 72px; }
 }
-
-/* ── IMAGE CAPTIONS ──────────────────────────────── */
-.group-card-img figcaption,
-.statement-img figcaption {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  font-family: var(--mono); font-size: 10px;
-  color: rgba(255,255,255,0.45);
-  padding: 4px 8px;
-  text-align: right;
-  pointer-events: none;
-}
-.group-card-img { position: relative; }
-.statement-img { position: relative; }
 
 /* ── PAGE CREDITS ────────────────────────────────── */
 .page-credits {
@@ -480,6 +475,79 @@ a.group-card:hover .group-card-img img { transform: scale(1.03); }
 @media (max-width: 600px) {
   .gene-row { grid-template-columns: 100px 1fr; }
   .gene-row-count { display: none; }
+}
+
+/* ── GENE PAGE EXTRAS ────────────────────────────── */
+.gene-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.gene-tag {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
+  color: var(--accent); border: 1px solid rgba(52,211,153,0.3);
+  border-radius: 3px; padding: 3px 9px; text-decoration: none;
+  transition: background 0.12s;
+}
+.gene-tag:hover { background: var(--accent-dim); }
+
+.gene-section { margin-bottom: 52px; }
+.gene-section:last-child { margin-bottom: 0; }
+
+.section-count {
+  font-family: var(--mono); font-size: 10px; font-weight: 400;
+  color: var(--faint); margin-left: 10px; letter-spacing: 0;
+}
+
+.unread-tag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--accent); background: var(--accent-dim);
+  border: 1px solid rgba(52,211,153,0.25);
+  border-radius: 3px; padding: 1px 7px;
+  margin-left: 8px; vertical-align: middle;
+}
+
+.empty-state {
+  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  padding: 24px 0; margin: 0;
+}
+
+/* SNP table */
+.snp-table-wrap { overflow-x: auto; margin-bottom: 8px; }
+.snp-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: 12px;
+}
+.snp-table th {
+  text-align: left; padding: 8px 12px;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--faint); border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.snp-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--line);
+  color: var(--muted); vertical-align: top;
+}
+.snp-table tr:last-child td { border-bottom: none; }
+.snp-table tr:hover td { background: var(--surface); }
+.rsid-link { color: var(--accent); text-decoration: none; }
+.rsid-link:hover { text-decoration: underline; }
+.snp-genotype { color: var(--ink); font-weight: 600; }
+.snp-notes { font-size: 11px; color: var(--faint); max-width: 260px; }
+
+.snp-status {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em;
+  border-radius: 3px; padding: 2px 7px; white-space: nowrap;
+}
+.snp-status--good     { color: var(--accent);  background: var(--accent-dim); }
+.snp-status--bad      { color: #f87171;         background: rgba(248,113,113,0.1); }
+.snp-status--neutral  { color: var(--muted);    background: var(--card); }
+.snp-status--pending  { color: var(--faint);    background: transparent; border: 1px solid var(--line); }
+
+/* Group page extras */
+.group-page-desc {
+  font-size: 15px; color: var(--muted); line-height: 1.65;
+  max-width: 620px; margin: 0 0 16px;
+}
+.group-stats {
+  font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin: 0;
 }
 
 /* Basics page */
