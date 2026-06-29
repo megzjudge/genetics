@@ -1,7 +1,0 @@
-{
-  "name": "RAG2",
-  "fullName": "Recombination Activating Gene 2",
-  "description": "Works with RAG1 to initiate V(D)J recombination; deficiency can present with secondary folate deficiency.",
-  "group": "Folate Metabolism",
-  "hasSnps": true
-}
