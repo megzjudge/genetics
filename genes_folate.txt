@@ -6,7 +6,7 @@ x ABCC2 (MRP2): Involved in the efflux (export) of folates and antifolates from 
 x DHFR (Dihydrofolate Reductase): Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis. 
 x SHMT1 and x SHMT2 (Serine Hydroxymethyltransferase 1 & 2): Convert serine and THF into glycine and 5,10-methylene-THF (cytosolic and mitochondrial isoforms, respectively). 
 x MTHFR (Methylenetetrahydrofolate Reductase): Irreversibly converts 5,10-methylene-THF to 5-methyl-THF, the primary circulating form of folate used for homocysteine remethylation. 
-x MTHFD1, x MTHFD2, x MTHFD2L, MTHFD1L: Multifunctional enzymes (dehydrogenase, cyclohydrolase, and formyl-THF synthetase) that drive the interconversion of various THF derivatives in the cytosol and mitochondria. 
+x MTHFD1, x MTHFD2, x MTHFD2L, x MTHFD1L: Multifunctional enzymes (dehydrogenase, cyclohydrolase, and formyl-THF synthetase) that drive the interconversion of various THF derivatives in the cytosol and mitochondria. 
 MTR (Methionine Synthase): Uses 5-methyl-THF to convert homocysteine into methionine (requires Vitamin B12). 
 MTRR (Methionine Synthase Reductase): Regenerates active Vitamin B12 for the MTR enzyme, essential for continuous folate cycling. 
 TYMS (Thymidylate Synthase): Uses 5,10-methylene-THF to convert dUMP to dTMP (thymidine) for DNA synthesis, producing DHF as a byproduct. 
