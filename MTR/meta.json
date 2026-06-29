@@ -1,7 +1,0 @@
-{
-  "name": "MTR",
-  "fullName": "Methionine Synthase",
-  "description": "Uses 5-methyl-THF to convert homocysteine into methionine; requires Vitamin B12 as cofactor.",
-  "group": "Folate Metabolism",
-  "hasSnps": true
-}
