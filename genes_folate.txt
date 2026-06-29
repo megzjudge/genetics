@@ -1,9 +1,9 @@
 x SLC19A1 (Reduced Folate Carrier 1 / RFC1): The primary transporter for reduced folates (like 5-methyl-THF) into cells at neutral pH. 
 x FOLR1, x FOLR2 x, FOLR3 x (Folate Receptors alpha, beta, gamma): High-affinity receptors that mediate folate uptake via endocytosis, crucial in the placenta, kidneys, and choroid plexus. 
-SLC46A1 (Proton-Coupled Folate Transporter / PCFT): Essential for intestinal folate absorption and transport across the choroid plexus; functions optimally at acidic pH. 
-SLC25A32 (Mitochondrial Folate Transporter / MFT): Transports folates across the inner mitochondrial membrane, linking cytosolic and mitochondrial folate pools. 
-ABCC2 (MRP2): Involved in the efflux (export) of folates and antifolates from cells, particularly in the liver and kidney.
-DHFR (Dihydrofolate Reductase): Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis. 
+x SLC46A1 (Proton-Coupled Folate Transporter / PCFT): Essential for intestinal folate absorption and transport across the choroid plexus; functions optimally at acidic pH. 
+x SLC25A32 (Mitochondrial Folate Transporter / MFT): Transports folates across the inner mitochondrial membrane, linking cytosolic and mitochondrial folate pools. 
+x ABCC2 (MRP2): Involved in the efflux (export) of folates and antifolates from cells, particularly in the liver and kidney.
+x DHFR (Dihydrofolate Reductase): Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis. 
 SHMT1 and SHMT2 (Serine Hydroxymethyltransferase 1 & 2): Convert serine and THF into glycine and 5,10-methylene-THF (cytosolic and mitochondrial isoforms, respectively). 
 x MTHFR (Methylenetetrahydrofolate Reductase): Irreversibly converts 5,10-methylene-THF to 5-methyl-THF, the primary circulating form of folate used for homocysteine remethylation. 
 MTHFD1, MTHFD2, MTHFD2L, MTHFD1L: Multifunctional enzymes (dehydrogenase, cyclohydrolase, and formyl-THF synthetase) that drive the interconversion of various THF derivatives in the cytosol and mitochondria. 
