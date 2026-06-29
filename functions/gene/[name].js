@@ -14,12 +14,11 @@ function nav() {
   return `<header class="site-nav">
   <a class="nav-brand" href="/">
     <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
-    Megan Judge
+    Genetics Research
   </a>
   <nav class="nav-links">
     <a href="/basics">Basics</a>
     <a href="/group/folate-metabolism">Genes</a>
-    <a href="https://research.jdge.cc" class="nav-external">Research →</a>
   </nav>
 </header>`;
 }
@@ -27,10 +26,10 @@ function nav() {
 function foot() {
   return `<footer class="site-footer">
   <div class="footer-inner">
-    <span>Megan Judge · Personal Genomics</span>
+    <span>Megan Judge · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
     <div style="display:flex;gap:20px">
       <a href="https://hereditary.substack.com">Hereditary →</a>
-      <a href="https://research.jdge.cc">Research Alerts →</a>
+      <a href="https://research.jdge.cc">Other Research Alerts →</a>
     </div>
   </div>
 </footer>`;
