@@ -4,7 +4,7 @@ x SLC46A1 (Proton-Coupled Folate Transporter / PCFT): Essential for intestinal f
 x SLC25A32 (Mitochondrial Folate Transporter / MFT): Transports folates across the inner mitochondrial membrane, linking cytosolic and mitochondrial folate pools. 
 x ABCC2 (MRP2): Involved in the efflux (export) of folates and antifolates from cells, particularly in the liver and kidney.
 x DHFR (Dihydrofolate Reductase): Converts dihydrofolate (DHF) back to tetrahydrofolate (THF), a critical step for recycling folate after DNA synthesis. 
-SHMT1 and SHMT2 (Serine Hydroxymethyltransferase 1 & 2): Convert serine and THF into glycine and 5,10-methylene-THF (cytosolic and mitochondrial isoforms, respectively). 
+x SHMT1 and x SHMT2 (Serine Hydroxymethyltransferase 1 & 2): Convert serine and THF into glycine and 5,10-methylene-THF (cytosolic and mitochondrial isoforms, respectively). 
 x MTHFR (Methylenetetrahydrofolate Reductase): Irreversibly converts 5,10-methylene-THF to 5-methyl-THF, the primary circulating form of folate used for homocysteine remethylation. 
 MTHFD1, MTHFD2, MTHFD2L, MTHFD1L: Multifunctional enzymes (dehydrogenase, cyclohydrolase, and formyl-THF synthetase) that drive the interconversion of various THF derivatives in the cytosol and mitochondria. 
 MTR (Methionine Synthase): Uses 5-methyl-THF to convert homocysteine into methionine (requires Vitamin B12). 
@@ -27,5 +27,5 @@ ADA, AK2, DCLRE1C, RAG1, RAG2: While primarily immune genes, their deficiency (S
 CUBN (Cubilin): Involved in the absorption of the Vitamin B12-Intrinsic Factor complex; essential because B12 deficiency functionally traps folate (the "methyl trap"). 
 MTHFS (5,10-Methenyltetrahydrofolate Synthetase): Mutations cause a rare neurodevelopmental disorder with microcephaly and seizures due to defective 5-formyl-THF metabolism. 
 FTCD (Formiminotransferase Cyclodeaminase): Defects cause glutamate formiminotransferase deficiency, leading to folate "trapping" and elevated FIGLU.
-MTHFD1 (Methylenetetrahydrofolate Dehydrogenase 1): Rare recessive mutations cause a syndrome of combined immunodeficiency, megaloblastic anemia, and hyperhomocysteinemia. 
+x MTHFD1 (Methylenetetrahydrofolate Dehydrogenase 1): Rare recessive mutations cause a syndrome of combined immunodeficiency, megaloblastic anemia, and hyperhomocysteinemia. 
 x PNKP (Polynucleotide Kinase 3'-Phosphatase): While primarily a DNA repair gene, mutations have been linked to infantile-onset cerebral folate deficiency (CFD) with polyneuropathy, likely due to secondary effects on folate-dependent DNA repair mechanisms. 
