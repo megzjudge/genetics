@@ -377,6 +377,7 @@
       gene_name:   geneLookupData.gene_name,
       full_name:   geneLookupData.full_name,
       description: geneLookupData.description,
+      maplocation: geneLookupData.maplocation || null,
       group_id:    document.getElementById("new-gene-group").value,
     };
     apiFetch("/api/gene", {
@@ -464,13 +465,16 @@
       return toast(`Add gene "${snpLookupData.gene_name}" first.`, true);
     }
     const body = {
-      gene_name:  snpLookupData.gene_name,
-      rsid:       snpLookupData.rsid,
-      genotype:   document.getElementById("snp-genotype").value.trim().toUpperCase() || null,
-      chromosome: snpLookupData.chromosome,
-      magnitude:  snpLookupData.magnitude,
-      status:     "pending",
-      notes:      [snpLookupData.protein_change, snpLookupData.summary].filter(Boolean).join(" — ") || null,
+      gene_name:     snpLookupData.gene_name,
+      rsid:          snpLookupData.rsid,
+      genotype:      document.getElementById("snp-genotype").value.trim().toUpperCase() || null,
+      chromosome:    snpLookupData.chromosome,
+      magnitude:     snpLookupData.magnitude,
+      status:        "pending",
+      notes:         [snpLookupData.protein_change, snpLookupData.summary].filter(Boolean).join(" — ") || null,
+      ref_allele:    snpLookupData.ref_allele    || null,
+      alt_allele:    snpLookupData.alt_allele    || null,
+      protein_change: snpLookupData.protein_change || null,
     };
     apiFetch("/api/snp", {
       method: "POST",

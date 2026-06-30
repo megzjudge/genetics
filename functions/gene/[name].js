@@ -1,3 +1,5 @@
+import { geneViz, chrFromMaploc } from "../lib/viz.js";
+
 const BASE = "https://genetics.jdge.cc";
 
 function esc(str) {
@@ -104,6 +106,10 @@ ${foot()}
   const groupSlug    = primaryGroup ? slugify(primaryGroup.name) : "";
   const descMeta     = esc(info.description || `${geneName} — curated research and Scholar alerts.`);
 
+  const maploc  = info.maplocation || "";
+  const chrNum  = chrFromMaploc(maploc) || snps[0]?.chromosome || null;
+  const vizSvg  = (chrNum || maploc) ? geneViz({ chrNum, geneName, maploc }) : null;
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,18 +136,21 @@ ${nav()}
 <main>
 
   <section class="gene-header">
-    <div class="gene-header-inner">
-      <nav class="gene-breadcrumb" aria-label="breadcrumb">
-        <a href="/">Home</a>${primaryGroup
-          ? ` / <a href="/group/${groupSlug}">${esc(primaryGroup.name)}</a>`
-          : ""} / ${esc(geneName)}
-      </nav>
-      <h1 class="gene-title">${esc(geneName)}</h1>
-      <p class="gene-fullname">${esc(info.full_name)}</p>
-      ${info.description ? `<p class="gene-desc">${esc(info.description)}</p>` : ""}
-      ${groups.length > 0 ? `<div class="gene-tags">${
-        groups.map(g => `<a class="gene-tag" href="/group/${slugify(g.name)}">${esc(g.name)}</a>`).join("")
-      }</div>` : ""}
+    <div class="gene-header-inner" style="${vizSvg ? "display:flex;gap:40px;align-items:flex-start" : ""}">
+      <div${vizSvg ? ' style="flex:1;min-width:0"' : ""}>
+        <nav class="gene-breadcrumb" aria-label="breadcrumb">
+          <a href="/">Home</a>${primaryGroup
+            ? ` / <a href="/group/${groupSlug}">${esc(primaryGroup.name)}</a>`
+            : ""} / ${esc(geneName)}
+        </nav>
+        <h1 class="gene-title">${esc(geneName)}</h1>
+        <p class="gene-fullname">${esc(info.full_name)}</p>
+        ${info.description ? `<p class="gene-desc">${esc(info.description)}</p>` : ""}
+        ${groups.length > 0 ? `<div class="gene-tags">${
+          groups.map(g => `<a class="gene-tag" href="/group/${slugify(g.name)}">${esc(g.name)}</a>`).join("")
+        }</div>` : ""}
+      </div>
+      ${vizSvg ? `<div style="flex-shrink:0;width:170px;margin-top:8px">${vizSvg}</div>` : ""}
     </div>
   </section>
 
@@ -157,7 +166,7 @@ ${nav()}
             const a2 = freqs[0]?.allele2 || "";
             return `<div class="snp-block">
           <div class="snp-row">
-            <a class="rsid-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(s.rsid)}" target="_blank" rel="noopener">${esc(s.rsid)}</a>
+            <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
             <span class="snp-genotype">${esc(s.genotype || "—")}</span>
             ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}</span>` : ""}
             ${s.magnitude != null ? `<span class="snp-meta-item">Mag ${s.magnitude}</span>` : ""}

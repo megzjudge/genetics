@@ -285,12 +285,12 @@ export async function onRequest({ request, env }) {
 
   // ── POST /api/gene ───────────────────────────────
   if (method === "POST" && route === "gene" && !param) {
-    const { gene_name, full_name, description, group_id } = await request.json();
+    const { gene_name, full_name, description, group_id, maplocation } = await request.json();
     if (!gene_name) return err("gene_name required");
     const name = gene_name.toUpperCase();
     await env.genetic.prepare(
-      `INSERT OR IGNORE INTO gene_info (gene_name, full_name, description) VALUES (?, ?, ?)`
-    ).bind(name, full_name, description || null).run();
+      `INSERT OR IGNORE INTO gene_info (gene_name, full_name, description, maplocation) VALUES (?, ?, ?, ?)`
+    ).bind(name, full_name, description || null, maplocation || null).run();
     if (group_id) {
       await env.genetic.prepare(
         `INSERT OR IGNORE INTO gene_groups (gene_name, group_id) VALUES (?, ?)`
@@ -330,6 +330,7 @@ export async function onRequest({ request, env }) {
 
     // Parse NCBI
     let gene_name = null, chromosome = null, consequence = null, protein_change = null;
+    let ref_allele = null, alt_allele = null;
     const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
     if (ncbi) {
       const anns = ncbi?.primary_snapshot_data?.allele_annotations || [];
@@ -339,7 +340,6 @@ export async function onRequest({ request, env }) {
             if (gene.locus) {
               gene_name   = gene.locus;
               consequence = gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null;
-              // Pull protein change (e.g. R653Q) from first RNA with a missense protein variant
               for (const rna of (gene.rnas || [])) {
                 const spdi = rna?.protein?.variant?.spdi;
                 if (spdi?.deleted_sequence && spdi?.inserted_sequence
@@ -356,7 +356,21 @@ export async function onRequest({ request, env }) {
       }
       for (const pl of (ncbi?.primary_snapshot_data?.placements_with_allele || [])) {
         const c = seqIdToChrom(pl.seq_id);
-        if (c) { chromosome = c; break; }
+        if (c) {
+          if (!chromosome) chromosome = c;
+          // Extract ref and alt alleles from chromosome-level SPDI
+          if (!ref_allele || !alt_allele) {
+            for (const a of (pl.alleles || [])) {
+              const spdi = a.allele?.spdi;
+              if (!spdi) continue;
+              if (!ref_allele) ref_allele = spdi.deleted_sequence || null;
+              if (!alt_allele && spdi.deleted_sequence !== spdi.inserted_sequence) {
+                alt_allele = spdi.inserted_sequence || null;
+              }
+            }
+          }
+          if (chromosome && ref_allele && alt_allele) break;
+        }
       }
     }
 
@@ -374,20 +388,23 @@ export async function onRequest({ request, env }) {
       if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
     }
 
-    return json({ rsid, gene_name, chromosome, consequence, protein_change, magnitude, summary });
+    return json({ rsid, gene_name, chromosome, consequence, protein_change, ref_allele, alt_allele, magnitude, summary });
   }
 
   // ── POST /api/snp ────────────────────────────────
   if (method === "POST" && route === "snp" && !param) {
-    const { gene_name, rsid, genotype, chromosome, magnitude, status, notes } = await request.json();
+    const { gene_name, rsid, genotype, chromosome, magnitude, status, notes,
+            ref_allele, alt_allele, protein_change } = await request.json();
     if (!gene_name || !rsid) return err("gene_name and rsid required");
     await env.genetic.prepare(`
-      INSERT OR REPLACE INTO genes (gene_name, rsid, genotype, chromosome, magnitude, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO genes
+        (gene_name, rsid, genotype, chromosome, magnitude, status, notes, ref_allele, alt_allele, protein_change)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       gene_name.toUpperCase(), rsid, genotype || null,
       chromosome || null, magnitude ?? null,
-      status || "pending", notes || null
+      status || "pending", notes || null,
+      ref_allele || null, alt_allele || null, protein_change || null
     ).run();
     // Fetch NCBI ALFA population frequencies automatically
     const freqRows = await fetchNcbiFreqs(rsid, env);
