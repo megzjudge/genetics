@@ -253,10 +253,40 @@ export async function onRequest({ request, env }) {
   // ── Auth-gated writes ────────────────────────────
   if (!checkAuth(request, env)) return err("Unauthorised", 401);
 
+  // ── POST /api/gene/lookup ────────────────────────
+  if (method === "POST" && route === "gene" && param === "lookup") {
+    const { gene_name: rawGene } = await request.json();
+    if (!rawGene) return err("gene_name required");
+    const sym = rawGene.trim().toUpperCase();
+
+    const searchRes = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&term=${encodeURIComponent(sym + "[sym] AND Homo sapiens[Organism]")}&retmode=json`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then(r => r.ok ? r.json() : null);
+
+    const geneId = searchRes?.esearchresult?.idlist?.[0];
+    if (!geneId) return err("Gene not found on NCBI", 404);
+
+    const summaryRes = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&id=${geneId}&retmode=json`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then(r => r.ok ? r.json() : null);
+
+    const info = summaryRes?.result?.[geneId];
+    if (!info) return err("Gene summary not found", 404);
+
+    return json({
+      gene_name:   sym,
+      full_name:   info.description || null,
+      description: info.summary     || null,
+      maplocation: info.maplocation || null,
+    });
+  }
+
   // ── POST /api/gene ───────────────────────────────
-  if (method === "POST" && route === "gene") {
+  if (method === "POST" && route === "gene" && !param) {
     const { gene_name, full_name, description, group_id } = await request.json();
-    if (!gene_name || !full_name) return err("gene_name and full_name required");
+    if (!gene_name) return err("gene_name required");
     const name = gene_name.toUpperCase();
     await env.genetic.prepare(
       `INSERT OR IGNORE INTO gene_info (gene_name, full_name, description) VALUES (?, ?, ?)`
@@ -299,7 +329,7 @@ export async function onRequest({ request, env }) {
     ]);
 
     // Parse NCBI
-    let gene_name = null, chromosome = null, consequence = null;
+    let gene_name = null, chromosome = null, consequence = null, protein_change = null;
     const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
     if (ncbi) {
       const anns = ncbi?.primary_snapshot_data?.allele_annotations || [];
@@ -309,6 +339,16 @@ export async function onRequest({ request, env }) {
             if (gene.locus) {
               gene_name   = gene.locus;
               consequence = gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null;
+              // Pull protein change (e.g. R653Q) from first RNA with a missense protein variant
+              for (const rna of (gene.rnas || [])) {
+                const spdi = rna?.protein?.variant?.spdi;
+                if (spdi?.deleted_sequence && spdi?.inserted_sequence
+                    && spdi.deleted_sequence !== spdi.inserted_sequence
+                    && spdi.position != null) {
+                  protein_change = `${spdi.deleted_sequence}${spdi.position + 1}${spdi.inserted_sequence}`;
+                  break;
+                }
+              }
               break outer;
             }
           }
@@ -334,7 +374,7 @@ export async function onRequest({ request, env }) {
       if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
     }
 
-    return json({ rsid, gene_name, chromosome, consequence, magnitude, summary });
+    return json({ rsid, gene_name, chromosome, consequence, protein_change, magnitude, summary });
   }
 
   // ── POST /api/snp ────────────────────────────────

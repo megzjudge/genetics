@@ -1,3 +1,95 @@
+dopamine
+
+DRD1: Encodes the D1 receptor. It is the most abundant dopamine receptor in the central nervous system, located primarily in the neostriatum, amygdala, and cortex. It is critical for working memory and influences drug-seeking behavior. 
+DRD2: Encodes the D2 receptor. Found heavily in dopaminergic regions like the basal ganglia, it regulates reward, movement, and addiction responses. It is the primary target for most antipsychotic medications. Variants in this gene (such as the Taq1A polymorphism) are linked to reduced receptor availability and increased risk for addiction and obesity. 
+DRD3: Encodes the D3 receptor. Located mainly in the limbic areas (ventral striatum), it adapts to fluctuating dopamine levels and is involved in cognition and emotion. 
+DRD4: Encodes the D4 receptor. Found in the cortex, amygdala, and retina, it modulates attention and emotion. Specific variants (e.g., the 7-repeat allele) are associated with Attention Deficit Hyperactivity Disorder (ADHD) and novelty-seeking behavior. 
+DRD5: Encodes the D5 receptor. Often co-localized with DRD1, it has a higher affinity for dopamine and is involved in long-term memory and behavioral regulation. 
+TH (Tyrosine Hydroxylase): The rate-limiting enzyme that converts the amino acid tyrosine into L-DOPA. Without this step, dopamine cannot be produced. 
+DDC (Dopa Decarboxylase): Converts L-DOPA into dopamine. This enzyme is also involved in the synthesis of serotonin. 
+DBH (Dopamine Beta-Hydroxylase): Converts dopamine into norepinephrine (noradrenaline). Variants in this gene affect the balance between dopamine and norepinephrine levels. 
+GCH1 (GTP Cyclohydrolase 1): Involved in the creation of tetrahydrobiopterin (BH4), an essential cofactor required for TH to function.
+PARK7 and PINK1: Genes associated with Parkinson's disease that are believed to stimulate dopamine synthesis and secretion.
+FGF20 and TGFB2: Growth factors involved in the creation and maintenance of dopamine-producing neurons.
+SLC6A3 (also known as DAT1): Encodes the Dopamine Transporter (DAT). This membrane-spanning protein pumps dopamine from the synapse back into the pre-synaptic neuron for reutilization. Variants are strongly linked to ADHD.
+COMT (Catechol-O-Methyltransferase): An enzyme that breaks down dopamine, particularly in the prefrontal cortex where DAT is less abundant. The common Val158Met polymorphism (rs4680) significantly alters enzyme activity and executive function. 
+MAOA (Monoamine Oxidase A): An enzyme that breaks down dopamine (and serotonin/norepinephrine) inside the neuron. 
+MAOB (Monoamine Oxidase B): Primarily breaks down dopamine in the glial cells and serotonergic neurons. 
+ABAT (4-aminobutyrate aminotransferase): Proposed to have roles in dopamine metabolism alongside its primary role in GABA degradation.
+ANKK1: Located near DRD2 on chromosome 11. The famous Taq1A polymorphism (rs1800497) is actually located in this gene but affects DRD2 receptor density. 
+NTS, NTSR1, NTSR2 (Neurotensin system): Neurotensin acts as a neuromodulator that interacts physically and functionally with dopamine receptors, particularly DRD2. 
+SNCA (Synuclein Alpha): Regulates dopamine release and uptake. Aggregation of the alpha-synuclein protein is the hallmark of Parkinson's disease.
+PRKN (Parkin): An E3 ubiquitin ligase involved in dopamine metabolism and the protection of dopaminergic neurons.
+GPR37: Affects the activity of the dopamine transporter.
+CHRNA4 and CHRNB2: Nicotinic acetylcholine receptor subunits that control dopamine synthesis and release, linking nicotine exposure to dopamine reward pathways. 
+HTR family (e.g., HTR1A, HTR2A): Serotonin receptors that cross-regulate dopamine release in the prefrontal cortex and striatum. 
+SLC18A2 (VMAT2): Encodes the Vesicular Monoamine Transporter 2, which pumps cytoplasmic dopamine into synaptic vesicles. Without this, dopamine cannot be stored or released. 
+SNAP25: Encodes a protein essential for vesicle fusion with the cell membrane (exocytosis), directly controlling dopamine release.
+SYT1 (Synaptotagmin-1): Acts as the calcium sensor that triggers vesicle fusion and dopamine release.
+RIMS1 and RIMS2: Regulate the priming of synaptic vesicles for release in dopaminergic neurons.
+GNAL: Encodes the G-alpha olfactory protein, which couples D1-like receptors (DRD1, DRD5) to adenylyl cyclase. Mutations here mimic dopamine receptor defects.
+GNAI1, GNAI2, GNAI3: Encode G-alpha inhibitory proteins that couple D2-like receptors (DRD2, DRD3, DRD4) to inhibit adenylyl cyclase.
+ADCY1, ADCY5, ADCY6 (Adenylyl Cyclases): Enzymes that produce cAMP, the secondary messenger activated or inhibited by dopamine receptors.
+PRKACA, PRKACB (Protein Kinase A): Enzymes activated by cAMP that phosphorylate target proteins to enact dopamine's effects.
+DARPP-32 (PPP1R1B): A critical integrator of dopamine signaling, particularly in the striatum, which regulates protein phosphatase-1.
+AKT1: A kinase regulated by dopamine signaling, heavily implicated in schizophrenia and synaptic plasticity. 
+PCBD1: Involved in recycling tetrahydrobiopterin (BH4), the essential cofactor for dopamine synthesis.
+QDPR: Encodes an enzyme that regenerates BH4.
+SPR: Encodes sepiapterin reductase, another enzyme in the BH4 synthesis pathway.
+PTS: Encodes 6-pyruvoyltetrahydropterin synthase, required for BH4 production. 
+MOXD1: A monoamine oxidase-like protein proposed to play a role in dopamine catabolism. 
+GPR143: An orphan G-protein coupled receptor that binds L-DOPA and dopamine, regulating pigmentation and eye development, but also modulating dopamine signaling. 
+SLC22A1, SLC22A2, SLC22A3: Organic cation transporters (OCTs) that provide an alternative, low-affinity mechanism for dopamine clearance, especially in the prefrontal cortex. 
+ADRB2: The Beta-2 adrenergic receptor, which forms heteromers with dopamine receptors and affects their binding properties. 
+BDNF: Brain-Derived Neurotrophic Factor; essential for the survival and maintenance of dopaminergic neurons.
+NRG1</entry>** and **<entity>ERBB4: Neuregulin signaling pathway genes that modulate dopamine neuron development and synaptic plasticity.
+CACNA1C: Encodes a calcium channel subunit; variants are strongly linked to bipolar disorder and schizophrenia via effects on dopamine neuron excitability.
+GRIN2A and GRIN2B: NMDA glutamate receptor subunits that physically and functionally interact with dopamine receptors to regulate synaptic strength.
+NPY2R: Neuropeptide Y receptor, implicated in stimulating dopamine production. 
+AGTR2: Angiotensin II receptor, involved in the regulation of dopamine synthesis in the brain. 
+
+
+
+
+maybe write it like this 
+
+
+https://www.youtube.com/shorts/NGyrbLIKQUk alelles explanation section
+https://www.youtube.com/shorts/CPwGk6rgrAM adhd page
+
+
+
+
+okay cool. so... now you are ready to code the .js to create this picture on every SNP page, pulling the data from the NCBIs page details... so i think we will ahve to work o the admin page now... cause both relates to the D1....
+
+admin page looks great so far, gg, so... when I put in an SNP for the first time, the Genotype / Magnitute / Chromosome / Status / Notes is all not data I want to add. So with this it should have > Gene, RSID should be renamed SNP. All data for this should be pulled from elsewhere... so... 
+
+lets use rs2236225 again
+
+https://www.ncbi.nlm.nih.gov/snp/rs2236225
+https://www.snpedia.com/index.php/rs2236225
+https://www.genecards.org/card/MTHFD1?Search=rs2236225#Variants_Variants
+
+so.... 
+
+in the .js
+
+https://www.ncbi.nlm.nih.gov/snp/rs2236225 < rs2236225 is changed out for the SNP added into the admin page
+https://www.snpedia.com/index.php/rs2236225 < rs2236225 is changed out for the SNP added into the admin page
+https://www.genecards.org/card/MTHFD1?Search=rs2236225#Variants_Variants < MTHFD1 is changed out for the Gene which is pulled from the NCBI first link, Gene : Consequence = MTHFD1 : Missense Variant, this section we should pull everything prior to : on the gene, looks like in the page code its just a simple table, <dt>Gene : Consequence</dt> then <dd><span>MTHFD1 : Missense Variant</span></dd>.
+After it pulls the gene to the D1, it can fill in the genecard URL.
+
+
+claude --resume af0e87f4-6020-4a7b-aba9-861cbe7c0267
+
+
+https://imgflip.com/gif/am8ne9 gif from https://www.youtube.com/watch?v=jQJAiPuqt4Q
+
+
+
+
+folate
+
 x SLC19A1 (Reduced Folate Carrier 1 / RFC1): The primary transporter for reduced folates (like 5-methyl-THF) into cells at neutral pH. 
 x FOLR1, x FOLR2 x, FOLR3 x (Folate Receptors alpha, beta, gamma): High-affinity receptors that mediate folate uptake via endocytosis, crucial in the placenta, kidneys, and choroid plexus. 
 x SLC46A1 (Proton-Coupled Folate Transporter / PCFT): Essential for intestinal folate absorption and transport across the choroid plexus; functions optimally at acidic pH. 

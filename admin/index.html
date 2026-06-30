@@ -96,22 +96,24 @@
       <div id="add-gene-form" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:28px">
         <p class="section-divider" style="margin-top:0">New Gene</p>
         <div class="admin-form">
-          <div class="field-row">
-            <div class="field">
-              <label>Gene Name (e.g. MTHFR)</label>
-              <input type="text" id="new-gene-name" placeholder="SLC19A1" oninput="this.value=this.value.toUpperCase()">
-            </div>
-            <div class="field">
-              <label>Group</label>
-              <select id="new-gene-group"></select>
-            </div>
+          <label>Gene</label>
+          <div style="display:flex;gap:10px;margin-bottom:18px">
+            <input type="text" id="new-gene-name" placeholder="MTHFD1" style="margin-bottom:0;flex:1"
+                   oninput="this.value=this.value.toUpperCase();clearGenePreview()" onkeydown="if(event.key==='Enter')lookupGene()">
+            <button class="btn-sm" id="gene-lookup-btn" onclick="lookupGene()">Lookup</button>
           </div>
-          <label>Full Name</label>
-          <input type="text" id="new-gene-fullname" placeholder="Reduced Folate Carrier 1 (RFC1)">
-          <label>Description</label>
-          <textarea id="new-gene-desc" class="mono" placeholder="One sentence describing the gene's role."></textarea>
+
+          <div id="gene-preview" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:18px">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px" id="gprev-name"></div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:8px" id="gprev-loc"></div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6" id="gprev-desc"></div>
+          </div>
+
+          <label>Group</label>
+          <select id="new-gene-group" style="margin-bottom:18px"></select>
+
           <div style="display:flex;gap:10px">
-            <button class="btn-sm" onclick="addGene()">Save Gene</button>
+            <button class="btn-sm" onclick="saveGene()">Save Gene</button>
             <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="toggleAddGene()">Cancel</button>
           </div>
         </div>
@@ -335,14 +337,48 @@
     f.style.display = f.style.display === "none" ? "block" : "none";
   }
 
-  function addGene() {
+  let geneLookupData = null;
+
+  function clearGenePreview() {
+    document.getElementById("gene-preview").style.display = "none";
+    geneLookupData = null;
+  }
+
+  async function lookupGene() {
+    const sym = document.getElementById("new-gene-name").value.trim().toUpperCase();
+    if (!sym) return toast("Enter a gene symbol first.", true);
+    const btn = document.getElementById("gene-lookup-btn");
+    btn.textContent = "...";
+    btn.disabled = true;
+    try {
+      const r = await apiFetch("/api/gene/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gene_name: sym }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      geneLookupData = d;
+      document.getElementById("gprev-name").textContent = d.gene_name + (d.full_name ? " · " + d.full_name : "");
+      document.getElementById("gprev-loc").textContent = d.maplocation || "";
+      document.getElementById("gprev-desc").textContent = d.description || "";
+      document.getElementById("gene-preview").style.display = "block";
+    } catch (e) {
+      toast("Lookup failed: " + e.message, true);
+    } finally {
+      btn.textContent = "Lookup";
+      btn.disabled = false;
+    }
+  }
+
+  function saveGene() {
+    if (!geneLookupData) return toast("Look up a gene first.", true);
     const body = {
-      gene_name:  document.getElementById("new-gene-name").value.trim().toUpperCase(),
-      full_name:  document.getElementById("new-gene-fullname").value.trim(),
-      description: document.getElementById("new-gene-desc").value.trim(),
-      group_id:   document.getElementById("new-gene-group").value,
+      gene_name:   geneLookupData.gene_name,
+      full_name:   geneLookupData.full_name,
+      description: geneLookupData.description,
+      group_id:    document.getElementById("new-gene-group").value,
     };
-    if (!body.gene_name || !body.full_name) return toast("Gene name and full name required.", true);
     apiFetch("/api/gene", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -351,7 +387,8 @@
       if (r.ok) {
         toast("Gene saved.");
         toggleAddGene();
-        ["new-gene-name","new-gene-fullname","new-gene-desc"].forEach(id => document.getElementById(id).value = "");
+        clearGenePreview();
+        document.getElementById("new-gene-name").value = "";
         init();
       } else {
         const d = await r.json().catch(() => ({}));
@@ -394,7 +431,7 @@
       if (!r.ok) throw new Error(d.error || r.status);
       snpLookupData = d;
 
-      document.getElementById("prev-rsid").textContent = d.rsid;
+      document.getElementById("prev-rsid").textContent = d.rsid + (d.protein_change ? " · " + d.protein_change : "");
       document.getElementById("prev-gene").textContent = d.gene_name || "Gene unknown";
       document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome : "";
       document.getElementById("prev-consequence").textContent = d.consequence || "";
@@ -433,7 +470,7 @@
       chromosome: snpLookupData.chromosome,
       magnitude:  snpLookupData.magnitude,
       status:     "pending",
-      notes:      snpLookupData.summary || null,
+      notes:      [snpLookupData.protein_change, snpLookupData.summary].filter(Boolean).join(" — ") || null,
     };
     apiFetch("/api/snp", {
       method: "POST",
