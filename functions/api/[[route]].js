@@ -17,6 +17,16 @@ const ALFA_POP = {
 
 function pct(n) { return n != null ? Math.round(n * 100) : null; }
 
+function seqIdToChrom(seqId) {
+  const m = seqId?.match(/^NC_(\d+)\./);
+  if (!m) return null;
+  const n = parseInt(m[1]);
+  if (n >= 1 && n <= 22) return String(n);
+  if (n === 23) return "X";
+  if (n === 24) return "Y";
+  return null;
+}
+
 async function fetchNcbiFreqs(rsid, env) {
   const numId = rsid.replace(/^rs/i, "");
   try {
@@ -272,8 +282,63 @@ export async function onRequest({ request, env }) {
     return json({ ok: true, deleted: name });
   }
 
+  // ── POST /api/snp/lookup ─────────────────────────────
+  if (method === "POST" && route === "snp" && param === "lookup") {
+    const { rsid: rawRsid } = await request.json();
+    if (!rawRsid) return err("rsid required");
+    const rsid  = /^rs/i.test(rawRsid) ? rawRsid : "rs" + rawRsid;
+    const numId = rsid.replace(/^rs/i, "");
+
+    const [ncbiRes, snpediaRes] = await Promise.allSettled([
+      fetch(`https://api.ncbi.nlm.nih.gov/variation/v0/beta/refsnp/${numId}`, {
+        headers: { Accept: "application/json", "User-Agent": "genetics.jdge.cc" },
+      }).then(r => r.ok ? r.json() : null),
+      fetch(`https://www.snpedia.com/api.php?action=query&prop=revisions&titles=${rsid}&rvprop=content&rvslots=main&format=json`, {
+        headers: { "User-Agent": "genetics.jdge.cc" },
+      }).then(r => r.ok ? r.json() : null),
+    ]);
+
+    // Parse NCBI
+    let gene_name = null, chromosome = null, consequence = null;
+    const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
+    if (ncbi) {
+      const anns = ncbi?.primary_snapshot_data?.allele_annotations || [];
+      outer: for (const ann of anns) {
+        for (const asm of (ann.assembly_annotation || [])) {
+          for (const gene of (asm.genes || [])) {
+            if (gene.locus) {
+              gene_name   = gene.locus;
+              consequence = gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null;
+              break outer;
+            }
+          }
+        }
+      }
+      for (const pl of (ncbi?.primary_snapshot_data?.placements_with_allele || [])) {
+        const c = seqIdToChrom(pl.seq_id);
+        if (c) { chromosome = c; break; }
+      }
+    }
+
+    // Parse SNPedia
+    let magnitude = null, summary = null;
+    const snpedia = snpediaRes.status === "fulfilled" ? snpediaRes.value : null;
+    if (snpedia) {
+      const pages = snpedia?.query?.pages || {};
+      const page  = Object.values(pages)[0];
+      const wikitext = page?.revisions?.[0]?.["*"]
+                    || page?.revisions?.[0]?.slots?.main?.["*"] || "";
+      const magM = wikitext.match(/\|\s*[Mm]agnitude\s*=\s*([\d.]+)/);
+      if (magM) magnitude = parseFloat(magM[1]);
+      const sumM = wikitext.match(/\|\s*[Ss]ummary\s*=\s*([^\n|{}]+)/);
+      if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
+    }
+
+    return json({ rsid, gene_name, chromosome, consequence, magnitude, summary });
+  }
+
   // ── POST /api/snp ────────────────────────────────
-  if (method === "POST" && route === "snp") {
+  if (method === "POST" && route === "snp" && !param) {
     const { gene_name, rsid, genotype, chromosome, magnitude, status, notes } = await request.json();
     if (!gene_name || !rsid) return err("gene_name and rsid required");
     await env.genetic.prepare(`

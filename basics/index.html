@@ -81,6 +81,34 @@
       you might have a T. That one-letter difference is an SNP.
     </p>
     <p>
+      To understand why that matters, consider what's happening at scale. The human genome has roughly
+      three billion base pair positions. The vast majority of those positions are <strong>fixed</strong>
+      — every human alive has exactly the same letter there. No variation, nothing to note. A position
+      only becomes an SNP when a second allele has appeared through mutation at some point in human
+      history and spread widely enough through the population to be considered meaningful. The
+      traditional threshold is a <strong>minor allele frequency above 1%</strong> — meaning at least
+      1 in 100 people carry the alternate version:
+    </p>
+
+    <div class="snp-freq-example">
+      <div class="snp-freq-row">
+        <span class="snp-freq-label">Fixed position</span>
+        <span class="snp-freq-bar">100% G in every human</span>
+        <span class="snp-freq-note">not an SNP — nothing varies</span>
+      </div>
+      <div class="snp-freq-row">
+        <span class="snp-freq-label">Rare variant</span>
+        <span class="snp-freq-bar">G 99.8% · A 0.2%</span>
+        <span class="snp-freq-note">catalogued, but not a common SNP</span>
+      </div>
+      <div class="snp-freq-row snp-freq-row--highlight">
+        <span class="snp-freq-label">Common SNP</span>
+        <span class="snp-freq-bar">G 57% · A 43%</span>
+        <span class="snp-freq-note">rs2236225 — this is what gets studied</span>
+      </div>
+    </div>
+
+    <p>
       SNPs are incredibly common. Humans differ from each other at roughly 4–5 million positions across
       the genome. Most of those differences are completely silent — they sit in regions that don't code
       for anything critical, or the swap doesn't change how the resulting protein folds. But some SNPs
@@ -97,6 +125,21 @@
       by the NCBI dbSNP database. These look like rs1801133, rs1805087, rs4846048. They're how researchers
       and databases refer to specific positions in the genome consistently across studies.
     </p>
+
+    <div class="video-pair">
+      <div class="video-wrap video-wrap--16x9">
+        <iframe src="https://www.youtube.com/embed/tJjXpiWKMyA"
+                title="What is an SNP?"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-wrap video-wrap--9x16">
+        <iframe src="https://www.youtube.com/embed/91oGfRQCwWQ"
+                title="SNP explained"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+    </div>
 
     <h2>What is an Allele?</h2>
     <p>

@@ -129,40 +129,39 @@
     <div id="panel-snp" class="admin-panel">
       <p class="section-divider" style="margin-top:0">Add Variant / SNP</p>
       <div class="admin-form">
-        <label>Gene</label>
-        <select id="snp-gene"></select>
-        <div class="field-row" style="margin-bottom:0">
-          <div class="field">
-            <label>rsID</label>
-            <input type="text" id="snp-rsid" placeholder="rs1801133">
+        <label>SNP</label>
+        <div style="display:flex;gap:10px;margin-bottom:18px">
+          <input type="text" id="snp-rsid" placeholder="rs2236225" style="margin-bottom:0;flex:1"
+                 oninput="clearSnpPreview()" onkeydown="if(event.key==='Enter')lookupSnp()">
+          <button class="btn-sm" id="snp-lookup-btn" onclick="lookupSnp()">Lookup</button>
+        </div>
+
+        <div id="snp-warn" style="display:none;font-family:var(--mono);font-size:11px;color:#f87171;margin-bottom:14px"></div>
+
+        <!-- Preview card — shown after lookup -->
+        <div id="snp-preview" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:18px">
+          <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
+            <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)" id="prev-rsid"></span>
+            <span style="font-family:var(--mono);font-size:12px;color:var(--ink)" id="prev-gene"></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="prev-chr"></span>
           </div>
-          <div class="field">
-            <label>Genotype</label>
-            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px" id="prev-consequence"></div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px" id="prev-magnitude"></div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px" id="prev-summary"></div>
+          <div style="display:flex;gap:18px;font-family:var(--mono);font-size:11px;margin-bottom:18px">
+            <a id="prev-ncbi" href="#" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
+            <a id="prev-snpedia" href="#" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
+            <a id="prev-genecards" href="#" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>
+          </div>
+          <div style="padding-top:16px;border-top:1px solid var(--line)">
+            <label>Genotype <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0">(your personal result — e.g. CT)</span></label>
+            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4"
+                   oninput="this.value=this.value.toUpperCase()" style="max-width:120px;margin-bottom:14px">
+            <div>
+              <button class="btn-sm" onclick="saveSnp()">Save SNP</button>
+            </div>
           </div>
         </div>
-        <div style="height:18px"></div>
-        <div class="field-row" style="margin-bottom:0">
-          <div class="field">
-            <label>Chromosome</label>
-            <input type="text" id="snp-chr" placeholder="1">
-          </div>
-          <div class="field">
-            <label>Magnitude</label>
-            <input type="number" id="snp-mag" placeholder="2.5" step="0.1">
-          </div>
-        </div>
-        <div style="height:18px"></div>
-        <label>Status</label>
-        <select id="snp-status">
-          <option value="pending">Pending</option>
-          <option value="good">Good</option>
-          <option value="bad">Bad</option>
-          <option value="neutral">Neutral</option>
-        </select>
-        <label>Notes</label>
-        <textarea id="snp-notes" class="mono" placeholder="Any additional context about this variant."></textarea>
-        <button class="btn-sm" onclick="addSnp()">Save Variant</button>
       </div>
     </div>
 
@@ -320,7 +319,7 @@
 
   function populateGeneSelects() {
     const opts = geneList.map(g => `<option value="${g.gene_name}">${g.gene_name}</option>`).join("");
-    ["snp-gene","study-gene","export-gene"].forEach(id => {
+    ["study-gene","export-gene"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = opts;
     });
@@ -370,26 +369,83 @@
   }
 
   // ── SNP tab ───────────────────────────────────────
-  function addSnp() {
+  let snpLookupData = null;
+
+  function clearSnpPreview() {
+    document.getElementById("snp-preview").style.display = "none";
+    document.getElementById("snp-warn").style.display = "none";
+    snpLookupData = null;
+  }
+
+  async function lookupSnp() {
+    const rsid = document.getElementById("snp-rsid").value.trim();
+    if (!rsid) return toast("Enter an SNP ID first.", true);
+    const btn = document.getElementById("snp-lookup-btn");
+    btn.textContent = "...";
+    btn.disabled = true;
+    document.getElementById("snp-warn").style.display = "none";
+    try {
+      const r = await apiFetch("/api/snp/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rsid }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      snpLookupData = d;
+
+      document.getElementById("prev-rsid").textContent = d.rsid;
+      document.getElementById("prev-gene").textContent = d.gene_name || "Gene unknown";
+      document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome : "";
+      document.getElementById("prev-consequence").textContent = d.consequence || "";
+      document.getElementById("prev-magnitude").textContent = d.magnitude != null ? "Magnitude " + d.magnitude : "";
+      document.getElementById("prev-summary").textContent = d.summary || "";
+      document.getElementById("prev-ncbi").href = "https://www.ncbi.nlm.nih.gov/snp/" + d.rsid;
+      document.getElementById("prev-snpedia").href = "https://www.snpedia.com/index.php/" + d.rsid;
+      document.getElementById("prev-genecards").href = d.gene_name
+        ? `https://www.genecards.org/card/${d.gene_name}?Search=${d.rsid}#Variants_Variants`
+        : "#";
+      document.getElementById("snp-preview").style.display = "block";
+
+      if (d.gene_name && !geneList.find(g => g.gene_name === d.gene_name)) {
+        const w = document.getElementById("snp-warn");
+        w.textContent = `Gene "${d.gene_name}" is not in your gene list yet — add it under the Genes tab first.`;
+        w.style.display = "block";
+      }
+    } catch (e) {
+      toast("Lookup failed: " + e.message, true);
+    } finally {
+      btn.textContent = "Lookup";
+      btn.disabled = false;
+    }
+  }
+
+  function saveSnp() {
+    if (!snpLookupData) return toast("Look up an SNP first.", true);
+    if (!snpLookupData.gene_name) return toast("No gene found for this SNP.", true);
+    if (geneList.length && !geneList.find(g => g.gene_name === snpLookupData.gene_name)) {
+      return toast(`Add gene "${snpLookupData.gene_name}" first.`, true);
+    }
     const body = {
-      gene_name:  document.getElementById("snp-gene").value,
-      rsid:       document.getElementById("snp-rsid").value.trim(),
-      genotype:   document.getElementById("snp-genotype").value.trim().toUpperCase(),
-      chromosome: document.getElementById("snp-chr").value.trim(),
-      magnitude:  parseFloat(document.getElementById("snp-mag").value) || null,
-      status:     document.getElementById("snp-status").value,
-      notes:      document.getElementById("snp-notes").value.trim(),
+      gene_name:  snpLookupData.gene_name,
+      rsid:       snpLookupData.rsid,
+      genotype:   document.getElementById("snp-genotype").value.trim().toUpperCase() || null,
+      chromosome: snpLookupData.chromosome,
+      magnitude:  snpLookupData.magnitude,
+      status:     "pending",
+      notes:      snpLookupData.summary || null,
     };
-    if (!body.rsid) return toast("rsID is required.", true);
     apiFetch("/api/snp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then(async r => {
       if (r.ok) {
-        toast("Variant saved.");
-        ["snp-rsid","snp-genotype","snp-chr","snp-mag","snp-notes"].forEach(id => document.getElementById(id).value = "");
-        document.getElementById("snp-status").value = "pending";
+        const d = await r.json().catch(() => ({}));
+        toast("SNP saved." + (d.frequencies_fetched ? " " + d.frequencies_fetched + " freq rows." : ""));
+        clearSnpPreview();
+        document.getElementById("snp-rsid").value = "";
+        document.getElementById("snp-genotype").value = "";
       } else {
         const d = await r.json().catch(() => ({}));
         toast("Error: " + (d.error || r.status), true);
