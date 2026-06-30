@@ -84,6 +84,7 @@
       <button class="admin-tab" onclick="switchTab('snp')">Add SNP</button>
       <button class="admin-tab" onclick="switchTab('study')">Add Study</button>
       <button class="admin-tab" onclick="switchTab('export')">Export</button>
+      <button class="admin-tab" onclick="switchTab('fix')">Fix Data</button>
     </div>
 
     <!-- TAB: GENES -->
@@ -219,6 +220,24 @@
         <select id="export-gene"></select>
         <button class="btn-sm" onclick="exportCsv()">Download CSV</button>
       </div>
+    </div>
+
+    <!-- TAB: FIX DATA -->
+    <div id="panel-fix" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Backfill Missing Data from NCBI</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">
+        Loops through every gene / SNP and fetches fresh data from NCBI, filling in anything that's missing.
+        Run <strong>Backfill Genes</strong> first (adds maplocation), then <strong>Backfill SNPs</strong> (adds ref/alt alleles and protein change).
+        Each request is throttled to stay within NCBI's rate limit — expect ~0.4 s per item.
+      </p>
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-sm" id="bf-genes-btn" onclick="backfillGenes()">Backfill Genes</button>
+        <button class="btn-sm" id="bf-snps-btn"  onclick="backfillSnps()">Backfill SNPs</button>
+        <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)"
+                onclick="document.getElementById('bf-log').textContent=''">Clear log</button>
+      </div>
+      <div id="bf-progress" style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px"></div>
+      <pre id="bf-log" style="font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:14px;min-height:120px;max-height:360px;overflow-y:auto;white-space:pre-wrap;margin:0"></pre>
     </div>
 
   </div>
@@ -535,6 +554,121 @@
         a.download = gene + "_export.csv";
         a.click();
       });
+  }
+
+  // ── Fix Data tab ──────────────────────────────────
+  function bfLog(msg) {
+    const el = document.getElementById("bf-log");
+    el.textContent += msg;
+    el.scrollTop = el.scrollHeight;
+  }
+  function bfProgress(msg) {
+    document.getElementById("bf-progress").textContent = msg;
+  }
+  function bfSetBtns(disabled) {
+    document.getElementById("bf-genes-btn").disabled = disabled;
+    document.getElementById("bf-snps-btn").disabled  = disabled;
+  }
+
+  async function backfillGenes() {
+    if (!geneList.length) return toast("No genes loaded.", true);
+    bfSetBtns(true);
+    bfProgress("");
+    const total = geneList.length;
+    let done = 0, errs = 0;
+
+    for (let i = 0; i < geneList.length; i++) {
+      const gene = geneList[i];
+      bfProgress(`Gene ${i + 1} / ${total} — ${gene.gene_name}`);
+      bfLog(`→ ${gene.gene_name} `);
+      try {
+        const lr = await apiFetch("/api/gene/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gene_name: gene.gene_name }),
+        });
+        const ld = await lr.json();
+        if (!lr.ok) throw new Error(ld.error || lr.status);
+
+        const pr = await apiFetch(`/api/gene/${gene.gene_name}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ full_name: ld.full_name, description: ld.description, maplocation: ld.maplocation }),
+        });
+        if (!pr.ok) throw new Error("PATCH failed " + pr.status);
+
+        done++;
+        bfLog(`✓  ${ld.maplocation || "—"}\n`);
+      } catch (e) {
+        errs++;
+        bfLog(`✗  ${e.message}\n`);
+      }
+      await new Promise(r => setTimeout(r, 380));
+    }
+
+    bfProgress(`Done — ${done}/${total} updated, ${errs} errors.`);
+    bfLog(`\n✦ Gene backfill complete: ${done} updated, ${errs} errors.\n`);
+    bfSetBtns(false);
+    init(); // refresh gene table
+  }
+
+  async function backfillSnps() {
+    bfSetBtns(true);
+    bfProgress("Fetching SNP list…");
+
+    let snps = [];
+    try {
+      const r  = await apiFetch("/api/snps");
+      const d  = await r.json();
+      snps = d.snps || [];
+    } catch (e) {
+      bfProgress("Failed to fetch SNP list: " + e.message);
+      bfSetBtns(false);
+      return;
+    }
+
+    if (!snps.length) {
+      bfProgress("No SNPs found in database.");
+      bfSetBtns(false);
+      return;
+    }
+
+    const total = snps.length;
+    let done = 0, errs = 0;
+
+    for (let i = 0; i < snps.length; i++) {
+      const snp = snps[i];
+      bfProgress(`SNP ${i + 1} / ${total} — ${snp.rsid}`);
+      bfLog(`→ ${snp.rsid} (${snp.gene_name}) `);
+      try {
+        const lr = await apiFetch("/api/snp/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rsid: snp.rsid }),
+        });
+        const ld = await lr.json();
+        if (!lr.ok) throw new Error(ld.error || lr.status);
+
+        const pr = await apiFetch(`/api/snp/${snp.rsid}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change }),
+        });
+        if (!pr.ok) throw new Error("PATCH failed " + pr.status);
+
+        done++;
+        const alleles = (ld.ref_allele && ld.alt_allele) ? `${ld.ref_allele}/${ld.alt_allele}` : "—";
+        bfLog(`✓  ${alleles}${ld.protein_change ? "  " + ld.protein_change : ""}\n`);
+      } catch (e) {
+        errs++;
+        bfLog(`✗  ${e.message}\n`);
+      }
+      await new Promise(r => setTimeout(r, 420));
+    }
+
+    bfProgress(`Done — ${done}/${total} updated, ${errs} errors.`);
+    bfLog(`\n✦ SNP backfill complete: ${done} updated, ${errs} errors.\n`);
+    bfSetBtns(false);
   }
 </script>
 

@@ -169,7 +169,7 @@ export async function onRequest({ request, env }) {
     return new Response(null, {
       headers: {
         "access-control-allow-origin": "*",
-        "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+        "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
         "access-control-allow-headers": "Content-Type, Authorization",
       },
     });
@@ -181,6 +181,14 @@ export async function onRequest({ request, env }) {
       `SELECT * FROM topic_groups ORDER BY name ASC`
     ).all();
     return json({ groups: results });
+  }
+
+  // ── GET /api/snps ────────────────────────────────
+  if (method === "GET" && route === "snps") {
+    const { results } = await env.genetic.prepare(
+      `SELECT gene_name, rsid, chromosome, ref_allele, alt_allele, protein_change FROM genes ORDER BY gene_name, rsid`
+    ).all();
+    return json({ snps: results || [] });
   }
 
   // ── GET /api/genes ───────────────────────────────
@@ -252,6 +260,34 @@ export async function onRequest({ request, env }) {
 
   // ── Auth-gated writes ────────────────────────────
   if (!checkAuth(request, env)) return err("Unauthorised", 401);
+
+  // ── PATCH /api/gene/:name ─────────────────────────
+  if (method === "PATCH" && route === "gene" && param) {
+    const name = param.toUpperCase();
+    const { full_name, description, maplocation } = await request.json();
+    await env.genetic.prepare(`
+      UPDATE gene_info
+      SET full_name   = COALESCE(?, full_name),
+          description = COALESCE(?, description),
+          maplocation = COALESCE(?, maplocation)
+      WHERE gene_name = ?
+    `).bind(full_name || null, description || null, maplocation || null, name).run();
+    return json({ ok: true });
+  }
+
+  // ── PATCH /api/snp/:rsid ──────────────────────────
+  if (method === "PATCH" && route === "snp" && param) {
+    const rsid = /^rs/i.test(param) ? param : "rs" + param;
+    const { ref_allele, alt_allele, protein_change } = await request.json();
+    await env.genetic.prepare(`
+      UPDATE genes
+      SET ref_allele    = COALESCE(?, ref_allele),
+          alt_allele    = COALESCE(?, alt_allele),
+          protein_change = COALESCE(?, protein_change)
+      WHERE rsid = ?
+    `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+    return json({ ok: true });
+  }
 
   // ── POST /api/gene/lookup ────────────────────────
   if (method === "POST" && route === "gene" && param === "lookup") {
