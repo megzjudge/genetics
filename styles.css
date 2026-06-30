@@ -665,9 +665,33 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border-radius: 0 5px 5px 0; padding: 16px 20px;
   margin: 24px 0; font-size: 14px; color: var(--muted); line-height: 1.65;
 }
+/* Database cards */
+.db-card-link {
+  display: flex; gap: 22px; align-items: flex-start;
+  padding: 28px 0; border-bottom: 1px solid var(--line);
+  text-decoration: none; color: inherit;
+  transition: opacity .15s;
+}
+.db-card-link:hover { opacity: .85; }
+.db-card-text { flex: 1; min-width: 0; }
+.db-card-title {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px;
+  font-weight: 600; color: var(--ink); font-size: 15px; margin-bottom: 8px;
+}
+.db-card-domain {
+  font-family: var(--mono); font-size: 11px; color: var(--faint); font-weight: 400;
+}
+.db-card-desc {
+  font-size: 13.5px; color: var(--muted); line-height: 1.68; margin: 0 0 10px;
+}
+.db-card-action {
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+}
+
 @media (max-width: 600px) {
   .basics-hero { padding: 44px 18px 36px; }
   .basics-body { padding: 36px 18px 64px; }
+  .db-card-link { gap: 14px; padding: 22px 0; }
 }
 
 /* Admin */
