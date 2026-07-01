@@ -13,6 +13,8 @@
   --accent:      #34d399;
   --accent-soft: #071e12;
   --accent-dim:  rgba(52, 211, 153, 0.12);
+  --pink:        #e84580;
+  --pink-soft:   #f472b6;
   --sans: 'Outfit', system-ui, -apple-system, sans-serif;
   --serif: 'Outfit', system-ui, -apple-system, sans-serif;
   --mono:  ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
@@ -671,7 +673,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   object-fit: cover; display: block;
 }
 
-.basics-body { max-width: 760px; margin: 0 auto; padding: 64px 36px 96px; }
+.basics-body { max-width: 832px; margin: 0 auto; padding: 64px 36px 96px; }
 .basics-body h2 {
   font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
   margin: 80px 0 20px; padding-top: 64px; border-top: 1px solid var(--line);
@@ -689,7 +691,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .callout {
   background: var(--card); border-left: 4px solid var(--accent);
   border-radius: 0 8px 8px 0; padding: 28px 32px;
-  margin: 40px 0; font-size: 16.5px; color: var(--body-text); line-height: 1.8;
+  margin: 40px 0; font-size: 17px; color: var(--body-text); line-height: 1.8;
 }
 
 /* Figures */
@@ -751,7 +753,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 
 /* Sources section */
 .basics-sources {
-  max-width: 760px; margin: 0 auto;
+  max-width: 832px; margin: 0 auto;
   padding: 56px 36px 72px;
   border-top: 1px solid var(--line);
 }
@@ -782,6 +784,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   display: block; font-family: var(--mono);
   font-size: 11px; color: var(--accent); margin-top: auto;
 }
+
+/* Inline text highlights */
+.highlight-pink { color: var(--pink); font-weight: 600; }
+.highlight-pink-soft { color: var(--pink-soft); font-weight: 600; }
 
 /* Footer nav links */
 .footer-links { display: flex; gap: 20px; }
