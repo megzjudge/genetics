@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Genetics Basics — Genes, SNPs, Alleles &amp; Haplogroups | Megan Judge</title>
+  <meta name="description" content="A plain-language guide to genes, SNPs, alleles, what binds to them, and haplogroups — written for anyone new to genetics.">
+  <meta name="author" content="Megan Judge">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://genetics.jdge.cc/basics">
+  <meta property="og:title" content="Genetics Basics | Megan Judge">
+  <meta property="og:description" content="Genes, SNPs, alleles, haplogroups — explained without the jargon.">
+  <meta property="og:url" content="https://genetics.jdge.cc/basics">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://genetics.jdge.cc/images/icon_full.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Genetics Basics | Megan Judge">
+  <meta name="twitter:image" content="https://genetics.jdge.cc/images/icon_full.png">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="site-nav">
+  <a class="nav-brand" href="/">
+    <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
+    Genetics Research
+  </a>
+  <nav class="nav-links">
+    <a href="/basics">Basics</a>
+    <a href="/group/folate-metabolism">Genes</a>
+    <a href="/databases">Databases</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="basics-hero">
+    <div class="basics-hero-inner">
+      <p class="hero-eyebrow">Start here</p>
+      <h1>The basics, without the jargon.</h1>
+      <p class="basics-hero-sub">
+        Genes, SNPs, alleles, what binds to them, and haplogroups —
+        explained at a level that makes the rest of this site make sense.
+      </p>
+      <img src="/images/doctor_genes_thumbnail.png"
+           alt="Doctor with DNA helix"
+           class="basics-hero-img"
+           loading="lazy">
+    </div>
+  </section>
+
+  <div class="basics-body">
+
+    <h2>What is a Gene?</h2>
+    <p>
+      Your DNA is a molecule shaped like a twisted ladder — the famous double helix — and it runs about
+      three billion rungs long. Stretched out, the DNA in a single human cell would be roughly two metres.
+      It's packed into 23 pairs of chromosomes, tucked into the nucleus of almost every cell in your body.
+    </p>
+    <p>
+      A <strong>gene</strong> is a specific stretch of that DNA that carries the instructions for making
+      something useful — usually a protein. Proteins do almost everything in the body: they form structures,
+      carry molecules, speed up chemical reactions, and regulate other genes. You have roughly 20,000–25,000
+      genes, though they only account for about 2% of your total DNA. The rest regulates them, or has
+      functions we're still figuring out.
+    </p>
+    <p>
+      Think of it this way: if your DNA is a library, chromosomes are the bookshelves, and genes are
+      individual chapters. Each chapter contains the blueprint for one specific protein.
+      You carry two copies of every chromosome (one from each parent), which means two copies of every gene.
+      Those two copies aren't always identical — and that's where things get interesting.
+    </p>
+
+    <h2>What is an SNP?</h2>
+    <p>
+      DNA is written in a four-letter alphabet: A, T, C, and G (the nucleotide bases). A
+      <strong>Single Nucleotide Polymorphism</strong> — pronounced <em>"snip"</em>, abbreviated SNP —
+      is a single-letter swap at one position in the sequence. For example, where most people have a C,
+      you might have a T. That one-letter difference is an SNP.
+    </p>
+    <p>
+      To understand why that matters, consider what's happening at scale. The human genome has roughly
+      three billion base pair positions. The vast majority of those positions are <strong>fixed</strong>
+      — every human alive has exactly the same letter there. No variation, nothing to note. A position
+      only becomes an SNP when a second allele has appeared through mutation at some point in human
+      history and spread widely enough through the population to be considered meaningful. The
+      traditional threshold is a <strong>minor allele frequency above 1%</strong> — meaning at least
+      1 in 100 people carry the alternate version:
+    </p>
+
+    <div class="snp-freq-example">
+      <div class="snp-freq-row">
+        <span class="snp-freq-label">Fixed position</span>
+        <span class="snp-freq-bar">100% G in every human</span>
+        <span class="snp-freq-note">not an SNP — nothing varies</span>
+      </div>
+      <div class="snp-freq-row">
+        <span class="snp-freq-label">Rare variant</span>
+        <span class="snp-freq-bar">G 99.8% · A 0.2%</span>
+        <span class="snp-freq-note">catalogued, but not a common SNP</span>
+      </div>
+      <div class="snp-freq-row snp-freq-row--highlight">
+        <span class="snp-freq-label">Common SNP</span>
+        <span class="snp-freq-bar">G 57% · A 43%</span>
+        <span class="snp-freq-note">rs2236225 — this is what gets studied</span>
+      </div>
+    </div>
+
+    <p>
+      SNPs are incredibly common — but to appreciate the scale, you need to understand the numbers.
+      Your body contains roughly <strong>37 trillion cells</strong>, and almost every one of them holds
+      a complete copy of your genome: 6.4 billion base pairs of DNA (3.2 billion from each parent),
+      packed into 46 chromosomes. Stretched out, the DNA in a single cell would be about two metres long.
+      Across that 6.4 billion base pair sequence, humans differ from each other at roughly
+      <strong>4–5 million positions</strong> — that's where your personal SNPs sit.
+      Of all the SNPs catalogued across the global population in NCBI's dbSNP database,
+      about <strong>10 million are considered common</strong> (minor allele frequency above 1%).
+      Any given person carries around <strong>3–5 million variants</strong> relative to the reference genome,
+      of which only <strong>50,000–100,000</strong> fall inside actual coding gene regions.
+      Most of those differences are completely silent — they sit in regions that don't code
+      for anything critical, or the swap doesn't change how the resulting protein folds. But some SNPs
+      matter a great deal. The MTHFR C677T variant (rsID: rs1801133), for example, is a single C→T swap
+      that reduces the enzyme's efficiency by 30–70%, affecting how your body processes folate.
+    </p>
+    <div class="callout">
+      37 trillion cells. 6.4 billion base pairs each. ~4–5 million positions where you personally
+      differ from the reference. Of those, around 50,000–100,000 are in genes.
+      The interesting ones are the exceptions — and that's what this site is about.
+    </div>
+    <p>
+      Each SNP has a unique reference ID called an <strong>rsID</strong> (reference SNP ID), assigned
+      by the NCBI dbSNP database. These look like rs1801133, rs1805087, rs4846048. They're how researchers
+      and databases refer to specific positions in the genome consistently across studies.
+    </p>
+
+    <div class="video-pair">
+      <div class="video-wrap video-wrap--16x9">
+        <iframe src="https://www.youtube.com/embed/tJjXpiWKMyA"
+                title="What is an SNP?"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-wrap video-wrap--9x16">
+        <iframe src="https://www.youtube.com/embed/91oGfRQCwWQ"
+                title="SNP explained"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <h2>What is an Allele?</h2>
+    <p>
+      An <strong>allele</strong> is the specific version of a gene — or a specific letter at a position —
+      that you actually carry. Because you have two copies of every chromosome, you have two alleles at
+      every position: one inherited from your mother, one from your father.
+    </p>
+    <p>
+      If both copies are the same (e.g. CC at a given SNP position), you're <strong>homozygous</strong>
+      at that position. If they differ (e.g. CT), you're <strong>heterozygous</strong>. This matters
+      because many variants only show significant effects when homozygous — carrying two copies of the
+      less common allele. Heterozygous carriers often land somewhere in between.
+    </p>
+
+    <figure class="basics-figure">
+      <img src="/images/How_Genes_Work.jpg"
+           alt="How genes work — four allele types diagram"
+           loading="lazy">
+      <figcaption>
+        Source: <a href="https://my.clevelandclinic.org/health/body/dna" target="_blank" rel="noopener">Cleveland Clinic</a>
+      </figcaption>
+    </figure>
+
+    <p>
+      A <strong>dominant</strong> allele expresses itself even when only one copy is present.
+      A <strong>recessive</strong> allele only shows its effect when both copies carry it — one from each parent.
+      The classic way to visualise this is through trait inheritance in a real organism.
+    </p>
+
+    <figure class="basics-figure">
+      <img src="/images/allele_dominant_recessive.jpg"
+           alt="Drosophila allele inheritance — dominant red eyes / brown body, heterozygous red eyes / black body, homozygous recessive brown eyes / black body"
+           loading="lazy">
+      <figcaption>
+        Fruit fly (<em>Drosophila</em>) trait inheritance. <strong>Red eyes + brown body = dominant</strong> (at least one dominant allele at each locus).
+        <strong>Red eyes + black body = heterozygous</strong> (one dominant, one recessive at the body-colour locus).
+        <strong>Brown eyes + black body = homozygous recessive</strong> (two recessive copies at both loci).
+        Source: <a href="https://www.nature.com/scitable/topicpage/inheritance-of-traits-by-offspring-follows-predictable-6524925/" target="_blank" rel="noopener">Nature Scitable — Fig. 14</a>
+      </figcaption>
+    </figure>
+
+    <p>
+      What makes genetics genuinely surprising is <strong>epistasis</strong> — where one gene masks or
+      modifies the effect of another entirely. The classic example is coat colour in mice.
+      Two separate genes are at play: one controls whether the coat will be black (<strong>B</strong>,
+      dominant) or brown (<strong>b</strong>, recessive), and a second controls whether any pigment is
+      produced at all (<strong>C</strong> = colour present, <strong>c</strong> = no colour).
+      A mouse that is <strong>cc</strong> (homozygous for no-colour) cannot make pigment regardless
+      of what its B/b alleles say — so it appears white, even though it's carrying functional black
+      or brown coat genes that simply can't be expressed.
+    </p>
+
+    <figure class="basics-figure basics-figure--contained">
+      <img src="/images/epistasis_coat_color.png"
+           alt="Epistasis in mice coat colour — Punnett square showing white mice carrying hidden B/b alleles"
+           loading="lazy">
+      <figcaption>
+        Epistasis in mouse coat colour. <strong>B = black (dominant), b = brown (recessive), C = pigment present, c = no pigment.</strong>
+        The four white mice in the bottom-right are <strong>cc</strong> — they carry B and b alleles for black and brown,
+        but the epistatic cc genotype silences all pigment production entirely.
+        Source: Campbell &amp; Reece, <em>Biologie</em> (Spektrum-Verlag, 2003) — via
+        <a href="https://en.wikipedia.org/wiki/Punnett_square" target="_blank" rel="noopener">Wikipedia: Punnett square</a>
+      </figcaption>
+    </figure>
+
+    <p>
+      Most SNPs studied in modern genetics don't follow simple dominant/recessive rules — they're
+      <strong>additive</strong> (each copy of the variant adds a small, measurable effect) or
+      <strong>codominant</strong> (both alleles contribute independently). Epistasis — where one
+      gene's effect depends on what's happening at another — is why studying SNPs in isolation
+      only tells part of the story.
+    </p>
+
+    <div class="video-pair">
+      <div class="video-wrap video-wrap--9x16">
+        <iframe src="https://www.youtube.com/embed/NGyrbLIKQUk"
+                title="What is an allele?"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-wrap video-wrap--9x16">
+        <iframe src="https://www.youtube.com/embed/0CEpIqmEE0I"
+                title="Homozygous and Heterozygous"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="video-pair">
+      <div class="video-wrap video-wrap--16x9">
+        <iframe src="https://www.youtube.com/embed/KNI9UXS7kkI"
+                title="Homozygous and Heterozygous explained"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-wrap video-wrap--16x9">
+        <iframe src="https://www.youtube.com/embed/Wt3Ygfn8lwc"
+                title="How you get homozygous"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <h2>What Binds to Alleles?</h2>
+    <p>
+      DNA isn't just passively sitting there. It's constantly being read, regulated, switched on and off.
+      Several types of molecules interact with it directly.
+    </p>
+    <p>
+      <strong>Transcription factors</strong> are proteins that bind to specific DNA sequences near a gene
+      and either activate or suppress its expression. Think of them as switches. A small change in the
+      binding site sequence — from an SNP, for example — can mean a transcription factor no longer
+      recognises it, changing how much of a protein gets made.
+    </p>
+    <p>
+      <strong>Methylation</strong> is a chemical modification where a methyl group (CH₃) is attached
+      directly to a cytosine base in the DNA. Methylated regions are generally silenced — the gene
+      doesn't get read. This is part of epigenetics: changes in gene expression that don't alter the
+      underlying DNA sequence. Crucially, methylation depends heavily on folate metabolism. Folate
+      (vitamin B9) feeds into a pathway that produces SAM (S-adenosylmethionine), the universal
+      methyl donor. If your MTHFR or MTR enzymes are impaired, SAM production drops and methylation
+      across the whole genome is affected.
+    </p>
+    <div class="callout">
+      This is why the MTHFR gene matters so much in folate research. Poor methylation from
+      MTHFR variants doesn't just affect one gene — it affects gene expression across the
+      whole genome, and influences everything from neurotransmitter synthesis to DNA repair.
+    </div>
+    <p>
+      <strong>Hormones</strong> such as oestrogen, testosterone, and cortisol bind to receptor proteins
+      that then act as transcription factors. This is why hormone levels can have broad effects on
+      gene expression, and why SNPs in receptor genes (like oestrogen receptor alpha, ESR1) can
+      alter sensitivity to hormonal signals.
+    </p>
+    <p>
+      <strong>Drugs and antifolates</strong> work by mimicking or blocking the natural molecules
+      that bind to gene products. Methotrexate, for instance, blocks DHFR (dihydrofolate reductase)
+      by fitting into the same binding site as dihydrofolate — jamming the folate cycle and stopping
+      rapidly dividing cells. Your SNPs in DHFR, TYMS, and related genes affect how well
+      (or poorly) antifolate drugs work in your body.
+    </p>
+
+    <h2>What is a Haplogroup?</h2>
+    <p>
+      As humans migrated out of Africa over tens of thousands of years, populations became geographically
+      separated. Over time, each group accumulated its own set of SNPs — small mutations that arose and
+      spread within that group but not others. A <strong>haplogroup</strong> is a cluster of such
+      SNPs that are reliably inherited together (because they sit close together on the chromosome
+      and rarely get separated by recombination). It acts as a genetic fingerprint for an ancestral
+      lineage.
+    </p>
+    <p>
+      There are two main types. <strong>Mitochondrial haplogroups</strong> trace your maternal line:
+      mitochondrial DNA is passed only from mother to child, so it accumulates mutations linearly
+      through the maternal lineage without being shuffled by recombination. Mitochondrial haplogroups
+      have letter-based names like H, J, T, U — H is the most common in Europeans.
+      <strong>Y-chromosome haplogroups</strong> trace the paternal line in men, in the same way.
+    </p>
+    <div class="callout">
+      Haplogroups don't tell you what your genes do — they tell you where your ancestors came from.
+      They're population genetics, not functional genetics. Knowing you're haplogroup H1a tells you
+      about migration patterns 10,000 years ago, not about your health.
+    </div>
+    <p>
+      Where haplogroups become relevant to functional genetics is in population frequency data.
+      An SNP that's common in one haplogroup may be rare in another, which affects how we interpret
+      its significance. This is why this site uses Caucasian population frequencies from NCBI
+      as the reference — it's the population context that matches the data.
+    </p>
+
+  </div>
+
+  <section class="basics-sources">
+    <p class="basics-sources-label">Where my genome data comes from</p>
+    <div class="basics-sources-grid">
+
+      <a href="https://sequencing.com" target="_blank" rel="noopener" class="basics-source-card">
+        <img src="/images/sequencing_favicon.png" alt="sequencing.com" width="40" height="40">
+        <div>
+          <div class="basics-source-name">sequencing.com</div>
+          <div class="basics-source-desc">Whole genome sequencing at 30× depth — the source of my raw variant data.</div>
+        </div>
+        <span class="basics-source-link">sequencing.com ↗</span>
+      </a>
+
+      <a href="https://www.i-screen.com.au" target="_blank" rel="noopener" class="basics-source-card">
+        <img src="/images/iscreen_logo.svg" alt="i-screen" height="28" style="width:auto">
+        <div>
+          <div class="basics-source-name">i-screen.com.au</div>
+          <div class="basics-source-desc">Australian health and genetic testing provider — used to collect and submit my sample.</div>
+        </div>
+        <span class="basics-source-link">i-screen.com.au ↗</span>
+      </a>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>Megan Judge · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
+    <nav class="footer-links">
+      <a href="https://hereditary.substack.com">Hereditary →</a>
+      <a href="https://research.jdge.cc">Other Research Alerts →</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
