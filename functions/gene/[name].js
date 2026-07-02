@@ -46,10 +46,10 @@ export async function onRequestGet({ params, env }) {
   const geneName = (params.name || "").toUpperCase();
 
   const [info, groupsRes, studiesRes, alertsRes, snpsRes] = await Promise.all([
-    env.genetic.prepare(`SELECT * FROM gene_info WHERE gene_name = ?`).bind(geneName).first(),
+    env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ?`).bind(geneName).first(),
     env.genetic.prepare(`
-      SELECT tg.id, tg.name FROM topic_groups tg
-      JOIN gene_groups gg ON tg.id = gg.group_id
+      SELECT tg.id, tg.name FROM topics tg
+      JOIN gene_topics gg ON tg.id = gg.group_id
       WHERE gg.gene_name = ?
     `).bind(geneName).all(),
     env.genetic.prepare(`
@@ -67,10 +67,10 @@ export async function onRequestGet({ params, env }) {
           'allele2', f.allele2, 'allele2_freq', f.allele2_freq,
           'geno_hom1', f.geno_hom1, 'geno_het', f.geno_het, 'geno_hom2', f.geno_hom2
         ))
-        FROM snp_frequencies f WHERE f.rsid = g.rsid
+        FROM snps f WHERE f.rsid = g.rsid
         ORDER BY f.pop_type = 'Total' DESC, f.population ASC
       ) AS freq_json
-      FROM genes g WHERE g.gene_name = ?
+      FROM personal g WHERE g.gene_name = ?
       ORDER BY g.magnitude IS NULL, g.magnitude DESC
     `).bind(geneName).all(),
   ]);

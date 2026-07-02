@@ -16,8 +16,8 @@ function url(loc, priority, changefreq) {
 
 export async function onRequestGet({ env }) {
   const [genesRes, groupsRes] = await Promise.all([
-    env.genetic.prepare(`SELECT gene_name FROM gene_info ORDER BY gene_name ASC`).all(),
-    env.genetic.prepare(`SELECT name FROM topic_groups ORDER BY name ASC`).all(),
+    env.genetic.prepare(`SELECT gene_name FROM genes ORDER BY gene_name ASC`).all(),
+    env.genetic.prepare(`SELECT name FROM topics ORDER BY name ASC`).all(),
   ]);
 
   const genes  = genesRes.results  || [];

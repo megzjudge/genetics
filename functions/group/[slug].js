@@ -38,7 +38,7 @@ function foot() {
 export async function onRequestGet({ params, env }) {
   const slug = (params.slug || "").toLowerCase();
 
-  const allGroupsRes = await env.genetic.prepare(`SELECT * FROM topic_groups`).all();
+  const allGroupsRes = await env.genetic.prepare(`SELECT * FROM topics`).all();
   const group = (allGroupsRes.results || []).find(g => slugify(g.name) === slug);
 
   if (!group) {
@@ -52,8 +52,8 @@ export async function onRequestGet({ params, env }) {
       COUNT(DISTINCT s.id)                                  AS study_count,
       COUNT(DISTINCT ea.id)                                 AS alert_count,
       SUM(CASE WHEN ea.read = 0 THEN 1 ELSE 0 END)         AS unread_count
-    FROM gene_info gi
-    JOIN gene_groups gg ON gi.gene_name = gg.gene_name
+    FROM genes gi
+    JOIN gene_topics gg ON gi.gene_name = gg.gene_name
     LEFT JOIN studies s     ON gi.gene_name = s.gene_name
     LEFT JOIN email_alerts ea ON gi.gene_name = ea.gene_name
     WHERE gg.group_id = ?

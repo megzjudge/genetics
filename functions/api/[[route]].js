@@ -117,7 +117,7 @@ async function fetchNcbiFreqs(rsid, env) {
 async function storeFreqs(rsid, rows, env) {
   for (const row of rows) {
     await env.genetic.prepare(`
-      INSERT OR REPLACE INTO snp_frequencies
+      INSERT OR REPLACE INTO snps
         (rsid, population, pop_type, sample_size,
          allele1, allele1_freq, allele2, allele2_freq,
          geno_hom1, geno_het, geno_hom2)
@@ -178,7 +178,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/groups ──────────────────────────────
   if (method === "GET" && route === "groups") {
     const { results } = await env.genetic.prepare(
-      `SELECT * FROM topic_groups ORDER BY name ASC`
+      `SELECT * FROM topics ORDER BY name ASC`
     ).all();
     return json({ groups: results });
   }
@@ -186,7 +186,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(
-      `SELECT gene_name, rsid, chromosome, ref_allele, alt_allele, protein_change FROM genes ORDER BY gene_name, rsid`
+      `SELECT gene_name, rsid, chromosome, ref_allele, alt_allele, protein_change FROM personal ORDER BY gene_name, rsid`
     ).all();
     return json({ snps: results || [] });
   }
@@ -195,9 +195,9 @@ export async function onRequest({ request, env }) {
   if (method === "GET" && route === "genes") {
     const { results } = await env.genetic.prepare(`
       SELECT gi.*, tg.name AS group_name
-      FROM gene_info gi
-      LEFT JOIN gene_groups gg ON gi.gene_name = gg.gene_name
-      LEFT JOIN topic_groups tg ON gg.group_id = tg.id
+      FROM genes gi
+      LEFT JOIN gene_topics gg ON gi.gene_name = gg.gene_name
+      LEFT JOIN topics tg ON gg.group_id = tg.id
       ORDER BY gi.gene_name ASC
     `).all();
     return json({ genes: results });
@@ -207,15 +207,15 @@ export async function onRequest({ request, env }) {
   if (method === "GET" && route === "gene" && param) {
     const name = param.toUpperCase();
     const [info, groups, studies, alerts, snps] = await Promise.all([
-      env.genetic.prepare(`SELECT * FROM gene_info WHERE gene_name = ?`).bind(name).first(),
+      env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ?`).bind(name).first(),
       env.genetic.prepare(`
-        SELECT tg.* FROM topic_groups tg
-        JOIN gene_groups gg ON tg.id = gg.group_id
+        SELECT tg.* FROM topics tg
+        JOIN gene_topics gg ON tg.id = gg.group_id
         WHERE gg.gene_name = ?
       `).bind(name).all(),
       env.genetic.prepare(`SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC`).bind(name).all(),
       env.genetic.prepare(`SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC`).bind(name).all(),
-      env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
+      env.genetic.prepare(`SELECT * FROM personal WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
     ]);
     if (!info) return err("Gene not found", 404);
     return json({ info, groups: groups.results, studies: studies.results, alerts: alerts.results, snps: snps.results });
@@ -226,7 +226,7 @@ export async function onRequest({ request, env }) {
     const name = param.toUpperCase();
     const [studies, snps] = await Promise.all([
       env.genetic.prepare(`SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC`).bind(name).all(),
-      env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
+      env.genetic.prepare(`SELECT * FROM personal WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
     ]);
     const rows = [];
     rows.push("type,gene_name,rsid,snippet,authors,title,url,doi,year,genotype,chromosome,magnitude,status,notes");
@@ -266,7 +266,7 @@ export async function onRequest({ request, env }) {
     const name = param.toUpperCase();
     const { full_name, description, maplocation } = await request.json();
     await env.genetic.prepare(`
-      UPDATE gene_info
+      UPDATE genes
       SET full_name   = COALESCE(?, full_name),
           description = COALESCE(?, description),
           maplocation = COALESCE(?, maplocation)
@@ -280,7 +280,7 @@ export async function onRequest({ request, env }) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change } = await request.json();
     await env.genetic.prepare(`
-      UPDATE genes
+      UPDATE personal
       SET ref_allele    = COALESCE(?, ref_allele),
           alt_allele    = COALESCE(?, alt_allele),
           protein_change = COALESCE(?, protein_change)
@@ -325,11 +325,11 @@ export async function onRequest({ request, env }) {
     if (!gene_name) return err("gene_name required");
     const name = gene_name.toUpperCase();
     await env.genetic.prepare(
-      `INSERT OR IGNORE INTO gene_info (gene_name, full_name, description, maplocation) VALUES (?, ?, ?, ?)`
+      `INSERT OR IGNORE INTO genes (gene_name, full_name, description, maplocation) VALUES (?, ?, ?, ?)`
     ).bind(name, full_name, description || null, maplocation || null).run();
     if (group_id) {
       await env.genetic.prepare(
-        `INSERT OR IGNORE INTO gene_groups (gene_name, group_id) VALUES (?, ?)`
+        `INSERT OR IGNORE INTO gene_topics (gene_name, group_id) VALUES (?, ?)`
       ).bind(name, group_id).run();
     }
     return json({ ok: true, gene_name: name });
@@ -339,9 +339,9 @@ export async function onRequest({ request, env }) {
   if (method === "DELETE" && route === "gene" && param) {
     const name = param.toUpperCase();
     await Promise.all([
-      env.genetic.prepare(`DELETE FROM gene_info     WHERE gene_name = ?`).bind(name).run(),
-      env.genetic.prepare(`DELETE FROM gene_groups   WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM genes         WHERE gene_name = ?`).bind(name).run(),
+      env.genetic.prepare(`DELETE FROM gene_topics   WHERE gene_name = ?`).bind(name).run(),
+      env.genetic.prepare(`DELETE FROM personal      WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM studies       WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM email_alerts  WHERE gene_name = ?`).bind(name).run(),
     ]);
@@ -410,6 +410,21 @@ export async function onRequest({ request, env }) {
       }
     }
 
+    // Fallback: scrape NCBI HTML for upstream/near-gene variants where JSON API lacks gene annotation
+    if (!gene_name) {
+      const ncbiHtml = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
+        headers: { "User-Agent": "genetics.jdge.cc/bot", "Accept": "text/html" }
+      }).then(r => r.ok ? r.text() : null).catch(() => null);
+      if (ncbiHtml) {
+        const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
+        if (gm) gene_name = gm[1].trim();
+        if (!consequence) {
+          const cm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>[^:]+:\s*([^<\n]+)/i);
+          if (cm) consequence = cm[1].trim();
+        }
+      }
+    }
+
     // Parse SNPedia
     let magnitude = null, summary = null;
     const snpedia = snpediaRes.status === "fulfilled" ? snpediaRes.value : null;
@@ -433,7 +448,7 @@ export async function onRequest({ request, env }) {
             ref_allele, alt_allele, protein_change } = await request.json();
     if (!gene_name || !rsid) return err("gene_name and rsid required");
     await env.genetic.prepare(`
-      INSERT OR REPLACE INTO genes
+      INSERT OR REPLACE INTO personal
         (gene_name, rsid, genotype, chromosome, magnitude, status, notes, ref_allele, alt_allele, protein_change)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
@@ -452,7 +467,7 @@ export async function onRequest({ request, env }) {
   if (method === "GET" && route === "freqs" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { results } = await env.genetic.prepare(`
-      SELECT * FROM snp_frequencies WHERE rsid = ?
+      SELECT * FROM snps WHERE rsid = ?
       ORDER BY pop_type = 'Total' DESC, population ASC
     `).bind(rsid).all();
     return json({ rsid, frequencies: results || [] });

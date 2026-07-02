@@ -132,11 +132,19 @@
     <div id="panel-snp" class="admin-panel">
       <p class="section-divider" style="margin-top:0">Add Variant / SNP</p>
       <div class="admin-form">
-        <label>SNP</label>
-        <div style="display:flex;gap:10px;margin-bottom:18px">
-          <input type="text" id="snp-rsid" placeholder="rs2236225" style="margin-bottom:0;flex:1"
-                 oninput="clearSnpPreview()" onkeydown="if(event.key==='Enter')lookupSnp()">
-          <button class="btn-sm" id="snp-lookup-btn" onclick="lookupSnp()">Lookup</button>
+        <!-- rsID + Lkp button + genotype — all always visible -->
+        <div style="display:flex;gap:10px;margin-bottom:18px;align-items:flex-end">
+          <div style="flex:1">
+            <label>rsID</label>
+            <input type="text" id="snp-rsid" placeholder="rs2236225" style="margin-bottom:0"
+                   oninput="clearSnpPreview()" onkeydown="if(event.key==='Enter')lookupSnp()">
+          </div>
+          <button class="btn-sm" id="snp-lookup-btn" onclick="lookupSnp()" style="margin-bottom:1px;flex-shrink:0">Lkp</button>
+          <div style="flex-shrink:0">
+            <label>Genotype <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
+            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4"
+                   oninput="this.value=this.value.toUpperCase()" style="margin-bottom:0;width:90px">
+          </div>
         </div>
 
         <div id="snp-warn" style="display:none;font-family:var(--mono);font-size:11px;color:#f87171;margin-bottom:14px"></div>
@@ -151,20 +159,14 @@
           <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px" id="prev-consequence"></div>
           <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px" id="prev-magnitude"></div>
           <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px" id="prev-summary"></div>
-          <div style="display:flex;gap:18px;font-family:var(--mono);font-size:11px;margin-bottom:18px">
+          <div style="display:flex;gap:18px;font-family:var(--mono);font-size:11px">
             <a id="prev-ncbi" href="#" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
             <a id="prev-snpedia" href="#" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
             <a id="prev-genecards" href="#" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>
           </div>
-          <div style="padding-top:16px;border-top:1px solid var(--line)">
-            <label>Genotype <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0">(your personal result — e.g. CT)</span></label>
-            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4"
-                   oninput="this.value=this.value.toUpperCase()" style="max-width:120px;margin-bottom:14px">
-            <div>
-              <button class="btn-sm" onclick="saveSnp()">Save SNP</button>
-            </div>
-          </div>
         </div>
+
+        <button class="btn-sm" onclick="saveSnp()">Save SNP</button>
       </div>
     </div>
 

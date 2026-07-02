@@ -44,12 +44,12 @@ export async function onRequestGet({ params, env }) {
   const [snp, freqsRes] = await Promise.all([
     env.genetic.prepare(
       `SELECT g.*, gi.full_name, gi.maplocation
-       FROM genes g
-       LEFT JOIN gene_info gi ON gi.gene_name = g.gene_name
+       FROM personal g
+       LEFT JOIN genes gi ON gi.gene_name = g.gene_name
        WHERE g.rsid = ?`
     ).bind(rsid).first(),
     env.genetic.prepare(
-      `SELECT * FROM snp_frequencies WHERE rsid = ?
+      `SELECT * FROM snps WHERE rsid = ?
        ORDER BY pop_type = 'Total' DESC, population ASC`
     ).bind(rsid).all(),
   ]);
