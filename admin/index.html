@@ -330,14 +330,24 @@
   function renderGeneTable() {
     document.getElementById("gene-count").textContent = geneList.length + " genes";
     const tbody = document.getElementById("gene-tbody");
-    tbody.innerHTML = geneList.map(g => `
+    const groupOpts = groupList.map(gr => `<option value="${gr.id}">${gr.name}</option>`).join("");
+    tbody.innerHTML = geneList.map(g => {
+      const opts = groupList.map(gr =>
+        `<option value="${gr.id}"${gr.name === g.group_name ? " selected" : ""}>${gr.name}</option>`
+      ).join("");
+      return `
       <tr>
         <td><span class="gene-sym"><a href="/gene/${g.gene_name}" target="_blank" style="color:var(--accent);text-decoration:none">${g.gene_name}</a></span></td>
         <td style="font-size:12px">${g.full_name || ""}</td>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--faint)">${g.group_name || "—"}</td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="grp-${g.gene_name}" style="font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:3px 6px;color:var(--ink);margin:0">${opts}</select>
+            <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="updateGeneGroup('${g.gene_name}')">Set</button>
+          </div>
+        </td>
         <td><button class="btn-danger" onclick="deleteGene('${g.gene_name}')">Delete</button></td>
-      </tr>
-    `).join("");
+      </tr>`;
+    }).join("");
   }
 
   function populateGeneSelects() {
@@ -430,6 +440,17 @@
       if (r.ok) { toast("Deleted."); init(); }
       else toast("Delete failed.", true);
     });
+  }
+
+  async function updateGeneGroup(geneName) {
+    const groupId = document.getElementById("grp-" + geneName).value;
+    const r = await apiFetch(`/api/gene/${geneName}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ group_id: groupId }),
+    });
+    if (r.ok) toast("Group updated.");
+    else toast("Update failed.", true);
   }
 
   // ── SNP tab ───────────────────────────────────────
