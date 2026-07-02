@@ -1,0 +1,27 @@
+name: Weekly D1 Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'   # Every Sunday at 3am UTC
+  workflow_dispatch:        # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Export D1 database
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          wrangler d1 export genetic --remote --output=genetic-backup-$(date +%Y-%m-%d).sql
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: genetic-backup-${{ github.run_id }}
+          path: genetic-backup-*.sql
+          retention-days: 90
