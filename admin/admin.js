@@ -348,12 +348,45 @@ async function generateGroupDescription() {
 function renderGroupTable() {
   const tbody = document.getElementById("group-tbody");
   if (!tbody) return;
-  tbody.innerHTML = groupList.map(g => `
-    <tr>
+  tbody.innerHTML = groupList.map(g => groupRow(g)).join("");
+}
+
+function groupRow(g) {
+  const name = g.name.replace(/'/g, "\\'");
+  const desc = (g.description || "").replace(/'/g, "\\'");
+  return `
+    <tr id="grow-${g.id}">
       <td><span class="gene-sym">${g.name}</span></td>
       <td style="font-size:12px;color:var(--muted)">${g.description || ""}</td>
-      <td><button class="btn-danger" onclick="deleteGroup(${g.id}, '${g.name.replace(/'/g, "\\'")}')">Delete</button></td>
-    </tr>`).join("");
+      <td style="display:flex;gap:6px">
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="editGroup(${g.id}, '${name}', '${desc}')">Edit</button>
+        <button class="btn-danger" onclick="deleteGroup(${g.id}, '${name}')">Delete</button>
+      </td>
+    </tr>`;
+}
+
+function editGroup(id, name, desc) {
+  const row = document.getElementById("grow-" + id);
+  row.innerHTML = `
+    <td><input id="gedit-name-${id}" value="${name}" style="font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
+    <td><input id="gedit-desc-${id}" value="${desc}" style="font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
+    <td style="display:flex;gap:6px">
+      <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="saveGroupEdit(${id})">Save</button>
+      <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="renderGroupTable()">Cancel</button>
+    </td>`;
+}
+
+async function saveGroupEdit(id) {
+  const name = document.getElementById("gedit-name-" + id).value.trim();
+  const desc = document.getElementById("gedit-desc-" + id).value.trim();
+  if (!name) return toast("Name cannot be empty.", true);
+  const r = await apiFetch(`/api/group/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description: desc || null }),
+  });
+  if (r.ok) { toast("Group updated."); init(); }
+  else toast("Update failed.", true);
 }
 
 function deleteGroup(id, name) {
