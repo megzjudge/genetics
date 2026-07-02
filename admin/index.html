@@ -178,7 +178,10 @@
       <div class="admin-form">
         <label>Group Name</label>
         <input type="text" id="group-name" placeholder="Folate Metabolism">
-        <label>Description</label>
+        <label style="display:flex;align-items:center;justify-content:space-between">
+          Description
+          <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="group-gen-btn" onclick="generateGroupDescription()">Generate</button>
+        </label>
         <textarea id="group-description" placeholder="Brief description of this gene group…"></textarea>
         <button class="btn-sm" onclick="addGroup()">Save Group</button>
       </div>

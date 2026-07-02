@@ -318,6 +318,32 @@ function addStudy() {
 }
 
 // ── Group tab ─────────────────────────────────────
+async function generateGroupDescription() {
+  const name = document.getElementById("group-name").value.trim();
+  if (!name) return toast("Enter a group name first.", true);
+  const btn = document.getElementById("group-gen-btn");
+  btn.textContent = "...";
+  btn.disabled = true;
+  try {
+    const r = await apiFetch("/api/group/description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const d = await r.json();
+    if (d.description) {
+      document.getElementById("group-description").value = d.description;
+    } else {
+      toast("No description found — try a more specific term.", true);
+    }
+  } catch (e) {
+    toast("Generate failed: " + e.message, true);
+  } finally {
+    btn.textContent = "Generate";
+    btn.disabled = false;
+  }
+}
+
 function addGroup() {
   const name = document.getElementById("group-name").value.trim();
   const description = document.getElementById("group-description").value.trim();

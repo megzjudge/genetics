@@ -305,6 +305,40 @@ export async function onRequest({ request, env }) {
     return json({ ok: true });
   }
 
+  // ── POST /api/group/description ───────────────────
+  if (method === "POST" && route === "group" && param === "description") {
+    const { name } = await request.json();
+    if (!name) return err("name required");
+
+    const firstTwo = text => {
+      const sentences = text.match(/[^.!?]*[.!?]+/g) || [];
+      return sentences.slice(0, 2).join(" ").trim() || text.slice(0, 220).trim();
+    };
+
+    // 1. DuckDuckGo Instant Answer
+    try {
+      const ddg = await fetch(
+        `https://api.duckduckgo.com/?q=${encodeURIComponent(name)}&format=json&no_html=1&skip_disambig=1`,
+        { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
+      ).then(r => r.ok ? r.json() : null).catch(() => null);
+      const text = ddg?.AbstractText?.trim();
+      if (text) return json({ description: firstTwo(text) });
+    } catch (_) {}
+
+    // 2. Wikipedia REST API fallback
+    try {
+      const title = name.replace(/\s+/g, "_");
+      const wiki = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
+        { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
+      ).then(r => r.ok ? r.json() : null).catch(() => null);
+      const text = wiki?.extract?.trim();
+      if (text) return json({ description: firstTwo(text) });
+    } catch (_) {}
+
+    return json({ description: null });
+  }
+
   // ── POST /api/gene/lookup ────────────────────────
   if (method === "POST" && route === "gene" && param === "lookup") {
     const { gene_name: rawGene } = await request.json();
