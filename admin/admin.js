@@ -224,6 +224,19 @@ function deleteSnp(rsid) {
 
 let snpLookupData = null;
 
+function checkSnpGeneWarn() {
+  if (!snpLookupData) return;
+  const geneSelect = document.getElementById("prev-gene-select");
+  const gene = geneSelect.style.display !== "none" ? geneSelect.value : snpLookupData.gene_name;
+  const w = document.getElementById("snp-warn");
+  if (gene && !geneList.find(g => g.gene_name === gene)) {
+    w.textContent = `Gene "${gene}" is not in your gene list yet — add it under the Genes tab first.`;
+    w.style.display = "block";
+  } else {
+    w.style.display = "none";
+  }
+}
+
 function clearSnpPreview() {
   document.getElementById("snp-preview").style.display = "none";
   document.getElementById("snp-warn").style.display = "none";
@@ -276,10 +289,9 @@ async function lookupSnp() {
       : "#";
     document.getElementById("snp-preview").style.display = "block";
 
-    if (d.gene_name && !geneList.find(g => g.gene_name === d.gene_name)) {
-      const w = document.getElementById("snp-warn");
-      w.textContent = `Gene "${d.gene_name}" is not in your gene list yet — add it under the Genes tab first.`;
-      w.style.display = "block";
+    checkSnpGeneWarn();
+    if (d.gene_names && d.gene_names.length > 1) {
+      document.getElementById("prev-gene-select").addEventListener("change", checkSnpGeneWarn);
     }
   } catch (e) {
     toast("Lookup failed: " + e.message, true);
@@ -297,7 +309,7 @@ function saveSnp() {
     : snpLookupData.gene_name;
   if (!chosenGene) return toast("No gene found for this SNP.", true);
   if (geneList.length && !geneList.find(g => g.gene_name === chosenGene)) {
-    return toast(`Add gene "${chosenGene}" first.`, true);
+    if (!confirm(`"${chosenGene}" is not in your gene list yet. Save the SNP anyway?`)) return;
   }
   const body = {
     gene_name:      chosenGene,
