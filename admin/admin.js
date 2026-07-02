@@ -56,6 +56,7 @@ function init() {
     geneList = genes.genes || genes || [];
     groupList = groups.groups || groups || [];
     renderGeneTable();
+    renderGroupTable();
     populateGeneSelects();
     populateGroupSelect();
   });
@@ -342,6 +343,25 @@ async function generateGroupDescription() {
     btn.textContent = "Generate";
     btn.disabled = false;
   }
+}
+
+function renderGroupTable() {
+  const tbody = document.getElementById("group-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = groupList.map(g => `
+    <tr>
+      <td><span class="gene-sym">${g.name}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${g.description || ""}</td>
+      <td><button class="btn-danger" onclick="deleteGroup(${g.id}, '${g.name.replace(/'/g, "\\'")}')">Delete</button></td>
+    </tr>`).join("");
+}
+
+function deleteGroup(id, name) {
+  if (!confirm(`Delete group "${name}"? Genes assigned to it will lose their group.`)) return;
+  apiFetch(`/api/group/${id}`, { method: "DELETE" }).then(r => {
+    if (r.ok) { toast("Group deleted."); init(); }
+    else toast("Delete failed.", true);
+  });
 }
 
 function addGroup() {
