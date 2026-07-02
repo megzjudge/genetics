@@ -387,6 +387,29 @@ export async function onRequest({ request, env }) {
     return json({ ok: true, gene_name: name });
   }
 
+  // ── PATCH /api/group/:id ─────────────────────────
+  if (method === "PATCH" && route === "group" && param) {
+    const id = parseInt(param);
+    if (!id) return err("invalid id");
+    const { name, description } = await request.json();
+    if (!name) return err("name required");
+    await env.genetic.prepare(
+      `UPDATE topics SET name = ?, description = ? WHERE id = ?`
+    ).bind(name.trim(), description || null, id).run();
+    return json({ ok: true });
+  }
+
+  // ── DELETE /api/group/:id ────────────────────────
+  if (method === "DELETE" && route === "group" && param) {
+    const id = parseInt(param);
+    if (!id) return err("invalid id");
+    await Promise.all([
+      env.genetic.prepare(`DELETE FROM topics      WHERE id = ?`).bind(id).run(),
+      env.genetic.prepare(`DELETE FROM gene_topics WHERE topic_id = ?`).bind(id).run(),
+    ]);
+    return json({ ok: true });
+  }
+
   // ── DELETE /api/gene/:name ───────────────────────
   if (method === "DELETE" && route === "gene" && param) {
     const name = param.toUpperCase();
