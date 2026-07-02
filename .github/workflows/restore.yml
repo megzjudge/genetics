@@ -1,0 +1,56 @@
+name: Restore D1 from Backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Backup run ID — find it in the URL of the backup run in the Actions tab'
+        required: true
+        type: string
+      clean_restore:
+        description: 'Drop all tables before restoring (full clean restore)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download backup artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./restore
+
+      - name: Find SQL file
+        id: find
+        run: echo "file=$(find ./restore -name '*.sql' | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Drop all tables (clean restore)
+        if: ${{ inputs.clean_restore == true }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cat <<'EOF' > drop.sql
+          DROP TABLE IF EXISTS personal;
+          DROP TABLE IF EXISTS snps;
+          DROP TABLE IF EXISTS gene_topics;
+          DROP TABLE IF EXISTS genes;
+          DROP TABLE IF EXISTS topics;
+          DROP TABLE IF EXISTS studies;
+          DROP TABLE IF EXISTS email_alerts;
+          EOF
+          wrangler d1 execute genetic --remote --file=drop.sql
+
+      - name: Execute restore
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          wrangler d1 execute genetic --remote --file=${{ steps.find.outputs.file }}
