@@ -40,6 +40,7 @@
       <button class="admin-tab active" onclick="switchTab('genes')">Genes</button>
       <button class="admin-tab" onclick="switchTab('snp')">Add SNP</button>
       <button class="admin-tab" onclick="switchTab('study')">Add Study</button>
+      <button class="admin-tab" onclick="switchTab('group')">Add Group</button>
       <button class="admin-tab" onclick="switchTab('export')">Export</button>
       <button class="admin-tab" onclick="switchTab('fix')">Fix Data</button>
     </div>
@@ -168,6 +169,18 @@
         </div>
         <div style="height:18px"></div>
         <button class="btn-sm" onclick="addStudy()">Save Study</button>
+      </div>
+    </div>
+
+    <!-- TAB: ADD GROUP -->
+    <div id="panel-group" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Add Topic Group</p>
+      <div class="admin-form">
+        <label>Group Name</label>
+        <input type="text" id="group-name" placeholder="Folate Metabolism">
+        <label>Description</label>
+        <textarea id="group-description" placeholder="Brief description of this gene group…"></textarea>
+        <button class="btn-sm" onclick="addGroup()">Save Group</button>
       </div>
     </div>
 

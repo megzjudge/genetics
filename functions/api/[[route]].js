@@ -264,14 +264,20 @@ export async function onRequest({ request, env }) {
   // ── PATCH /api/gene/:name ─────────────────────────
   if (method === "PATCH" && route === "gene" && param) {
     const name = param.toUpperCase();
-    const { full_name, description, maplocation } = await request.json();
-    await env.genetic.prepare(`
-      UPDATE genes
-      SET full_name   = COALESCE(?, full_name),
-          description = COALESCE(?, description),
-          maplocation = COALESCE(?, maplocation)
-      WHERE gene_name = ?
-    `).bind(full_name || null, description || null, maplocation || null, name).run();
+    const { full_name, description, maplocation, group_id } = await request.json();
+    if (full_name || description || maplocation) {
+      await env.genetic.prepare(`
+        UPDATE genes
+        SET full_name   = COALESCE(?, full_name),
+            description = COALESCE(?, description),
+            maplocation = COALESCE(?, maplocation)
+        WHERE gene_name = ?
+      `).bind(full_name || null, description || null, maplocation || null, name).run();
+    }
+    if (group_id) {
+      await env.genetic.prepare(`DELETE FROM gene_topics WHERE gene_name = ?`).bind(name).run();
+      await env.genetic.prepare(`INSERT OR IGNORE INTO gene_topics (gene_name, group_id) VALUES (?, ?)`).bind(name, group_id).run();
+    }
     return json({ ok: true });
   }
 
@@ -286,6 +292,16 @@ export async function onRequest({ request, env }) {
           protein_change = COALESCE(?, protein_change)
       WHERE rsid = ?
     `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+    return json({ ok: true });
+  }
+
+  // ── POST /api/group ──────────────────────────────
+  if (method === "POST" && route === "group" && !param) {
+    const { name, description } = await request.json();
+    if (!name) return err("name required");
+    await env.genetic.prepare(
+      `INSERT INTO topics (name, description) VALUES (?, ?)`
+    ).bind(name.trim(), description || null).run();
     return json({ ok: true });
   }
 

@@ -317,6 +317,28 @@ function addStudy() {
   });
 }
 
+// ── Group tab ─────────────────────────────────────
+function addGroup() {
+  const name = document.getElementById("group-name").value.trim();
+  const description = document.getElementById("group-description").value.trim();
+  if (!name) return toast("Group name is required.", true);
+  apiFetch("/api/group", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description: description || null }),
+  }).then(async r => {
+    if (r.ok) {
+      toast("Group saved.");
+      document.getElementById("group-name").value = "";
+      document.getElementById("group-description").value = "";
+      init();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      toast("Error: " + (d.error || r.status), true);
+    }
+  });
+}
+
 // ── Export tab ────────────────────────────────────
 function exportCsv() {
   const gene = document.getElementById("export-gene").value;
