@@ -111,8 +111,7 @@
         <div id="snp-preview" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:18px">
           <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
             <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)" id="prev-rsid"></span>
-            <span style="font-family:var(--mono);font-size:12px;color:var(--ink)" id="prev-gene"></span>
-            <select id="prev-gene-select" style="display:none;font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:2px 6px;color:var(--ink)"></select>
+            <input id="prev-gene" type="text" style="font-family:var(--mono);font-size:12px;color:var(--ink);background:transparent;border:none;border-bottom:1px dashed var(--line);padding:1px 4px;width:120px" oninput="checkSnpGeneWarn()">
             <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="prev-chr"></span>
           </div>
           <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px" id="prev-consequence"></div>

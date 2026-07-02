@@ -226,8 +226,7 @@ let snpLookupData = null;
 
 function checkSnpGeneWarn() {
   if (!snpLookupData) return;
-  const geneSelect = document.getElementById("prev-gene-select");
-  const gene = geneSelect.style.display !== "none" ? geneSelect.value : snpLookupData.gene_name;
+  const gene = document.getElementById("prev-gene").value.trim().toUpperCase();
   const w = document.getElementById("snp-warn");
   if (gene && !geneList.find(g => g.gene_name === gene)) {
     w.textContent = `Gene "${gene}" is not in your gene list yet — add it under the Genes tab first.`;
@@ -268,17 +267,7 @@ async function lookupSnp() {
     document.getElementById("prev-rsid").textContent = d.rsid + (d.protein_change ? " · " + d.protein_change : "");
     document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome : "";
 
-    const geneSpan   = document.getElementById("prev-gene");
-    const geneSelect = document.getElementById("prev-gene-select");
-    if (d.gene_names && d.gene_names.length > 1) {
-      geneSpan.style.display = "none";
-      geneSelect.style.display = "";
-      geneSelect.innerHTML = d.gene_names.map(n => `<option value="${n}">${n}</option>`).join("");
-    } else {
-      geneSpan.style.display = "";
-      geneSpan.textContent = d.gene_name || "Gene unknown";
-      geneSelect.style.display = "none";
-    }
+    document.getElementById("prev-gene").value = d.gene_name || "";
     document.getElementById("prev-consequence").textContent = d.consequence || "";
     document.getElementById("prev-magnitude").textContent = d.magnitude != null ? "Magnitude " + d.magnitude : "";
     document.getElementById("prev-summary").textContent = d.summary || "";
@@ -290,9 +279,6 @@ async function lookupSnp() {
     document.getElementById("snp-preview").style.display = "block";
 
     checkSnpGeneWarn();
-    if (d.gene_names && d.gene_names.length > 1) {
-      document.getElementById("prev-gene-select").addEventListener("change", checkSnpGeneWarn);
-    }
   } catch (e) {
     toast("Lookup failed: " + e.message, true);
   } finally {
@@ -303,10 +289,7 @@ async function lookupSnp() {
 
 function saveSnp() {
   if (!snpLookupData) return toast("Look up an SNP first.", true);
-  const geneSelect = document.getElementById("prev-gene-select");
-  const chosenGene = geneSelect.style.display !== "none"
-    ? geneSelect.value
-    : snpLookupData.gene_name;
+  const chosenGene = document.getElementById("prev-gene").value.trim().toUpperCase();
   if (!chosenGene) return toast("No gene found for this SNP.", true);
   if (geneList.length && !geneList.find(g => g.gene_name === chosenGene)) {
     if (!confirm(`"${chosenGene}" is not in your gene list yet. Save the SNP anyway?`)) return;
