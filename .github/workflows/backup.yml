@@ -2,7 +2,7 @@ name: Weekly D1 Backup
 
 on:
   schedule:
-    - cron: '0 3 * * 0'   # Every Sunday at 3am UTC
+    - cron: '0 4 * * 1'   # Every Monday at 4am UTC
   workflow_dispatch:        # Allow manual trigger from GitHub Actions tab
 
 jobs:
