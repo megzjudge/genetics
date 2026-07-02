@@ -1,6 +1,7 @@
 let TOKEN = "";
 let geneList = [];
 let groupList = [];
+let snpList = [];
 
 // ── Auth ──────────────────────────────────────────
 function tryAuth() {
@@ -52,11 +53,14 @@ function init() {
   Promise.all([
     apiFetch("/api/genes").then(r => r.json()),
     apiFetch("/api/groups").then(r => r.json()),
-  ]).then(([genes, groups]) => {
-    geneList = genes.genes || genes || [];
-    groupList = groups.groups || groups || [];
+    apiFetch("/api/snps").then(r => r.json()),
+  ]).then(([genes, groups, snps]) => {
+    geneList  = genes.genes   || genes   || [];
+    groupList = groups.groups || groups  || [];
+    snpList   = snps.snps     || snps    || [];
     renderGeneTable();
     renderGroupTable();
+    renderSnpTable();
     populateGeneSelects();
     populateGroupSelect();
   });
@@ -197,6 +201,27 @@ async function updateGeneGroup(geneName) {
 }
 
 // ── SNP tab ───────────────────────────────────────
+function renderSnpTable() {
+  const tbody = document.getElementById("snp-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = snpList.map(s => `
+    <tr>
+      <td><span class="gene-sym">${s.gene_name}</span></td>
+      <td style="font-family:var(--mono);font-size:12px"><a href="/snp/${s.rsid}" target="_blank" style="color:var(--accent);text-decoration:none">${s.rsid}</a></td>
+      <td style="font-family:var(--mono);font-size:12px">${s.genotype || ""}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--faint)">${s.chromosome ? "Chr " + s.chromosome : ""}</td>
+      <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
+    </tr>`).join("");
+}
+
+function deleteSnp(rsid) {
+  if (!confirm(`Delete ${rsid} and all its frequency data? This cannot be undone.`)) return;
+  apiFetch(`/api/snp/${rsid}`, { method: "DELETE" }).then(r => {
+    if (r.ok) { toast("SNP deleted."); init(); }
+    else toast("Delete failed.", true);
+  });
+}
+
 let snpLookupData = null;
 
 function clearSnpPreview() {

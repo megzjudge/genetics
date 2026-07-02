@@ -186,7 +186,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(
-      `SELECT gene_name, rsid, chromosome, ref_allele, alt_allele, protein_change FROM personal ORDER BY gene_name, rsid`
+      `SELECT gene_name, rsid, genotype, chromosome, ref_allele, alt_allele, protein_change FROM personal ORDER BY gene_name, rsid`
     ).all();
     return json({ snps: results || [] });
   }
@@ -292,6 +292,16 @@ export async function onRequest({ request, env }) {
           protein_change = COALESCE(?, protein_change)
       WHERE rsid = ?
     `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+    return json({ ok: true });
+  }
+
+  // ── DELETE /api/snp/:rsid ────────────────────────
+  if (method === "DELETE" && route === "snp" && param) {
+    const rsid = /^rs/i.test(param) ? param : "rs" + param;
+    await Promise.all([
+      env.genetic.prepare(`DELETE FROM personal WHERE rsid = ?`).bind(rsid).run(),
+      env.genetic.prepare(`DELETE FROM snps     WHERE rsid = ?`).bind(rsid).run(),
+    ]);
     return json({ ok: true });
   }
 
