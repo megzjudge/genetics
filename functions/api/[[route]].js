@@ -452,28 +452,37 @@ export async function onRequest({ request, env }) {
     // Parse NCBI
     let gene_name = null, chromosome = null, consequence = null, protein_change = null;
     let ref_allele = null, alt_allele = null;
+    const genes_found = [];
     const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
     if (ncbi) {
       const anns = ncbi?.primary_snapshot_data?.allele_annotations || [];
-      outer: for (const ann of anns) {
+      for (const ann of anns) {
         for (const asm of (ann.assembly_annotation || [])) {
           for (const gene of (asm.genes || [])) {
-            if (gene.locus) {
-              gene_name   = gene.locus;
-              consequence = gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null;
+            if (gene.locus && !genes_found.find(g => g.name === gene.locus)) {
+              const entry = {
+                name:        gene.locus,
+                consequence: gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null,
+                protein_change: null,
+              };
               for (const rna of (gene.rnas || [])) {
                 const spdi = rna?.protein?.variant?.spdi;
                 if (spdi?.deleted_sequence && spdi?.inserted_sequence
                     && spdi.deleted_sequence !== spdi.inserted_sequence
                     && spdi.position != null) {
-                  protein_change = `${spdi.deleted_sequence}${spdi.position + 1}${spdi.inserted_sequence}`;
+                  entry.protein_change = `${spdi.deleted_sequence}${spdi.position + 1}${spdi.inserted_sequence}`;
                   break;
                 }
               }
-              break outer;
+              genes_found.push(entry);
             }
           }
         }
+      }
+      if (genes_found.length) {
+        gene_name      = genes_found[0].name;
+        consequence    = genes_found[0].consequence;
+        protein_change = genes_found[0].protein_change;
       }
       for (const pl of (ncbi?.primary_snapshot_data?.placements_with_allele || [])) {
         const c = seqIdToChrom(pl.seq_id);
@@ -524,7 +533,7 @@ export async function onRequest({ request, env }) {
       if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
     }
 
-    return json({ rsid, gene_name, chromosome, consequence, protein_change, ref_allele, alt_allele, magnitude, summary });
+    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, consequence, protein_change, ref_allele, alt_allele, magnitude, summary });
   }
 
   // ── POST /api/snp ────────────────────────────────
