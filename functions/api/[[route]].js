@@ -311,9 +311,11 @@ export async function onRequest({ request, env }) {
     const info = summaryRes?.result?.[geneId];
     if (!info) return err("Gene summary not found", 404);
 
+    const titleCase = s => s ? s.replace(/\b\w/g, c => c.toUpperCase()) : null;
+
     return json({
       gene_name:   sym,
-      full_name:   info.description || null,
+      full_name:   titleCase(info.description) || null,
       description: info.summary     || null,
       maplocation: info.maplocation || null,
     });
