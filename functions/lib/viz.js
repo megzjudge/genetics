@@ -60,7 +60,10 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
   const suffix  = String(idSuffix || chr).replace(/\W/g, "");
 
   const CX = 120, HW = 17, NHW = 11; // center-x, half-width, narrow half-width (centromere)
-  const TOP = 108, BOT = 368, H = BOT - TOP;
+  // Panel body spans y=20..540 (520px). Top 1/6 (~87px) is the title zone above
+  // TOP; the pill runs 4.5/6 of that (TOP..BOT); the last 0.5/6 below BOT is
+  // reserved for the watermark.
+  const TOP = 108, BOT = 496, H = BOT - TOP;
   const cenY  = Math.round(TOP + cenFrac * H);
   const cenT  = cenY - 7;
   const cenB  = cenY + 7;
@@ -106,7 +109,7 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
   return `
   <rect x="20" y="20" width="270" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
   <text x="155" y="54"  text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#7a8fa6" letter-spacing="2">CHROMOSOME</text>
-  <text x="155" y="76"  text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#e2e8f2" font-weight="700">Chr ${esc(chr)}</text>
+  <text x="155" y="76"  text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
   <defs><clipPath id="chr-clip-${suffix}"><path d="${path}"/></clipPath></defs>
   <g clip-path="url(#chr-clip-${suffix})">
     <rect x="${CX-HW}" y="${TOP}" width="${HW*2}" height="${H}" fill="#3d5068"/>
@@ -257,6 +260,6 @@ export function geneViz({ chrNum, geneName, maploc }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 560" style="width:100%;height:auto;display:block;border-radius:8px">
   <rect width="300" height="560" fill="#0e1117"/>
   ${chrPanel(chrNum, geneName, maploc, String(geneName || "gene").replace(/\W/g,""), null)}
-  <text x="150" y="550" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#1e3a2a" letter-spacing="0.05em">genetics.jdge.cc</text>
+  <text x="278" y="522" text-anchor="end" font-family="ui-monospace,monospace" font-size="9" fill="#7a8fa6" opacity="0.25" letter-spacing="0.05em">genetics.jdge.cc</text>
 </svg>`;
 }
