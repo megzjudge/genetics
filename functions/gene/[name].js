@@ -140,7 +140,7 @@ ${nav()}
 <main>
 
   <section class="gene-header">
-    <div class="gene-header-inner" style="${vizSvg ? "display:flex;gap:40px;align-items:flex-start" : ""}">
+    <div class="gene-header-inner" style="${vizSvg ? "display:flex;gap:40px;align-items:center" : ""}">
       <div${vizSvg ? ' style="flex:1;min-width:0"' : ""}>
         <nav class="gene-breadcrumb" aria-label="breadcrumb">
           <a href="/">Home</a> / <a href="/groups">Groups</a>${primaryGroup
@@ -154,7 +154,7 @@ ${nav()}
           groups.map(g => `<a class="gene-tag" href="/group/${slugify(g.name)}">${esc(g.name)}</a>`).join("")
         }</div>` : ""}
       </div>
-      ${vizSvg ? `<div style="flex-shrink:0;width:250px;max-width:100%;margin-top:8px">${vizSvg}</div>` : ""}
+      ${vizSvg ? `<div style="flex-shrink:0;width:250px;max-width:100%">${vizSvg}</div>` : ""}
     </div>
   </section>
 

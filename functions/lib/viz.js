@@ -108,8 +108,8 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
 
   return `
   <rect x="20" y="20" width="270" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
-  <text x="155" y="54"  text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#7a8fa6" letter-spacing="2">CHROMOSOME</text>
-  <text x="155" y="76"  text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
+  <text x="32"  y="70" text-anchor="start" font-family="ui-monospace,monospace" font-size="13" fill="#7a8fa6" letter-spacing="1.2" font-weight="600">CHROMOSOME</text>
+  <text x="278" y="76" text-anchor="end"   font-family="Georgia,serif" font-size="36" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
   <defs><clipPath id="chr-clip-${suffix}"><path d="${path}"/></clipPath></defs>
   <g clip-path="url(#chr-clip-${suffix})">
     <rect x="${CX-HW}" y="${TOP}" width="${HW*2}" height="${H}" fill="#3d5068"/>
@@ -120,8 +120,8 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
   <ellipse cx="${CX}" cy="${cenY}" rx="${NHW}" ry="5" fill="#0e1117" stroke="#3d5068" stroke-width="1"/>
   <circle cx="${CX}" cy="${lineY}" r="3" fill="#34d399"/>
   <line x1="${CX+HW}" y1="${lineY}" x2="195" y2="${lineY}" stroke="#34d399" stroke-width="1.5" stroke-dasharray="3,2"/>
-  <text x="200" y="${lineY - 4}" font-family="ui-monospace,monospace" font-size="10" fill="#34d399" font-weight="600">${esc(geneName)}</text>
-  <text x="200" y="${lineY + 9}" font-family="ui-monospace,monospace" font-size="9"  fill="#7a8fa6">${esc(maploc || "")}</text>
+  <text x="200" y="${lineY - 7}"  font-family="ui-monospace,monospace" font-size="15" fill="#34d399" font-weight="600">${esc(geneName)}</text>
+  <text x="200" y="${lineY + 13}" font-family="ui-monospace,monospace" font-size="12" fill="#7a8fa6">${esc(maploc || "")}</text>
   ${connector}`;
 }
 
@@ -260,6 +260,6 @@ export function geneViz({ chrNum, geneName, maploc }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 560" style="width:100%;height:auto;display:block;border-radius:8px">
   <rect width="310" height="560" fill="#0e1117"/>
   ${chrPanel(chrNum, geneName, maploc, String(geneName || "gene").replace(/\W/g,""), null)}
-  <text x="278" y="522" text-anchor="end" font-family="ui-monospace,monospace" font-size="9" fill="#7a8fa6" opacity="0.25" letter-spacing="0.05em">genetics.jdge.cc</text>
+  <text x="278" y="522" text-anchor="end" font-family="ui-monospace,monospace" font-size="12" fill="#7a8fa6" opacity="0.3" letter-spacing="0.05em">genetics.jdge.cc</text>
 </svg>`;
 }
