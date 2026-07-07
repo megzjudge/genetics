@@ -130,6 +130,117 @@ async function storeFreqs(rsid, rows, env) {
   }
 }
 
+// ── Auto-search PubMed + Semantic Scholar for a given rsID ──
+function authorsToStr(names) {
+  if (!names || !names.length) return null;
+  const shown = names.slice(0, 3);
+  return shown.join(", ") + (names.length > 3 ? " et al." : "");
+}
+
+function truncate(str, n) {
+  if (!str) return null;
+  const s = String(str).trim();
+  return s.length > n ? s.slice(0, n).trim() + "…" : s;
+}
+
+async function fetchPubmedAbstracts(pmids, env) {
+  try {
+    const xml = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=xml&id=${pmids.join(",")}`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then(r => r.ok ? r.text() : "");
+    const map = {};
+    const blocks = xml.match(/<PubmedArticle>[\s\S]*?<\/PubmedArticle>/g) || [];
+    for (const block of blocks) {
+      const pmidM = block.match(/<PMID[^>]*>(\d+)<\/PMID>/);
+      if (!pmidM) continue;
+      const abs = (block.match(/<AbstractText[^>]*>([\s\S]*?)<\/AbstractText>/g) || [])
+        .map(t => t.replace(/<[^>]+>/g, "").trim())
+        .join(" ");
+      if (abs) map[pmidM[1]] = abs;
+    }
+    return map;
+  } catch (e) {
+    console.error("PubMed abstract fetch error:", e.message);
+    return {};
+  }
+}
+
+async function fetchAutoStudies(rsid, env) {
+  const term = `"${rsid}"`;
+  const results = [];
+
+  // PubMed
+  try {
+    const search = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=20&term=${encodeURIComponent(term)}`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then(r => r.ok ? r.json() : null);
+    const pmids = search?.esearchresult?.idlist || [];
+    if (pmids.length) {
+      const [summary, abstracts] = await Promise.all([
+        fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmids.join(",")}`,
+          { headers: { "User-Agent": "genetics.jdge.cc" } }).then(r => r.ok ? r.json() : null),
+        fetchPubmedAbstracts(pmids, env),
+      ]);
+      for (const uid of (summary?.result?.uids || pmids)) {
+        const rec = summary?.result?.[uid];
+        if (!rec) continue;
+        const yearM = (rec.pubdate || "").match(/\d{4}/);
+        results.push({
+          title:   rec.title || null,
+          authors: authorsToStr((rec.authors || []).map(a => a.name)),
+          year:    yearM ? parseInt(yearM[0]) : null,
+          url:     `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
+          doi:     rec.articleids?.find(a => a.idtype === "doi")?.value || null,
+          snippet: truncate(abstracts[uid], 500) || rec.title || null,
+        });
+      }
+    }
+  } catch (e) { console.error("PubMed auto-search error:", e.message); }
+
+  // Semantic Scholar
+  try {
+    const r = await fetch(
+      `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(rsid)}&fields=title,year,abstract,authors,externalIds&limit=20`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    );
+    if (r.ok) {
+      const data = await r.json();
+      for (const p of (data.data || [])) {
+        const doi = p.externalIds?.DOI || null;
+        results.push({
+          title:   p.title || null,
+          authors: authorsToStr((p.authors || []).map(a => a.name)),
+          year:    p.year || null,
+          url:     doi ? `https://doi.org/${doi}` : (p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : null),
+          doi,
+          snippet: truncate(p.abstract, 500) || p.title || null,
+        });
+      }
+    }
+  } catch (e) { console.error("Semantic Scholar auto-search error:", e.message); }
+
+  return results.filter(s => s.title && s.url);
+}
+
+async function insertAutoStudies(gene_name, rsid, env) {
+  const candidates = await fetchAutoStudies(rsid, env);
+  let inserted = 0;
+  for (const c of candidates) {
+    const dupe = await env.genetic.prepare(
+      `SELECT 1 FROM studies WHERE rsid = ? AND (url = ? OR (doi IS NOT NULL AND doi = ?)) LIMIT 1`
+    ).bind(rsid, c.url, c.doi).first();
+    if (dupe) continue;
+    await env.genetic.prepare(`
+      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, doi, year)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(gene_name.toUpperCase(), rsid, c.snippet, c.authors, c.title, c.url, c.doi, c.year).run();
+    inserted++;
+  }
+  return inserted;
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -186,7 +297,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(
-      `SELECT gene_name, rsid, genotype, chromosome, ref_allele, alt_allele, protein_change FROM personal ORDER BY gene_name, rsid`
+      `SELECT gene_name, rsid, genotype, chromosome, ref_allele, alt_allele, protein_change, rr_url FROM personal ORDER BY gene_name, rsid`
     ).all();
     return json({ snps: results || [] });
   }
@@ -284,14 +395,21 @@ export async function onRequest({ request, env }) {
   // ── PATCH /api/snp/:rsid ──────────────────────────
   if (method === "PATCH" && route === "snp" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
-    const { ref_allele, alt_allele, protein_change } = await request.json();
-    await env.genetic.prepare(`
-      UPDATE personal
-      SET ref_allele    = COALESCE(?, ref_allele),
-          alt_allele    = COALESCE(?, alt_allele),
-          protein_change = COALESCE(?, protein_change)
-      WHERE rsid = ?
-    `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+    const { ref_allele, alt_allele, protein_change, rr_url } = await request.json();
+    if (ref_allele || alt_allele || protein_change) {
+      await env.genetic.prepare(`
+        UPDATE personal
+        SET ref_allele    = COALESCE(?, ref_allele),
+            alt_allele    = COALESCE(?, alt_allele),
+            protein_change = COALESCE(?, protein_change)
+        WHERE rsid = ?
+      `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+    }
+    // rr_url is set directly (not COALESCEd) so an empty string can clear it back to "no"
+    if (rr_url !== undefined) {
+      await env.genetic.prepare(`UPDATE personal SET rr_url = ? WHERE rsid = ?`)
+        .bind(rr_url || null, rsid).run();
+    }
     return json({ ok: true });
   }
 
@@ -554,7 +672,9 @@ export async function onRequest({ request, env }) {
     // Fetch NCBI ALFA population frequencies automatically
     const freqRows = await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
-    return json({ ok: true, frequencies_fetched: freqRows.length });
+    // Auto-search PubMed + Semantic Scholar for studies mentioning this rsID
+    const studiesInserted = await insertAutoStudies(gene_name, rsid, env);
+    return json({ ok: true, frequencies_fetched: freqRows.length, studies_found: studiesInserted });
   }
 
   // ── GET /api/freqs/:rsid ──────────────────────────

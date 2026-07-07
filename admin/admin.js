@@ -201,6 +201,26 @@ async function updateGeneGroup(geneName) {
 }
 
 // ── SNP tab ───────────────────────────────────────
+function rrBadge(s) {
+  const has = !!s.rr_url;
+  return `<button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${has ? "#4ade80" : "var(--faint)"}"
+            onclick="setRrUrl('${s.rsid}')" title="${has ? s.rr_url.replace(/"/g, "&quot;") : "Click to add a Research Rabbit folder-share URL"}">RR: ${has ? "Yes" : "No"}</button>`;
+}
+
+function setRrUrl(rsid) {
+  const current = snpList.find(s => s.rsid === rsid);
+  const value = prompt(`Research Rabbit folder-share URL for ${rsid} (leave blank to clear):`, current?.rr_url || "");
+  if (value === null) return;
+  apiFetch(`/api/snp/${rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rr_url: value.trim() }),
+  }).then(r => {
+    if (r.ok) { toast(value.trim() ? "Research Rabbit URL saved." : "Research Rabbit URL cleared."); init(); }
+    else toast("Failed to save.", true);
+  });
+}
+
 function renderSnpTable() {
   const tbody = document.getElementById("snp-tbody");
   if (!tbody) return;
@@ -209,8 +229,8 @@ function renderSnpTable() {
       <td><span class="gene-sym">${s.gene_name}</span></td>
       <td style="font-family:var(--mono);font-size:12px"><a href="/snp/${s.rsid}" target="_blank" style="color:var(--accent);text-decoration:none">${s.rsid}</a></td>
       <td style="font-family:var(--mono);font-size:12px">${s.genotype || ""}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--faint)">${s.chromosome ? "Chr " + s.chromosome : ""}</td>
       <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
+      <td>${rrBadge(s)}</td>
     </tr>`).join("");
 }
 

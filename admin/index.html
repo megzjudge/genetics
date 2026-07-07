@@ -117,10 +117,14 @@
           <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px" id="prev-consequence"></div>
           <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px" id="prev-magnitude"></div>
           <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px" id="prev-summary"></div>
-          <div style="display:flex;gap:18px;font-family:var(--mono);font-size:11px">
+          <div style="display:flex;gap:18px;align-items:center;font-family:var(--mono);font-size:11px">
             <a id="prev-ncbi" href="#" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
             <a id="prev-snpedia" href="#" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
             <a id="prev-genecards" href="#" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>
+            <a href="https://app.researchrabbit.ai/search/" target="_blank" rel="noopener" style="color:var(--accent);display:flex;align-items:center;gap:5px">
+              <img src="/images/logo_researchrabbit.ico" alt="" width="13" height="13" style="border-radius:2px">
+              Scan Research Rabbit ↗
+            </a>
           </div>
         </div>
 
@@ -129,7 +133,7 @@
 
       <table class="admin-table" id="snp-table" style="margin-top:28px">
         <thead><tr>
-          <th>Gene</th><th>rsID</th><th>Genotype</th><th>Chr</th><th></th>
+          <th>Gene</th><th>rsID</th><th>Genotype</th><th></th><th></th>
         </tr></thead>
         <tbody id="snp-tbody"></tbody>
       </table>

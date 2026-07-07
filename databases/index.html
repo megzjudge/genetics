@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Genetics Databases | Megan Judge</title>
-  <meta name="description" content="The public databases behind modern genetics research — dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar — with descriptions of what each one does.">
+  <meta name="description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar — with descriptions of what each one does.">
   <meta name="author" content="Megan Judge">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://genetics.jdge.cc/databases">
   <meta property="og:title" content="Genetics Databases | Megan Judge">
-  <meta property="og:description" content="The public databases behind modern genetics research — dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar.">
+  <meta property="og:description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar.">
   <meta property="og:url" content="https://genetics.jdge.cc/databases">
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://genetics.jdge.cc/images/icon_full.png">
@@ -41,7 +41,8 @@
         Where the Data Lives
       </h1>
       <p style="font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0 auto;line-height:1.6">
-        This website pulls from six public databases and that underpin modern genetics research from variant registration to population frequencies to clinical interpretation.
+        Seven public databases and tools that underpin modern genetics research. This site draws on all of them —
+        from variant registration to population frequencies to clinical interpretation to literature discovery.
       </p>
     </div>
   </section>
@@ -55,6 +56,26 @@
     </p>
 
     <div style="margin:36px 0;display:flex;flex-direction:column">
+
+      <a href="https://www.researchrabbitapp.com/" target="_blank" rel="noopener" class="db-card-link">
+        <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <img src="/images/logo_researchrabbit.ico" alt="ResearchRabbit" width="24" height="24"
+               style="image-rendering:crisp-edges">
+        </div>
+        <div class="db-card-text">
+          <div class="db-card-title">
+            ResearchRabbit
+            <span class="db-card-domain">researchrabbit.ai</span>
+          </div>
+          <p class="db-card-desc">
+            A free literature-mapping tool that builds citation networks around a paper or search
+            term — surfacing related, similar, and citing work far beyond what a plain keyword search
+            returns. Used here to widen the study search around a variant beyond what PubMed and
+            Semantic Scholar turn up directly.
+          </p>
+          <span class="db-card-action">researchrabbit.ai ↗</span>
+        </div>
+      </a>
 
       <a href="https://www.ncbi.nlm.nih.gov/snp/rs2236225" target="_blank" rel="noopener" class="db-card-link">
         <img src="/images/logo_dbsnp.png" alt="NCBI dbSNP" width="52" height="52"
@@ -175,28 +196,27 @@
       </a>
 
     </div>
-    
+
+    <h2>How they fit together</h2>
     <p>
-      <a href="https://scholar.google.com/" target="_blank" rel="noopener" class="db-card-link" style="border-bottom:none">
-        <img src="/images/logo_scholar.png" alt="ClinVar" width="52" height="52"
-             style="border-radius:10px;flex-shrink:0;display:block">
-        <div class="db-card-text">
-          <div class="db-card-title">
-            Scholar
-            <span class="db-card-domain">cholar.google.com</span>
-          </div>
-          <p class="db-card-desc">
-            This website is used for alerts for new studies posted to add to the database.
-            An SNP is put into scholar.
-            An alert is made from the side menu.
-            A cloudflare email routing worker intakes the email and then sends it to a database which then shows up on this website.
-            For how to do this please click the Other Research Website in the Footer and then read the Github explanation.
-          </p>
-          <span class="db-card-action">scholar.google.com ↗</span>
-        </div>
-      </a>
+      A typical lookup starts at <strong>dbSNP</strong> — it's the canonical source for an rsID's
+      chromosomal position, the reference and alternate alleles, and the population-level frequencies
+      used on this site. From there, <strong>SNPedia</strong> and <strong>ClinVar</strong> supply
+      the clinical interpretation: whether the variant has been linked to a phenotype, and how strong
+      that evidence is. <strong>GeneCards</strong> zooms out to the gene level — useful when the
+      variant is intronic or when you want to understand the biological context before diving into
+      individual SNPs. <strong>gnomAD</strong> answers the population question: how often does this
+      variant appear in healthy individuals, and does its frequency differ by ancestry? And
+      <strong>OMIM</strong> grounds everything in the longer history — the decades of Mendelian
+      genetics that established which genes matter and why.
     </p>
-      
+    <p>
+      No single database tells the whole story. This site tries to surface the most relevant data
+      from each one without requiring you to cross-reference all six yourself.
+    </p>
+
+  </div>
+
 </main>
 
 <footer class="site-footer">
