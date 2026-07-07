@@ -610,10 +610,11 @@ async function backfillSnps() {
         }),
       });
       if (!pr.ok) throw new Error("PATCH failed " + pr.status);
+      const pd = await pr.json().catch(() => ({}));
 
       done++;
       const alleles = (ld.ref_allele && ld.alt_allele) ? `${ld.ref_allele}/${ld.alt_allele}` : "—";
-      bfLog(`✓  ${alleles}${ld.protein_change ? "  " + ld.protein_change : ""}\n`);
+      bfLog(`✓  ${alleles}${ld.protein_change ? "  " + ld.protein_change : ""}  (${pd.frequencies_fetched ?? 0} freq rows)\n`);
     } catch (e) {
       errs++;
       bfLog(`✗  ${e.message}\n`);

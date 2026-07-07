@@ -436,7 +436,11 @@ export async function onRequest({ request, env }) {
         ON CONFLICT(rsid) DO UPDATE SET rr_url = excluded.rr_url
       `).bind(rsid, rr_url || null).run();
     }
-    return json({ ok: true });
+    // Refresh NCBI ALFA population frequencies too — this endpoint is also the
+    // backfill path, and backfill previously never touched snp_pop at all.
+    const freqRows = await fetchNcbiFreqs(rsid, env);
+    if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
+    return json({ ok: true, frequencies_fetched: freqRows.length });
   }
 
   // ── DELETE /api/snp/:rsid ────────────────────────
