@@ -20,7 +20,7 @@ function nav() {
   </a>
   <nav class="nav-links">
     <a href="/basics">Basics</a>
-    <a href="/group/folate-metabolism">Genes</a>
+    <a href="/groups">Genes</a>
   </nav>
 </header>`;
 }
@@ -143,7 +143,7 @@ ${nav()}
     <div class="gene-header-inner" style="${vizSvg ? "display:flex;gap:40px;align-items:flex-start" : ""}">
       <div${vizSvg ? ' style="flex:1;min-width:0"' : ""}>
         <nav class="gene-breadcrumb" aria-label="breadcrumb">
-          <a href="/">Home</a>${primaryGroup
+          <a href="/">Home</a> / <a href="/groups">Groups</a>${primaryGroup
             ? ` / <a href="/group/${groupSlug}">${esc(primaryGroup.name)}</a>`
             : ""} / ${esc(geneName)}
         </nav>
@@ -154,7 +154,7 @@ ${nav()}
           groups.map(g => `<a class="gene-tag" href="/group/${slugify(g.name)}">${esc(g.name)}</a>`).join("")
         }</div>` : ""}
       </div>
-      ${vizSvg ? `<div style="flex-shrink:0;width:170px;margin-top:8px">${vizSvg}</div>` : ""}
+      ${vizSvg ? `<div style="flex-shrink:0;width:500px;max-width:100%;margin-top:8px">${vizSvg}</div>` : ""}
     </div>
   </section>
 

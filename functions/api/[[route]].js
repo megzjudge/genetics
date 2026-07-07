@@ -319,7 +319,8 @@ export async function onRequest({ request, env }) {
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(`
-      SELECT p.gene_name, p.rsid, p.alleles, s.rr_url
+      SELECT p.gene_name, p.rsid, p.alleles, s.rr_url,
+             (SELECT COUNT(*) FROM snp_pop WHERE snp_pop.rsid = p.rsid) AS pop_count
       FROM personal p LEFT JOIN snps s ON s.rsid = p.rsid
       ORDER BY p.gene_name, p.rsid
     `).all();
@@ -462,7 +463,7 @@ export async function onRequest({ request, env }) {
     // backfill path, and backfill previously never touched snp_pop at all.
     const freqRows = await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
-    return json({ ok: true, frequencies_fetched: freqRows.length });
+    return json({ ok: true, frequencies_fetched: freqRows.length, frequencies: freqRows });
   }
 
   // ── DELETE /api/snp/:rsid ────────────────────────

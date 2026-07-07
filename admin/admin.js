@@ -244,6 +244,40 @@ function setRrUrl(rsid) {
   });
 }
 
+function popBadge(s) {
+  const has = (s.pop_count || 0) > 0;
+  return `<button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${has ? "#4ade80" : "#f87171"}"
+            onclick="scanOnePop('${s.rsid}')" title="${has ? s.pop_count + " population rows" : "Click to fetch population frequency data"}">Pop: ${has ? "Yes" : "No"}</button>`;
+}
+
+async function scanOnePop(rsid) {
+  toast(`Scanning ${rsid}…`);
+  try {
+    const lr = await apiFetch("/api/snp/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rsid }),
+    });
+    const ld = await lr.json();
+    if (!lr.ok) throw new Error(ld.error || lr.status);
+    const pr = await apiFetch(`/api/snp/${rsid}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
+        consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
+        summary: ld.summary,
+      }),
+    });
+    if (!pr.ok) throw new Error("PATCH failed " + pr.status);
+    const pd = await pr.json().catch(() => ({}));
+    toast(`${rsid}: ${pd.frequencies_fetched ?? 0} population rows fetched.`);
+    init();
+  } catch (e) {
+    toast(`Scan failed for ${rsid}: ${e.message}`, true);
+  }
+}
+
 function renderSnpTable() {
   const tbody = document.getElementById("snp-tbody");
   if (!tbody) return;
@@ -254,6 +288,7 @@ function renderSnpTable() {
       <td style="font-family:var(--mono);font-size:12px">${s.alleles || ""}</td>
       <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
       <td>${rrBadge(s)}</td>
+      <td>${popBadge(s)}</td>
     </tr>`).join("");
 }
 
@@ -596,7 +631,7 @@ async function backfillSnps() {
   for (let i = 0; i < snps.length; i++) {
     const snp = snps[i];
     bfProgress(`SNP ${i + 1} / ${total} — ${snp.rsid}`);
-    bfLog(`→ ${snp.rsid} (${snp.gene_name}) `);
+    bfLog(`→ ${snp.rsid} (${snp.gene_name})\n`);
     try {
       const lr = await apiFetch("/api/snp/lookup", {
         method: "POST",
@@ -619,11 +654,24 @@ async function backfillSnps() {
       const pd = await pr.json().catch(() => ({}));
 
       done++;
-      const alleles = (ld.ref_allele && ld.alt_allele) ? `${ld.ref_allele}/${ld.alt_allele}` : "—";
-      bfLog(`✓  ${alleles}${ld.protein_change ? "  " + ld.protein_change : ""}  (${pd.frequencies_fetched ?? 0} freq rows)\n`);
+      bfLog(`  snps: chromosome=${ld.chromosome || "—"} position=${ld.position || "—"} ref_allele=${ld.ref_allele || "—"} alt_allele=${ld.alt_allele || "—"} protein_change=${ld.protein_change || "—"} consequence=${ld.consequence || "—"} summary=${ld.summary ? '"' + truncateStr(ld.summary, 70) + '"' : "—"}\n`);
+      const freqs = pd.frequencies || [];
+      if (freqs.length) {
+        bfLog(`  snp_pop (${freqs.length} rows):\n`);
+        for (const f of freqs) {
+          const a1f = f.allele1_freq != null ? f.allele1_freq.toFixed(3) : "—";
+          const a2f = f.allele2_freq != null ? f.allele2_freq.toFixed(3) : "—";
+          const h1  = f.geno_hom1   != null ? f.geno_hom1.toFixed(3)   : "—";
+          const het = f.geno_het    != null ? f.geno_het.toFixed(3)    : "—";
+          const h2  = f.geno_hom2   != null ? f.geno_hom2.toFixed(3)   : "—";
+          bfLog(`    ${f.population} (${f.pop_type}): allele1=${f.allele1 || "?"} allele1_freq=${a1f} allele2=${f.allele2 || "?"} allele2_freq=${a2f} geno_hom1=${h1} geno_het=${het} geno_hom2=${h2} sample_size=${f.sample_size ?? "—"}\n`);
+        }
+      } else {
+        bfLog(`  snp_pop: 0 rows\n`);
+      }
     } catch (e) {
       errs++;
-      bfLog(`✗  ${e.message}\n`);
+      bfLog(`  ✗  ${e.message}\n`);
     }
     await new Promise(r => setTimeout(r, 420));
   }

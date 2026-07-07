@@ -18,7 +18,7 @@ function nav() {
   </a>
   <nav class="nav-links">
     <a href="/basics">Basics</a>
-    <a href="/group/folate-metabolism">Genes</a>
+    <a href="/groups">Genes</a>
   </nav>
 </header>`;
 }
@@ -94,7 +94,7 @@ ${nav()}
   <section class="group-header">
     <div class="group-header-inner">
       <nav class="gene-breadcrumb" aria-label="breadcrumb">
-        <a href="/">Home</a> / ${esc(group.name)}
+        <a href="/">Home</a> / <a href="/groups">Groups</a> / ${esc(group.name)}
       </nav>
       <h1 class="group-page-title">${esc(group.name)}</h1>
       ${group.description ? `<p class="group-page-desc">${esc(group.description)}</p>` : ""}

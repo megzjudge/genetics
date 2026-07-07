@@ -392,8 +392,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 /* Studies */
 .studies-section { margin-bottom: 56px; }
 .studies-heading {
-  font-family: var(--mono); font-size: 10.5px;
-  letter-spacing: 0.13em; text-transform: uppercase;
+  font-family: var(--mono); font-size: 14px;
+  letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--faint); margin: 0 0 24px;
   padding-bottom: 14px; border-bottom: 1px solid var(--line);
 }
@@ -593,7 +593,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .gene-section:last-child { margin-bottom: 0; }
 
 .section-count {
-  font-family: var(--mono); font-size: 10px; font-weight: 400;
+  font-family: var(--mono); font-size: 12px; font-weight: 400;
   color: var(--faint); margin-left: 10px; letter-spacing: 0;
 }
 

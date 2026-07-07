@@ -20,7 +20,7 @@ function nav() {
   </a>
   <nav class="nav-links">
     <a href="/basics">Basics</a>
-    <a href="/group/folate-metabolism">Genes</a>
+    <a href="/groups">Genes</a>
   </nav>
 </header>`;
 }
@@ -45,7 +45,7 @@ export async function onRequestGet({ params, env }) {
     env.genetic.prepare(
       `SELECT g.rsid, g.alleles, g.notes, g.gene_name, gi.full_name, gi.maplocation,
               si.chromosome, si.position, si.ref_allele, si.alt_allele,
-              si.protein_change, si.consequence, si.summary
+              si.protein_change, si.consequence, si.summary, si.rr_url
        FROM personal g
        LEFT JOIN genes gi ON gi.gene_name = g.gene_name
        LEFT JOIN snps si ON si.rsid = g.rsid
@@ -155,7 +155,7 @@ ${nav()}
   <section class="gene-header">
     <div class="gene-header-inner">
       <nav class="gene-breadcrumb" aria-label="breadcrumb">
-        <a href="/">Home</a>${geneName
+        <a href="/">Home</a> / <a href="/groups">Groups</a>${geneName
           ? ` / <a href="/gene/${esc(geneName)}">${esc(geneName)}</a>`
           : ""} / ${esc(rsid)}
       </nav>
@@ -177,6 +177,7 @@ ${nav()}
 
       <div style="display:flex;gap:20px;font-family:var(--mono);font-size:11px;margin-top:8px">
         <a href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
+        ${snp.rr_url ? `<a href="${esc(snp.rr_url)}" target="_blank" rel="noopener" style="color:var(--accent)">Research Rabbit ↗</a>` : ""}
         <a href="https://www.snpedia.com/index.php/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
         ${geneName ? `<a href="https://www.genecards.org/card/${esc(geneName)}?Search=${esc(rsid)}#Variants_Variants" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>` : ""}
       </div>
