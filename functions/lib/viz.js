@@ -257,8 +257,8 @@ export function snpViz({ chrNum, geneName, maploc, rsid, refAllele, altAllele, p
 
 // Panel 1 only — inline string (for embedding in gene page HTML)
 export function geneViz({ chrNum, geneName, maploc }) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 560" style="width:100%;height:auto;display:block;border-radius:8px">
-  <rect width="300" height="560" fill="#0e1117"/>
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 560" style="width:100%;height:auto;display:block;border-radius:8px">
+  <rect width="310" height="560" fill="#0e1117"/>
   ${chrPanel(chrNum, geneName, maploc, String(geneName || "gene").replace(/\W/g,""), null)}
   <text x="278" y="522" text-anchor="end" font-family="ui-monospace,monospace" font-size="9" fill="#7a8fa6" opacity="0.25" letter-spacing="0.05em">genetics.jdge.cc</text>
 </svg>`;

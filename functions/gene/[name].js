@@ -154,7 +154,7 @@ ${nav()}
           groups.map(g => `<a class="gene-tag" href="/group/${slugify(g.name)}">${esc(g.name)}</a>`).join("")
         }</div>` : ""}
       </div>
-      ${vizSvg ? `<div style="flex-shrink:0;width:500px;max-width:100%;margin-top:8px">${vizSvg}</div>` : ""}
+      ${vizSvg ? `<div style="flex-shrink:0;width:250px;max-width:100%;margin-top:8px">${vizSvg}</div>` : ""}
     </div>
   </section>
 
