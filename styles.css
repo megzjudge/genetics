@@ -843,7 +843,13 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .admin-table .gene-sym { font-family:var(--mono); font-weight:600; color:var(--accent); font-size:13px; }
 .admin-table tr.bulk-row--flagged td { background:rgba(248,113,113,.08); }
 .admin-table tr.bulk-row--flagged td:first-child { border-left:2px solid #f87171; }
+.admin-table tr.bulk-row--dup-same td { background:rgba(148,163,184,.14); }
+.admin-table tr.bulk-row--dup-same td:first-child { border-left:2px solid #94a3b8; }
+.admin-table tr.bulk-row--dup-other td { background:rgba(125,180,255,.10); }
+.admin-table tr.bulk-row--dup-other td:first-child { border-left:2px solid #7db4ff; }
 .bulk-cell-empty { color:#f87171; font-style:italic; }
+.bulk-dup-note { font-family:var(--mono); font-size:11px; margin:0 0 10px; }
+.bulk-dup-note strong { color:inherit; }
 .bulk-edit-row textarea, .bulk-edit-row input { width:100%; background:var(--card); border:1px solid var(--line); border-radius:4px; padding:6px 8px; color:var(--ink); font-family:var(--mono); font-size:12px; margin-bottom:6px; }
 .bulk-edit-row textarea { min-height:60px; resize:vertical; }
 

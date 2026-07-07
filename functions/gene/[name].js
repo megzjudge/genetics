@@ -161,7 +161,10 @@ ${nav()}
   <div class="gene-body">
 
     <div class="gene-section">
-      <h2 class="studies-heading">My Variants<span class="section-count">${snps.length}</span></h2>
+      <h2 class="studies-heading">
+        My Variants<span class="section-count">${snps.length}</span>
+        <button id="personal-signin" class="personal-signin-btn" style="display:none;font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;cursor:pointer;margin-left:10px">Sign in to view</button>
+      </h2>
       ${snps.length === 0
         ? `<p class="empty-state">No variant data entered yet.</p>`
         : snps.map(s => {
@@ -171,10 +174,10 @@ ${nav()}
             return `<div class="snp-block">
           <div class="snp-row">
             <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
-            <span class="snp-genotype">${esc(s.alleles || "—")}</span>
+            <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}">···</span>
             ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
           </div>
-          ${s.notes ? `<p class="snp-notes">${esc(s.notes)}</p>` : ""}
+          <div data-personal-notes="${esc(s.rsid)}"></div>
           ${freqs.length > 0 ? `<div class="freq-table">
             ${freqs.map(f => {
               const fa1 = f.allele1 || "?", fa2 = f.allele2 || "?";
@@ -239,6 +242,27 @@ ${nav()}
   </div>
 </main>
 ${foot()}
+<script src="/personal-auth.js"></script>
+<script>
+(function () {
+  const geneName = ${JSON.stringify(geneName)};
+  async function load() {
+    const res = await PersonalAuth.fetchPersonal({ gene: geneName });
+    const btn = document.getElementById("personal-signin");
+    if (!res.ok) { btn.style.display = "inline-block"; return; }
+    btn.style.display = "none";
+    for (const p of (res.personal || [])) {
+      const a = document.querySelector('[data-personal-alleles="' + p.rsid + '"]');
+      if (a) a.textContent = p.alleles || "—";
+      const n = document.querySelector('[data-personal-notes="' + p.rsid + '"]');
+      if (n && p.notes) n.innerHTML = '<p class="snp-notes"></p>';
+      if (n && p.notes) n.firstChild.textContent = p.notes;
+    }
+  }
+  PersonalAuth.wireSignIn("personal-signin", load);
+  load();
+})();
+</script>
 </body>
 </html>`;
 

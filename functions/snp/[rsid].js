@@ -171,9 +171,10 @@ ${nav()}
         ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
         ${snp.consequence ? `<span>${esc(snp.consequence)}</span>` : ""}
+        <button id="personal-signin" class="personal-signin-btn" style="display:none;font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;cursor:pointer">Sign in to view</button>
       </div>
 
-      ${snp.notes ? `<p class="gene-desc">${esc(snp.notes)}</p>` : ""}
+      <div data-personal-notes="${esc(rsid)}"></div>
 
       <div style="display:flex;gap:20px;font-family:var(--mono);font-size:11px;margin-top:8px">
         <a href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
@@ -194,6 +195,25 @@ ${nav()}
 
 </main>
 ${foot()}
+<script src="/personal-auth.js"></script>
+<script>
+(function () {
+  const rsid = ${JSON.stringify(rsid)};
+  async function load() {
+    const res = await PersonalAuth.fetchPersonal({ rsid });
+    const btn = document.getElementById("personal-signin");
+    if (!res.ok) { btn.style.display = "inline-block"; return; }
+    btn.style.display = "none";
+    const n = document.querySelector('[data-personal-notes="' + rsid + '"]');
+    if (n && res.personal && res.personal.notes) {
+      n.innerHTML = '<p class="gene-desc"></p>';
+      n.firstChild.textContent = res.personal.notes;
+    }
+  }
+  PersonalAuth.wireSignIn("personal-signin", load);
+  load();
+})();
+</script>
 </body>
 </html>`;
 

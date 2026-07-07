@@ -684,10 +684,15 @@ function populateBulkSnpList() {
 function bulkFileSelected() {
   const file = document.getElementById("bulk-file").files[0];
   if (!file) return;
+  document.getElementById("bulk-scan-btn").disabled = true;
   const reader = new FileReader();
   reader.onload = () => {
     bulkRawCsv = reader.result;
     document.getElementById("bulk-scan-btn").disabled = false;
+  };
+  reader.onerror = () => {
+    bulkRawCsv = null;
+    toast("Failed to read that file: " + (reader.error?.message || "unknown error"), true);
   };
   reader.readAsText(file);
 
@@ -729,7 +734,57 @@ function bulkSnpPicked() {
   bulkGene = null; bulkRsid = null;
 }
 
-function bulkScanCsv() {
+// doi.org resolves any real DOI directly — if a row already has a DOI but no
+// URL, this is the primary, deterministic way to fill it (no search needed).
+function bulkDeriveDoiUrl(row) {
+  if (row.doi && !row.url) row.url = `https://doi.org/${row.doi}`;
+}
+
+function bulkIsFlagged(row) {
+  return !row.title || !row.authors || !row.year || !row.abstract || (!row.url && !row.doi);
+}
+
+// Manual convenience link, not an automated fetch — opens Scholar with the
+// title (or authors, if title's missing) pre-filled in quotes.
+function bulkScholarUrl(row) {
+  const q = row.title || row.authors || "";
+  if (!q) return null;
+  return `https://scholar.google.com/scholar?hl=en&as_sdt=0,5&q=${encodeURIComponent('"' + q + '"')}`;
+}
+
+function bulkNormTitle(t) {
+  return (t || "").toLowerCase().replace(/[\s.,;:'"’…-]+/g, " ").trim();
+}
+
+// Checks a CSV row against every study already in the DB (any gene/rsid —
+// the same paper often covers many SNPs, so a match under a different rsid
+// isn't a true duplicate, just a paper worth re-using).
+function bulkFindDuplicate(row, existingStudies) {
+  const normTitle = bulkNormTitle(row.title);
+  for (const s of existingStudies) {
+    const matched = [];
+    if (row.doi && s.doi && row.doi.toLowerCase() === s.doi.toLowerCase()) matched.push("doi");
+    if (row.url && s.url && row.url.toLowerCase() === s.url.toLowerCase()) matched.push("url");
+    if (normTitle && normTitle === bulkNormTitle(s.title)) matched.push("title");
+    if (matched.length) return { study: s, matched };
+  }
+  return null;
+}
+
+// Row state drives both styling and Import-All eligibility:
+//   grey  = exact duplicate already imported under THIS SAME rsid — skipped
+//   blue  = exact duplicate exists, but under a DIFFERENT rsid — still imported
+//   red   = missing a required field — skipped
+//   normal = clean — imported
+function bulkComputeState(row, existingStudies) {
+  const dup = bulkFindDuplicate(row, existingStudies);
+  row._dup = dup;
+  if (dup && dup.study.rsid === bulkRsid) return "grey";
+  if (dup) return "blue";
+  return bulkIsFlagged(row) ? "red" : "normal";
+}
+
+async function bulkScanCsv() {
   if (!bulkRawCsv) return toast("Choose a CSV file first.", true);
   if (!bulkGene || !bulkRsid) return toast("Pick a gene/rsID first.", true);
 
@@ -753,12 +808,15 @@ function bulkScanCsv() {
     url:      bulkNormalize(r[idx.url]),
     _open:    false,
   }));
+  bulkRows.forEach(bulkDeriveDoiUrl);
+
+  document.getElementById("bulk-scan-btn").disabled = true;
+  const existing = await safeFetchJson("/api/studies").then(d => (d && d.studies) || []);
+  bulkRows.forEach(row => { row._state = bulkComputeState(row, existing); });
+  document.getElementById("bulk-scan-btn").disabled = false;
+
   renderBulkTable();
   document.getElementById("bulk-review").style.display = "block";
-}
-
-function bulkIsFlagged(row) {
-  return !row.title || !row.authors || !row.year || !row.abstract || (!row.url && !row.doi);
 }
 
 function bulkField(i, key, value) {
@@ -771,55 +829,75 @@ function bulkToggleEdit(i) {
 }
 
 function bulkRemoveRow(i) {
+  const row = bulkRows[i];
+  if (!confirm(`Remove "${truncateStr(row.title || "(untitled)", 60)}" from this import list? You'd need to re-upload the CSV to get it back.`)) return;
   bulkRows.splice(i, 1);
   renderBulkTable();
 }
 
-async function bulkScanRow(i) {
+async function bulkSubmitOne(row) {
+  const snippet = row.abstract || row.title;
+  if (!snippet) throw new Error("no abstract or title");
+  const r = await apiFetch("/api/study", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      gene_name: bulkGene, rsid: bulkRsid,
+      snippet, authors: row.authors || null, title: row.title || null,
+      url: row.url || null, doi: row.doi || null,
+      year: row.year ? parseInt(row.year) : null,
+    }),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+}
+
+async function bulkSubmitRow(i) {
   const row = bulkRows[i];
-  const query = [row.title, row.authors].filter(Boolean).join(" ") || (row.abstract ? row.abstract.slice(0, 80) : "");
-  if (!query) return toast("Not enough info in this row to search.", true);
   try {
-    const r = await apiFetch("/api/study/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || r.status);
-    if (!row.doi && d.doi) row.doi = d.doi;
-    if (!row.title && d.title) row.title = d.title;
-    if (!row.authors && d.authors) row.authors = d.authors;
-    if (!row.year && d.year) row.year = String(d.year);
+    await bulkSubmitOne(row);
+    bulkRows.splice(i, 1);
     renderBulkTable();
-    toast(d.warning || "Scan complete — check the filled fields.", !!d.warning);
+    toast("Study imported.");
   } catch (e) {
-    toast("Scan failed: " + e.message, true);
+    toast("Import failed: " + e.message, true);
   }
+}
+
+const BULK_ROW_CLASS = { grey: "bulk-row--dup-same", blue: "bulk-row--dup-other", red: "bulk-row--flagged", normal: "" };
+
+function bulkFieldStyle(row, field) {
+  return (row._dup && row._dup.matched.includes(field)) ? "border-color:#f87171" : "";
 }
 
 function renderBulkTable() {
   const tbody = document.getElementById("bulk-tbody");
   document.getElementById("bulk-count").textContent = `${bulkRows.length} rows`;
   tbody.innerHTML = bulkRows.map((row, i) => {
-    const flagged = bulkIsFlagged(row);
     const link = row.url || (row.doi ? `https://doi.org/${row.doi}` : "");
+    const scholarUrl = bulkScholarUrl(row);
     const compact = `
-    <tr class="${flagged ? "bulk-row--flagged" : ""}">
+    <tr class="${BULK_ROW_CLASS[row._state] || ""}">
       <td title="${escAttr(row.title)}">${row.title ? escHtml(truncateStr(row.title, 60)) : '<span class="bulk-cell-empty">missing</span>'}</td>
       <td title="${escAttr(row.authors)}">${row.authors ? escHtml(truncateStr(row.authors, 40)) : '<span class="bulk-cell-empty">missing</span>'}</td>
       <td>${row.year ? escHtml(row.year) : '<span class="bulk-cell-empty">—</span>'}</td>
       <td>${link ? `<a href="${escAttr(link)}" target="_blank" rel="noopener">↗</a>` : '<span class="bulk-cell-empty">none</span>'}</td>
       <td style="white-space:nowrap">
         <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="bulkToggleEdit(${i})">${row._open ? "Done" : "Edit"}</button>
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="bulkSubmitRow(${i})">Submit</button>
         <button class="btn-danger" onclick="bulkRemoveRow(${i})">Remove</button>
       </td>
     </tr>`;
+    const dupNote = row._dup
+      ? row._state === "grey"
+        ? `<p class="bulk-dup-note" style="color:#94a3b8">Already imported for <strong>${escHtml(row._dup.study.rsid)}</strong> (${escHtml(row._dup.study.gene_name)}) — matched on ${row._dup.matched.map(escHtml).join(", ")}. Won't import via "Import All"; fields below are highlighted red where they matched. Use Submit to force it through anyway.</p>`
+        : `<p class="bulk-dup-note" style="color:#7db4ff">Also exists under <strong>${escHtml(row._dup.study.rsid)}</strong> (${escHtml(row._dup.study.gene_name)}) — matched on ${row._dup.matched.map(escHtml).join(", ")}. Will still import as a new entry for ${escHtml(bulkRsid)}, since the same paper can be useful for more than one SNP.</p>`
+      : "";
     const editRow = `
     <tr${row._open ? "" : ' style="display:none"'}>
       <td colspan="5" class="bulk-edit-row">
+        ${dupNote}
         <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Title</label>
-        <input type="text" value="${escAttr(row.title)}" oninput="bulkField(${i},'title',this.value)">
+        <input type="text" value="${escAttr(row.title)}" style="${bulkFieldStyle(row, "title")}" oninput="bulkField(${i},'title',this.value)">
         <div style="display:flex;gap:10px">
           <div style="flex:1">
             <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Authors</label>
@@ -833,16 +911,16 @@ function renderBulkTable() {
         <div style="display:flex;gap:10px">
           <div style="flex:1">
             <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">URL</label>
-            <input type="text" value="${escAttr(row.url)}" oninput="bulkField(${i},'url',this.value)">
+            <input type="text" value="${escAttr(row.url)}" style="${bulkFieldStyle(row, "url")}" oninput="bulkField(${i},'url',this.value)">
           </div>
           <div style="flex:1">
             <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">DOI</label>
-            <input type="text" value="${escAttr(row.doi)}" oninput="bulkField(${i},'doi',this.value)">
+            <input type="text" value="${escAttr(row.doi)}" style="${bulkFieldStyle(row, "doi")}" oninput="bulkField(${i},'doi',this.value)">
           </div>
         </div>
         <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Abstract / Snippet</label>
         <textarea oninput="bulkField(${i},'abstract',this.value)">${escHtml(row.abstract)}</textarea>
-        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="bulkScanRow(${i})">Scan for missing details</button>
+        ${scholarUrl ? `<a href="${escAttr(scholarUrl)}" target="_blank" rel="noopener" class="btn-sm" style="text-decoration:none;display:inline-block;font-size:10px;padding:3px 8px">Search Google Scholar ↗</a>` : ""}
       </td>
     </tr>`;
     return compact + editRow;
@@ -858,39 +936,33 @@ function bulkLog(msg) {
 async function bulkImportAll() {
   if (!bulkGene || !bulkRsid) return toast("Pick a gene/rsID first.", true);
   if (!bulkRows.length) return toast("Nothing to import.", true);
-  const total = bulkRows.length;
+  const toImport = bulkRows.filter(r => r._state === "normal" || r._state === "blue");
+  if (!toImport.length) return toast("Nothing eligible to import — only red/grey rows remain.", true);
+
+  const total = toImport.length;
   let done = 0, errs = 0;
   document.getElementById("bulk-log").textContent = "";
+  const imported = new Set();
 
-  for (let i = 0; i < bulkRows.length; i++) {
-    const row = bulkRows[i];
-    document.getElementById("bulk-progress").textContent = `${i + 1} / ${total}`;
-    const snippet = row.abstract || row.title;
-    if (!snippet) {
-      errs++;
-      bulkLog(`✗  row ${i + 1}: no abstract or title, skipped\n`);
-      continue;
-    }
+  for (let n = 0; n < toImport.length; n++) {
+    const row = toImport[n];
+    document.getElementById("bulk-progress").textContent = `${n + 1} / ${total}`;
     try {
-      const r = await apiFetch("/api/study", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gene_name: bulkGene, rsid: bulkRsid,
-          snippet, authors: row.authors || null, title: row.title || null,
-          url: row.url || null, doi: row.doi || null,
-          year: row.year ? parseInt(row.year) : null,
-        }),
-      });
-      if (!r.ok) throw new Error("HTTP " + r.status);
+      await bulkSubmitOne(row);
       done++;
+      imported.add(row);
       bulkLog(`✓  ${truncateStr(row.title || "(untitled)", 60)}\n`);
     } catch (e) {
       errs++;
-      bulkLog(`✗  row ${i + 1}: ${e.message}\n`);
+      bulkLog(`✗  ${truncateStr(row.title || "(untitled)", 60)}: ${e.message}\n`);
     }
     await new Promise(res => setTimeout(res, 150));
   }
+
+  // Only successfully-imported rows disappear — red/grey (skipped) and any
+  // that errored stay on screen for review.
+  bulkRows = bulkRows.filter(r => !imported.has(r));
+  renderBulkTable();
 
   document.getElementById("bulk-progress").textContent = `Done — ${done}/${total} imported, ${errs} errors.`;
   toast(`Imported ${done} studies.`);
