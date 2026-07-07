@@ -750,7 +750,7 @@ export async function onRequest({ request, env }) {
   }
 
   // ── POST /api/study ──────────────────────────────
-  if (method === "POST" && route === "study") {
+  if (method === "POST" && route === "study" && !param) {
     const { gene_name, rsid, snippet, authors, title, url, doi, year } = await request.json();
     if (!gene_name || !snippet) return err("gene_name and snippet required");
     await env.genetic.prepare(`
@@ -762,6 +762,72 @@ export async function onRequest({ request, env }) {
       url || null, doi || null, year || null
     ).run();
     return json({ ok: true });
+  }
+
+  // ── POST /api/study/scan ──────────────────────────
+  // Best-effort fill for a bulk-import row missing doi/title/authors/year.
+  // Brave's web search returns unstructured snippets, not bibliographic
+  // metadata, so this is a heuristic — it won't always find everything.
+  if (method === "POST" && route === "study" && param === "scan") {
+    const { query } = await request.json();
+    if (!query) return err("query required");
+    if (!env.BRAVE_API_KEY) return err("Brave API key not configured (env.BRAVE_API_KEY)", 500);
+
+    // Monthly usage cap — tracked in our own DB, not Brave's dashboard,
+    // since we're the only caller of this endpoint anyway.
+    const BRAVE_MONTHLY_CAP = 1000; // adjust to match your actual Brave plan limit
+    const BRAVE_WARN_AT     = BRAVE_MONTHLY_CAP - 10;
+    const yearMonth = new Date().toISOString().slice(0, 7); // e.g. "2026-07"
+
+    const usageRow = await env.genetic.prepare(
+      `SELECT count FROM api_usage WHERE service = 'brave' AND year_month = ?`
+    ).bind(yearMonth).first();
+    const priorCount = usageRow?.count || 0;
+
+    if (priorCount >= BRAVE_MONTHLY_CAP) {
+      return err(`Brave Search monthly cap (${BRAVE_MONTHLY_CAP}) reached for ${yearMonth}. Scan disabled until next month.`, 429);
+    }
+
+    const r = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
+      { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+    );
+    if (!r.ok) return err("Brave search failed: " + r.status, 502);
+    const data = await r.json();
+    const results = data?.web?.results || [];
+
+    let doi = null, title = null, authors = null, year = null;
+    for (const res of results) {
+      const blob = `${res.title || ""} ${res.description || ""} ${res.url || ""}`;
+      if (!doi) {
+        const doiM = blob.match(/10\.\d{4,9}\/[^\s"'<>,)]+/);
+        if (doiM) doi = doiM[0].replace(/[.,]+$/, "");
+      }
+      if (!year) {
+        const yearM = blob.match(/\b(19|20)\d{2}\b/);
+        if (yearM) year = parseInt(yearM[0]);
+      }
+      if (!title && res.title) {
+        title = res.title.replace(/\s*[-–|]\s*(PubMed|NCBI|PMC).*$/i, "").trim();
+      }
+      if (!authors && res.description) {
+        const authM = res.description.match(/^([A-Z][\w.'’-]+(?:,?\s+[A-Z][\w.'’-]+){1,6})\s*[-–]/);
+        if (authM) authors = authM[1].trim();
+      }
+      if (doi && title && authors && year) break;
+    }
+    if (authors && authors.length > 50) authors = authors.slice(0, 50).trim() + "…";
+
+    await env.genetic.prepare(`
+      INSERT INTO api_usage (service, year_month, count) VALUES ('brave', ?, 1)
+      ON CONFLICT(service, year_month) DO UPDATE SET count = count + 1
+    `).bind(yearMonth).run();
+    const newCount = priorCount + 1;
+    const warning = newCount >= BRAVE_WARN_AT
+      ? `Brave Search: ${BRAVE_MONTHLY_CAP - newCount} searches left this month.`
+      : null;
+
+    return json({ doi, title, authors, year, warning });
   }
 
   return err("Not found", 404);

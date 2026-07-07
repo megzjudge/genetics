@@ -841,6 +841,11 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .admin-table td { padding:10px 12px; border-bottom:1px solid var(--line); color:var(--muted); vertical-align:top; }
 .admin-table tr:hover td { background:var(--surface); }
 .admin-table .gene-sym { font-family:var(--mono); font-weight:600; color:var(--accent); font-size:13px; }
+.admin-table tr.bulk-row--flagged td { background:rgba(248,113,113,.08); }
+.admin-table tr.bulk-row--flagged td:first-child { border-left:2px solid #f87171; }
+.bulk-cell-empty { color:#f87171; font-style:italic; }
+.bulk-edit-row textarea, .bulk-edit-row input { width:100%; background:var(--card); border:1px solid var(--line); border-radius:4px; padding:6px 8px; color:var(--ink); font-family:var(--mono); font-size:12px; margin-bottom:6px; }
+.bulk-edit-row textarea { min-height:60px; resize:vertical; }
 
 .btn-danger { background:transparent; border:1px solid rgba(248,113,113,.3); color:#f87171; font-family:var(--mono); font-size:11px; padding:4px 10px; border-radius:3px; cursor:pointer; transition:background .12s; }
 .btn-danger:hover { background:rgba(248,113,113,.1); }

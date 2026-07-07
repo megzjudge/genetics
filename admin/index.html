@@ -40,6 +40,7 @@
       <button class="admin-tab active" onclick="switchTab('genes')">Genes</button>
       <button class="admin-tab" onclick="switchTab('snp')">Add SNP</button>
       <button class="admin-tab" onclick="switchTab('study')">Add Study</button>
+      <button class="admin-tab" onclick="switchTab('bulkstudy')">Add Bulk Studies</button>
       <button class="admin-tab" onclick="switchTab('group')">Add Group</button>
       <button class="admin-tab" onclick="switchTab('export')">Export</button>
       <button class="admin-tab" onclick="switchTab('fix')">Fix Data</button>
@@ -179,6 +180,41 @@
         </div>
         <div style="height:18px"></div>
         <button class="btn-sm" onclick="addStudy()">Save Study</button>
+      </div>
+    </div>
+
+    <!-- TAB: ADD BULK STUDIES -->
+    <div id="panel-bulkstudy" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Bulk Import from ResearchRabbit CSV</p>
+      <div class="admin-form">
+        <div class="field-row">
+          <div class="field">
+            <label>CSV File</label>
+            <input type="file" id="bulk-file" accept=".csv" onchange="bulkFileSelected()">
+          </div>
+          <div class="field">
+            <label>Gene — rsID</label>
+            <input type="text" id="bulk-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="bulkSnpPicked()">
+            <datalist id="bulk-snp-list"></datalist>
+          </div>
+        </div>
+        <div id="bulk-detect-note" style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:14px"></div>
+        <button class="btn-sm" id="bulk-scan-btn" onclick="bulkScanCsv()" disabled>Scan CSV</button>
+      </div>
+
+      <div id="bulk-review" style="display:none;margin-top:28px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="bulk-count"></span>
+          <button class="btn-sm" onclick="bulkImportAll()">Import All</button>
+        </div>
+        <table class="admin-table" id="bulk-table">
+          <thead><tr>
+            <th>Title</th><th>Authors</th><th>Year</th><th>Link</th><th></th>
+          </tr></thead>
+          <tbody id="bulk-tbody"></tbody>
+        </table>
+        <div id="bulk-progress" style="font-family:var(--mono);font-size:11px;color:var(--faint);margin:14px 0 6px"></div>
+        <pre id="bulk-log" style="font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:14px;min-height:60px;max-height:240px;overflow-y:auto;white-space:pre-wrap;margin:0"></pre>
       </div>
     </div>
 

@@ -3,6 +3,11 @@ let geneList = [];
 let groupList = [];
 let snpList = [];
 
+// ── Bulk study import state ───────────────────────
+let bulkRawCsv = null;
+let bulkGene = null, bulkRsid = null;
+let bulkRows = [];
+
 // ── Auth ──────────────────────────────────────────
 function tryAuth() {
   const pw = document.getElementById("auth-input").value.trim();
@@ -76,6 +81,7 @@ function init() {
     renderSnpTable();
     populateGeneSelects();
     populateGroupSelect();
+    populateBulkSnpList();
   });
 }
 
@@ -625,4 +631,267 @@ async function backfillSnps() {
   bfProgress(`Done — ${done}/${total} updated, ${errs} errors.`);
   bfLog(`\n✦ SNP backfill complete: ${done} updated, ${errs} errors.\n`);
   bfSetBtns(false);
+}
+
+// ── Bulk study import (ResearchRabbit CSV) ────────
+function escHtml(s) {
+  return (s == null ? "" : String(s)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function escAttr(s) {
+  return escHtml(s).replace(/"/g, "&quot;");
+}
+function truncateStr(s, n) {
+  if (!s) return "";
+  return s.length > n ? s.slice(0, n).trim() + "…" : s;
+}
+
+// Minimal RFC4180-style CSV parser — handles quoted fields, embedded commas/
+// newlines/escaped quotes ("") within quotes, since abstracts and author
+// lists routinely contain commas.
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i + 1];
+    if (inQuotes) {
+      if (c === '"' && next === '"') { field += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\r') { /* skip */ }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
+      else { field += c; }
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || r[0] !== "");
+}
+
+function bulkNormalize(v) {
+  if (v == null) return "";
+  const t = v.trim();
+  return /^\(missing[^)]*\)$/i.test(t) ? "" : t;
+}
+
+function populateBulkSnpList() {
+  const dl = document.getElementById("bulk-snp-list");
+  if (!dl) return;
+  dl.innerHTML = snpList.map(s => `<option value="${escAttr(s.gene_name + " — " + s.rsid)}">`).join("");
+}
+
+function bulkFileSelected() {
+  const file = document.getElementById("bulk-file").files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    bulkRawCsv = reader.result;
+    document.getElementById("bulk-scan-btn").disabled = false;
+  };
+  reader.readAsText(file);
+
+  const base = file.name.replace(/\.csv$/i, "");
+  const m = base.match(/^(rs\d+)/i);
+  const note = document.getElementById("bulk-detect-note");
+  if (m) {
+    const rsid = m[1].toLowerCase();
+    const match = snpList.find(s => s.rsid.toLowerCase() === rsid);
+    if (match) {
+      bulkGene = match.gene_name; bulkRsid = match.rsid;
+      document.getElementById("bulk-snp-picker").value = `${match.gene_name} — ${match.rsid}`;
+      note.textContent = `Detected ${match.rsid} (${match.gene_name}) from filename.`;
+      note.style.color = "var(--faint)";
+    } else {
+      bulkGene = null; bulkRsid = rsid;
+      note.textContent = `Filename suggests ${rsid}, but it's not in your SNP list yet — pick the gene manually.`;
+      note.style.color = "#f87171";
+    }
+  } else {
+    bulkGene = null; bulkRsid = null;
+    note.textContent = "Couldn't detect an rsID from the filename — pick the gene/rsID manually.";
+    note.style.color = "#f87171";
+  }
+}
+
+function bulkSnpPicked() {
+  const val = document.getElementById("bulk-snp-picker").value.trim();
+  let m = val.match(/^(.+?)\s*—\s*(rs\d+)$/i);
+  if (m) {
+    const match = snpList.find(s => s.gene_name === m[1].trim().toUpperCase() && s.rsid.toLowerCase() === m[2].toLowerCase());
+    if (match) { bulkGene = match.gene_name; bulkRsid = match.rsid; return; }
+  }
+  m = val.match(/^(rs\d+)$/i);
+  if (m) {
+    const match = snpList.find(s => s.rsid.toLowerCase() === m[1].toLowerCase());
+    if (match) { bulkGene = match.gene_name; bulkRsid = match.rsid; return; }
+  }
+  bulkGene = null; bulkRsid = null;
+}
+
+function bulkScanCsv() {
+  if (!bulkRawCsv) return toast("Choose a CSV file first.", true);
+  if (!bulkGene || !bulkRsid) return toast("Pick a gene/rsID first.", true);
+
+  const table = parseCsv(bulkRawCsv);
+  if (!table.length) return toast("CSV appears empty.", true);
+  const header = table[0].map(h => h.trim().toLowerCase());
+  const idx = {
+    doi: header.indexOf("doi"),
+    title: header.indexOf("title"),
+    authors: header.indexOf("authors"),
+    year: header.indexOf("year"),
+    abstract: header.indexOf("abstract"),
+    url: header.indexOf("pubmedid"),
+  };
+  bulkRows = table.slice(1).map(r => ({
+    doi:      bulkNormalize(r[idx.doi]),
+    title:    bulkNormalize(r[idx.title]),
+    authors:  bulkNormalize(r[idx.authors]),
+    year:     bulkNormalize(r[idx.year]),
+    abstract: bulkNormalize(r[idx.abstract]),
+    url:      bulkNormalize(r[idx.url]),
+    _open:    false,
+  }));
+  renderBulkTable();
+  document.getElementById("bulk-review").style.display = "block";
+}
+
+function bulkIsFlagged(row) {
+  return !row.title || !row.authors || !row.year || !row.abstract || (!row.url && !row.doi);
+}
+
+function bulkField(i, key, value) {
+  bulkRows[i][key] = value;
+}
+
+function bulkToggleEdit(i) {
+  bulkRows[i]._open = !bulkRows[i]._open;
+  renderBulkTable();
+}
+
+function bulkRemoveRow(i) {
+  bulkRows.splice(i, 1);
+  renderBulkTable();
+}
+
+async function bulkScanRow(i) {
+  const row = bulkRows[i];
+  const query = [row.title, row.authors].filter(Boolean).join(" ") || (row.abstract ? row.abstract.slice(0, 80) : "");
+  if (!query) return toast("Not enough info in this row to search.", true);
+  try {
+    const r = await apiFetch("/api/study/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.status);
+    if (!row.doi && d.doi) row.doi = d.doi;
+    if (!row.title && d.title) row.title = d.title;
+    if (!row.authors && d.authors) row.authors = d.authors;
+    if (!row.year && d.year) row.year = String(d.year);
+    renderBulkTable();
+    toast(d.warning || "Scan complete — check the filled fields.", !!d.warning);
+  } catch (e) {
+    toast("Scan failed: " + e.message, true);
+  }
+}
+
+function renderBulkTable() {
+  const tbody = document.getElementById("bulk-tbody");
+  document.getElementById("bulk-count").textContent = `${bulkRows.length} rows`;
+  tbody.innerHTML = bulkRows.map((row, i) => {
+    const flagged = bulkIsFlagged(row);
+    const link = row.url || (row.doi ? `https://doi.org/${row.doi}` : "");
+    const compact = `
+    <tr class="${flagged ? "bulk-row--flagged" : ""}">
+      <td title="${escAttr(row.title)}">${row.title ? escHtml(truncateStr(row.title, 60)) : '<span class="bulk-cell-empty">missing</span>'}</td>
+      <td title="${escAttr(row.authors)}">${row.authors ? escHtml(truncateStr(row.authors, 40)) : '<span class="bulk-cell-empty">missing</span>'}</td>
+      <td>${row.year ? escHtml(row.year) : '<span class="bulk-cell-empty">—</span>'}</td>
+      <td>${link ? `<a href="${escAttr(link)}" target="_blank" rel="noopener">↗</a>` : '<span class="bulk-cell-empty">none</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="bulkToggleEdit(${i})">${row._open ? "Done" : "Edit"}</button>
+        <button class="btn-danger" onclick="bulkRemoveRow(${i})">Remove</button>
+      </td>
+    </tr>`;
+    const editRow = `
+    <tr${row._open ? "" : ' style="display:none"'}>
+      <td colspan="5" class="bulk-edit-row">
+        <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Title</label>
+        <input type="text" value="${escAttr(row.title)}" oninput="bulkField(${i},'title',this.value)">
+        <div style="display:flex;gap:10px">
+          <div style="flex:1">
+            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Authors</label>
+            <input type="text" value="${escAttr(row.authors)}" oninput="bulkField(${i},'authors',this.value)">
+          </div>
+          <div style="width:100px">
+            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Year</label>
+            <input type="number" value="${escAttr(row.year)}" oninput="bulkField(${i},'year',this.value)">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1">
+            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">URL</label>
+            <input type="text" value="${escAttr(row.url)}" oninput="bulkField(${i},'url',this.value)">
+          </div>
+          <div style="flex:1">
+            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">DOI</label>
+            <input type="text" value="${escAttr(row.doi)}" oninput="bulkField(${i},'doi',this.value)">
+          </div>
+        </div>
+        <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Abstract / Snippet</label>
+        <textarea oninput="bulkField(${i},'abstract',this.value)">${escHtml(row.abstract)}</textarea>
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="bulkScanRow(${i})">Scan for missing details</button>
+      </td>
+    </tr>`;
+    return compact + editRow;
+  }).join("");
+}
+
+function bulkLog(msg) {
+  const el = document.getElementById("bulk-log");
+  el.textContent += msg;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function bulkImportAll() {
+  if (!bulkGene || !bulkRsid) return toast("Pick a gene/rsID first.", true);
+  if (!bulkRows.length) return toast("Nothing to import.", true);
+  const total = bulkRows.length;
+  let done = 0, errs = 0;
+  document.getElementById("bulk-log").textContent = "";
+
+  for (let i = 0; i < bulkRows.length; i++) {
+    const row = bulkRows[i];
+    document.getElementById("bulk-progress").textContent = `${i + 1} / ${total}`;
+    const snippet = row.abstract || row.title;
+    if (!snippet) {
+      errs++;
+      bulkLog(`✗  row ${i + 1}: no abstract or title, skipped\n`);
+      continue;
+    }
+    try {
+      const r = await apiFetch("/api/study", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gene_name: bulkGene, rsid: bulkRsid,
+          snippet, authors: row.authors || null, title: row.title || null,
+          url: row.url || null, doi: row.doi || null,
+          year: row.year ? parseInt(row.year) : null,
+        }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      done++;
+      bulkLog(`✓  ${truncateStr(row.title || "(untitled)", 60)}\n`);
+    } catch (e) {
+      errs++;
+      bulkLog(`✗  row ${i + 1}: ${e.message}\n`);
+    }
+    await new Promise(res => setTimeout(res, 150));
+  }
+
+  document.getElementById("bulk-progress").textContent = `Done — ${done}/${total} imported, ${errs} errors.`;
+  toast(`Imported ${done} studies.`);
 }
