@@ -49,15 +49,28 @@ function toast(msg, err = false) {
 }
 
 // ── Init ──────────────────────────────────────────
+function safeFetchJson(path) {
+  return apiFetch(path)
+    .then(async r => {
+      if (!r.ok) throw new Error(`${path} → ${r.status}`);
+      return r.json();
+    })
+    .catch(e => {
+      console.error("Failed to load", path, e);
+      toast(`Failed to load ${path}`, true);
+      return null;
+    });
+}
+
 function init() {
   Promise.all([
-    apiFetch("/api/genes").then(r => r.json()),
-    apiFetch("/api/groups").then(r => r.json()),
-    apiFetch("/api/snps").then(r => r.json()),
+    safeFetchJson("/api/genes"),
+    safeFetchJson("/api/groups"),
+    safeFetchJson("/api/snps"),
   ]).then(([genes, groups, snps]) => {
-    geneList  = genes.genes   || genes   || [];
-    groupList = groups.groups || groups  || [];
-    snpList   = snps.snps     || snps    || [];
+    geneList  = (genes  && (genes.genes   || genes))  || [];
+    groupList = (groups && (groups.groups || groups)) || [];
+    snpList   = (snps   && (snps.snps     || snps))   || [];
     renderGeneTable();
     renderGroupTable();
     renderSnpTable();
@@ -182,7 +195,11 @@ function saveGene() {
 }
 
 function deleteGene(name) {
-  if (!confirm(`Delete ${name} and all its studies, alerts, and SNPs? This cannot be undone.`)) return;
+  const affected = snpList.filter(s => s.gene_name === name).map(s => s.rsid);
+  const msg = affected.length
+    ? `Delete ${name}, its studies/alerts, and these ${affected.length} SNPs: ${affected.join(", ")}? This cannot be undone.`
+    : `Delete ${name} and all its studies/alerts? This cannot be undone.`;
+  if (!confirm(msg)) return;
   apiFetch(`/api/gene/${name}`, { method: "DELETE" }).then(r => {
     if (r.ok) { toast("Deleted."); init(); }
     else toast("Delete failed.", true);
@@ -228,7 +245,7 @@ function renderSnpTable() {
     <tr>
       <td><span class="gene-sym">${s.gene_name}</span></td>
       <td style="font-family:var(--mono);font-size:12px"><a href="/snp/${s.rsid}" target="_blank" style="color:var(--accent);text-decoration:none">${s.rsid}</a></td>
-      <td style="font-family:var(--mono);font-size:12px">${s.genotype || ""}</td>
+      <td style="font-family:var(--mono);font-size:12px">${s.alleles || ""}</td>
       <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
       <td>${rrBadge(s)}</td>
     </tr>`).join("");
@@ -285,11 +302,10 @@ async function lookupSnp() {
     snpLookupData = d;
 
     document.getElementById("prev-rsid").textContent = d.rsid + (d.protein_change ? " · " + d.protein_change : "");
-    document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome : "";
+    document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome + (d.position ? ":" + d.position : "") : "";
 
     document.getElementById("prev-gene").value = d.gene_name || "";
     document.getElementById("prev-consequence").textContent = d.consequence || "";
-    document.getElementById("prev-magnitude").textContent = d.magnitude != null ? "Magnitude " + d.magnitude : "";
     document.getElementById("prev-summary").textContent = d.summary || "";
     document.getElementById("prev-ncbi").href = "https://www.ncbi.nlm.nih.gov/snp/" + d.rsid;
     document.getElementById("prev-snpedia").href = "https://www.snpedia.com/index.php/" + d.rsid;
@@ -317,14 +333,16 @@ function saveSnp() {
   const body = {
     gene_name:      chosenGene,
     rsid:           snpLookupData.rsid,
-    genotype:       document.getElementById("snp-genotype").value.trim().toUpperCase() || null,
-    chromosome:     snpLookupData.chromosome,
-    magnitude:      snpLookupData.magnitude,
-    status:         "pending",
-    notes:          [snpLookupData.protein_change, snpLookupData.summary].filter(Boolean).join(" — ") || null,
-    ref_allele:     snpLookupData.ref_allele    || null,
-    alt_allele:     snpLookupData.alt_allele    || null,
+    // Personal — specific to the person, not the SNP itself
+    alleles:        document.getElementById("snp-alleles").value.trim().toUpperCase() || null,
+    // SNP-level facts — same for anyone, stored in snps
+    chromosome:     snpLookupData.chromosome     || null,
+    position:       snpLookupData.position       || null,
+    ref_allele:     snpLookupData.ref_allele     || null,
+    alt_allele:     snpLookupData.alt_allele     || null,
     protein_change: snpLookupData.protein_change || null,
+    consequence:    snpLookupData.consequence    || null,
+    summary:        snpLookupData.summary        || null,
   };
   apiFetch("/api/snp", {
     method: "POST",
@@ -333,10 +351,10 @@ function saveSnp() {
   }).then(async r => {
     if (r.ok) {
       const d = await r.json().catch(() => ({}));
-      toast("SNP saved." + (d.frequencies_fetched ? " " + d.frequencies_fetched + " freq rows." : ""));
+      toast("SNP saved." + (d.frequencies_fetched ? " " + d.frequencies_fetched + " freq rows." : "") + (d.studies_found ? " " + d.studies_found + " studies found." : ""));
       clearSnpPreview();
       document.getElementById("snp-rsid").value = "";
-      document.getElementById("snp-genotype").value = "";
+      document.getElementById("snp-alleles").value = "";
     } else {
       const d = await r.json().catch(() => ({}));
       toast("Error: " + (d.error || r.status), true);
@@ -585,7 +603,11 @@ async function backfillSnps() {
       const pr = await apiFetch(`/api/snp/${snp.rsid}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change }),
+        body: JSON.stringify({
+          ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
+          consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
+          summary: ld.summary,
+        }),
       });
       if (!pr.ok) throw new Error("PATCH failed " + pr.status);
 

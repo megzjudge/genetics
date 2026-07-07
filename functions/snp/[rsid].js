@@ -43,13 +43,16 @@ export async function onRequestGet({ params, env }) {
 
   const [snp, freqsRes] = await Promise.all([
     env.genetic.prepare(
-      `SELECT g.*, gi.full_name, gi.maplocation
+      `SELECT g.rsid, g.alleles, g.notes, g.gene_name, gi.full_name, gi.maplocation,
+              si.chromosome, si.position, si.ref_allele, si.alt_allele,
+              si.protein_change, si.consequence, si.summary
        FROM personal g
        LEFT JOIN genes gi ON gi.gene_name = g.gene_name
+       LEFT JOIN snps si ON si.rsid = g.rsid
        WHERE g.rsid = ?`
     ).bind(rsid).first(),
     env.genetic.prepare(
-      `SELECT * FROM snps WHERE rsid = ?
+      `SELECT * FROM snp_pop WHERE rsid = ?
        ORDER BY pop_type = 'Total' DESC, population ASC`
     ).bind(rsid).all(),
   ]);
@@ -102,7 +105,6 @@ ${foot()}
   if (geneName)           descParts.push(`${geneName} variant`);
   if (chrNum)             descParts.push(`chromosome ${chrNum}`);
   if (snp.consequence)    descParts.push(snp.consequence);
-  if (snp.magnitude != null) descParts.push(`magnitude ${snp.magnitude}`);
   const descMeta = esc(descParts.join(", ") || `${rsid} — variant data and population frequencies.`);
 
   // Frequency table rows
@@ -166,10 +168,9 @@ ${nav()}
 
       <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 0 20px;font-family:var(--mono);font-size:12px;color:var(--muted)">
         ${geneName ? `<span>Gene: <a href="/gene/${esc(geneName)}" style="color:var(--accent)">${esc(geneName)}</a>${snp.full_name ? ` — ${esc(snp.full_name)}` : ""}</span>` : ""}
-        ${chrNum   ? `<span>Chr ${esc(chrNum)}</span>` : ""}
+        ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
         ${snp.consequence ? `<span>${esc(snp.consequence)}</span>` : ""}
-        ${snp.magnitude != null ? `<span>Magnitude ${snp.magnitude}</span>` : ""}
       </div>
 
       ${snp.notes ? `<p class="gene-desc">${esc(snp.notes)}</p>` : ""}

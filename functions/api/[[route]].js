@@ -117,7 +117,7 @@ async function fetchNcbiFreqs(rsid, env) {
 async function storeFreqs(rsid, rows, env) {
   for (const row of rows) {
     await env.genetic.prepare(`
-      INSERT OR REPLACE INTO snps
+      INSERT OR REPLACE INTO snp_pop
         (rsid, population, pop_type, sample_size,
          allele1, allele1_freq, allele2, allele2_freq,
          geno_hom1, geno_het, geno_hom2)
@@ -296,9 +296,11 @@ export async function onRequest({ request, env }) {
 
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
-    const { results } = await env.genetic.prepare(
-      `SELECT gene_name, rsid, genotype, chromosome, ref_allele, alt_allele, protein_change, rr_url FROM personal ORDER BY gene_name, rsid`
-    ).all();
+    const { results } = await env.genetic.prepare(`
+      SELECT p.gene_name, p.rsid, p.alleles, s.rr_url
+      FROM personal p LEFT JOIN snps s ON s.rsid = p.rsid
+      ORDER BY p.gene_name, p.rsid
+    `).all();
     return json({ snps: results || [] });
   }
 
@@ -326,7 +328,12 @@ export async function onRequest({ request, env }) {
       `).bind(name).all(),
       env.genetic.prepare(`SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC`).bind(name).all(),
       env.genetic.prepare(`SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC`).bind(name).all(),
-      env.genetic.prepare(`SELECT * FROM personal WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
+      env.genetic.prepare(`
+        SELECT p.*, si.chromosome, si.position, si.ref_allele, si.alt_allele,
+               si.protein_change, si.consequence, si.summary
+        FROM personal p LEFT JOIN snps si ON si.rsid = p.rsid
+        WHERE p.gene_name = ? ORDER BY p.rsid ASC
+      `).bind(name).all(),
     ]);
     if (!info) return err("Gene not found", 404);
     return json({ info, groups: groups.results, studies: studies.results, alerts: alerts.results, snps: snps.results });
@@ -337,20 +344,27 @@ export async function onRequest({ request, env }) {
     const name = param.toUpperCase();
     const [studies, snps] = await Promise.all([
       env.genetic.prepare(`SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC`).bind(name).all(),
-      env.genetic.prepare(`SELECT * FROM personal WHERE gene_name = ? ORDER BY magnitude IS NULL, magnitude DESC`).bind(name).all(),
+      env.genetic.prepare(`
+        SELECT p.gene_name, p.rsid, p.alleles, p.notes,
+               si.chromosome, si.position, si.ref_allele, si.alt_allele,
+               si.protein_change, si.consequence, si.summary
+        FROM personal p LEFT JOIN snps si ON si.rsid = p.rsid
+        WHERE p.gene_name = ? ORDER BY p.rsid ASC
+      `).bind(name).all(),
     ]);
     const rows = [];
-    rows.push("type,gene_name,rsid,snippet,authors,title,url,doi,year,genotype,chromosome,magnitude,status,notes");
+    rows.push("type,gene_name,rsid,snippet,authors,title,url,doi,year,alleles,chromosome,position,ref_allele,alt_allele,protein_change,consequence,summary,notes");
     for (const s of studies.results || []) {
       rows.push([
         "study", s.gene_name, s.rsid, s.snippet, s.authors, s.title, s.url, s.doi, s.year,
-        "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
       ].map(csvEscape).join(","));
     }
     for (const s of snps.results || []) {
       rows.push([
         "snp", s.gene_name, s.rsid, "", "", "", "", "", "",
-        s.genotype, s.chromosome, s.magnitude, s.status, s.notes,
+        s.alleles, s.chromosome, s.position, s.ref_allele, s.alt_allele,
+        s.protein_change, s.consequence, s.summary, s.notes,
       ].map(csvEscape).join(","));
     }
     return new Response(rows.join("\n"), {
@@ -395,20 +409,32 @@ export async function onRequest({ request, env }) {
   // ── PATCH /api/snp/:rsid ──────────────────────────
   if (method === "PATCH" && route === "snp" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
-    const { ref_allele, alt_allele, protein_change, rr_url } = await request.json();
-    if (ref_allele || alt_allele || protein_change) {
+    const { ref_allele, alt_allele, protein_change, consequence,
+            chromosome, position, summary, rr_url } = await request.json();
+    if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
-        UPDATE personal
-        SET ref_allele    = COALESCE(?, ref_allele),
-            alt_allele    = COALESCE(?, alt_allele),
-            protein_change = COALESCE(?, protein_change)
-        WHERE rsid = ?
-      `).bind(ref_allele || null, alt_allele || null, protein_change || null, rsid).run();
+        INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(rsid) DO UPDATE SET
+          ref_allele     = COALESCE(excluded.ref_allele, snps.ref_allele),
+          alt_allele     = COALESCE(excluded.alt_allele, snps.alt_allele),
+          protein_change = COALESCE(excluded.protein_change, snps.protein_change),
+          consequence    = COALESCE(excluded.consequence, snps.consequence),
+          chromosome     = COALESCE(excluded.chromosome, snps.chromosome),
+          position       = COALESCE(excluded.position, snps.position),
+          summary        = COALESCE(excluded.summary, snps.summary)
+      `).bind(
+        rsid, ref_allele || null, alt_allele || null, protein_change || null,
+        consequence || null, chromosome || null, position || null, summary || null
+      ).run();
     }
-    // rr_url is set directly (not COALESCEd) so an empty string can clear it back to "no"
+    // rr_url is set directly (not COALESCEd) so an empty string can clear it back to "no".
+    // Upsert (not plain UPDATE) in case this SNP's snps row doesn't exist yet.
     if (rr_url !== undefined) {
-      await env.genetic.prepare(`UPDATE personal SET rr_url = ? WHERE rsid = ?`)
-        .bind(rr_url || null, rsid).run();
+      await env.genetic.prepare(`
+        INSERT INTO snps (rsid, rr_url) VALUES (?, ?)
+        ON CONFLICT(rsid) DO UPDATE SET rr_url = excluded.rr_url
+      `).bind(rsid, rr_url || null).run();
     }
     return json({ ok: true });
   }
@@ -418,6 +444,7 @@ export async function onRequest({ request, env }) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     await Promise.all([
       env.genetic.prepare(`DELETE FROM personal WHERE rsid = ?`).bind(rsid).run(),
+      env.genetic.prepare(`DELETE FROM snp_pop  WHERE rsid = ?`).bind(rsid).run(),
       env.genetic.prepare(`DELETE FROM snps     WHERE rsid = ?`).bind(rsid).run(),
     ]);
     return json({ ok: true });
@@ -541,12 +568,22 @@ export async function onRequest({ request, env }) {
   // ── DELETE /api/gene/:name ───────────────────────
   if (method === "DELETE" && route === "gene" && param) {
     const name = param.toUpperCase();
+
+    // snp_pop has no gene_name column (only rsid), so capture the affected
+    // rsids up front rather than racing a subquery against the deletes below.
+    const { results: rows } = await env.genetic.prepare(
+      `SELECT rsid FROM personal WHERE gene_name = ?`
+    ).bind(name).all();
+    const rsids = (rows || []).map(r => r.rsid);
+
     await Promise.all([
       env.genetic.prepare(`DELETE FROM genes         WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM gene_topics   WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM personal      WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM studies       WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM email_alerts  WHERE gene_name = ?`).bind(name).run(),
+      env.genetic.prepare(`DELETE FROM snps          WHERE gene_name = ?`).bind(name).run(),
+      ...rsids.map(rsid => env.genetic.prepare(`DELETE FROM snp_pop WHERE rsid = ?`).bind(rsid).run()),
     ]);
     return json({ ok: true, deleted: name });
   }
@@ -569,7 +606,7 @@ export async function onRequest({ request, env }) {
 
     // Parse NCBI
     let gene_name = null, chromosome = null, consequence = null, protein_change = null;
-    let ref_allele = null, alt_allele = null;
+    let ref_allele = null, alt_allele = null, position = null;
     const genes_found = [];
     const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
     if (ncbi) {
@@ -606,7 +643,7 @@ export async function onRequest({ request, env }) {
         const c = seqIdToChrom(pl.seq_id);
         if (c) {
           if (!chromosome) chromosome = c;
-          // Extract ref and alt alleles from chromosome-level SPDI
+          // Extract ref and alt alleles (and exact base-pair position) from chromosome-level SPDI
           if (!ref_allele || !alt_allele) {
             for (const a of (pl.alleles || [])) {
               const spdi = a.allele?.spdi;
@@ -615,6 +652,7 @@ export async function onRequest({ request, env }) {
               if (!alt_allele && spdi.deleted_sequence !== spdi.inserted_sequence) {
                 alt_allele = spdi.inserted_sequence || null;
               }
+              if (position == null && spdi.position != null) position = spdi.position + 1;
             }
           }
           if (chromosome && ref_allele && alt_allele) break;
@@ -638,42 +676,62 @@ export async function onRequest({ request, env }) {
     }
 
     // Parse SNPedia
-    let magnitude = null, summary = null;
+    let summary = null;
     const snpedia = snpediaRes.status === "fulfilled" ? snpediaRes.value : null;
     if (snpedia) {
       const pages = snpedia?.query?.pages || {};
       const page  = Object.values(pages)[0];
       const wikitext = page?.revisions?.[0]?.["*"]
                     || page?.revisions?.[0]?.slots?.main?.["*"] || "";
-      const magM = wikitext.match(/\|\s*[Mm]agnitude\s*=\s*([\d.]+)/);
-      if (magM) magnitude = parseFloat(magM[1]);
       const sumM = wikitext.match(/\|\s*[Ss]ummary\s*=\s*([^\n|{}]+)/);
       if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
     }
 
-    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, consequence, protein_change, ref_allele, alt_allele, magnitude, summary });
+    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, position, consequence, protein_change, ref_allele, alt_allele, summary });
   }
 
   // ── POST /api/snp ────────────────────────────────
   if (method === "POST" && route === "snp" && !param) {
-    const { gene_name, rsid, genotype, chromosome, magnitude, status, notes,
-            ref_allele, alt_allele, protein_change } = await request.json();
+    const { gene_name, rsid, alleles, notes,
+            chromosome, position, ref_allele, alt_allele,
+            protein_change, consequence, summary } = await request.json();
     if (!gene_name || !rsid) return err("gene_name and rsid required");
+    const name = gene_name.toUpperCase();
+
+    // personal — only what's specific to the individual: which alleles they carry
     await env.genetic.prepare(`
-      INSERT OR REPLACE INTO personal
-        (gene_name, rsid, genotype, chromosome, magnitude, status, notes, ref_allele, alt_allele, protein_change)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO personal (gene_name, rsid, alleles, notes)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(rsid) DO UPDATE SET
+        gene_name = excluded.gene_name,
+        alleles   = excluded.alleles,
+        notes     = COALESCE(excluded.notes, personal.notes)
+    `).bind(name, rsid, alleles || null, notes || null).run();
+
+    // snps — facts about the SNP itself, same for anyone
+    await env.genetic.prepare(`
+      INSERT INTO snps (rsid, gene_name, chromosome, position, ref_allele, alt_allele, protein_change, consequence, summary)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(rsid) DO UPDATE SET
+        gene_name      = excluded.gene_name,
+        chromosome     = excluded.chromosome,
+        position       = excluded.position,
+        ref_allele     = excluded.ref_allele,
+        alt_allele     = excluded.alt_allele,
+        protein_change = excluded.protein_change,
+        consequence    = excluded.consequence,
+        summary        = excluded.summary
     `).bind(
-      gene_name.toUpperCase(), rsid, genotype || null,
-      chromosome || null, magnitude ?? null,
-      status || "pending", notes || null,
-      ref_allele || null, alt_allele || null, protein_change || null
+      rsid, name, chromosome || null, position || null,
+      ref_allele || null, alt_allele || null, protein_change || null,
+      consequence || null, summary || null
     ).run();
+
     // Fetch NCBI ALFA population frequencies automatically
     const freqRows = await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
     // Auto-search PubMed + Semantic Scholar for studies mentioning this rsID
-    const studiesInserted = await insertAutoStudies(gene_name, rsid, env);
+    const studiesInserted = await insertAutoStudies(name, rsid, env);
     return json({ ok: true, frequencies_fetched: freqRows.length, studies_found: studiesInserted });
   }
 
@@ -681,7 +739,7 @@ export async function onRequest({ request, env }) {
   if (method === "GET" && route === "freqs" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { results } = await env.genetic.prepare(`
-      SELECT * FROM snps WHERE rsid = ?
+      SELECT * FROM snp_pop WHERE rsid = ?
       ORDER BY pop_type = 'Total' DESC, population ASC
     `).bind(rsid).all();
     return json({ rsid, frequencies: results || [] });

@@ -59,7 +59,10 @@ export async function onRequestGet({ params, env }) {
       SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC
     `).bind(geneName).all(),
     env.genetic.prepare(`
-      SELECT g.*, (
+      SELECT g.rsid, g.alleles, g.notes, g.gene_name,
+             si.chromosome, si.position, si.consequence,
+             si.ref_allele, si.alt_allele, si.protein_change, si.summary,
+             (
         SELECT json_group_array(json_object(
           'population', f.population, 'pop_type', f.pop_type,
           'sample_size', f.sample_size,
@@ -67,11 +70,12 @@ export async function onRequestGet({ params, env }) {
           'allele2', f.allele2, 'allele2_freq', f.allele2_freq,
           'geno_hom1', f.geno_hom1, 'geno_het', f.geno_het, 'geno_hom2', f.geno_hom2
         ))
-        FROM snps f WHERE f.rsid = g.rsid
+        FROM snp_pop f WHERE f.rsid = g.rsid
         ORDER BY f.pop_type = 'Total' DESC, f.population ASC
       ) AS freq_json
-      FROM personal g WHERE g.gene_name = ?
-      ORDER BY g.magnitude IS NULL, g.magnitude DESC
+      FROM personal g LEFT JOIN snps si ON si.rsid = g.rsid
+      WHERE g.gene_name = ?
+      ORDER BY g.rsid ASC
     `).bind(geneName).all(),
   ]);
 
@@ -167,10 +171,8 @@ ${nav()}
             return `<div class="snp-block">
           <div class="snp-row">
             <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
-            <span class="snp-genotype">${esc(s.genotype || "—")}</span>
-            ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}</span>` : ""}
-            ${s.magnitude != null ? `<span class="snp-meta-item">Mag ${s.magnitude}</span>` : ""}
-            <span class="snp-status snp-status--${esc(s.status || "pending")}">${esc(s.status || "pending")}</span>
+            <span class="snp-genotype">${esc(s.alleles || "—")}</span>
+            ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
           </div>
           ${s.notes ? `<p class="snp-notes">${esc(s.notes)}</p>` : ""}
           ${freqs.length > 0 ? `<div class="freq-table">

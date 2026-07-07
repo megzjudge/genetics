@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Genetics Databases | Megan Judge</title>
-  <meta name="description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar — with descriptions of what each one does.">
+  <meta name="description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, ClinVar, Google Scholar, LOVD, VarSome, and GWAS Catalog — with descriptions of what each one does.">
   <meta name="author" content="Megan Judge">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://genetics.jdge.cc/databases">
   <meta property="og:title" content="Genetics Databases | Megan Judge">
-  <meta property="og:description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, and ClinVar.">
+  <meta property="og:description" content="The public databases behind modern genetics research — ResearchRabbit, dbSNP, SNPedia, GeneCards, gnomAD, OMIM, ClinVar, Google Scholar, LOVD, VarSome, and GWAS Catalog.">
   <meta property="og:url" content="https://genetics.jdge.cc/databases">
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://genetics.jdge.cc/images/icon_full.png">
@@ -41,8 +41,9 @@
         Where the Data Lives
       </h1>
       <p style="font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0 auto;line-height:1.6">
-        Seven public databases and tools that underpin modern genetics research. This site draws on all of them —
-        from variant registration to population frequencies to clinical interpretation to literature discovery.
+        Eleven public databases and tools that underpin modern genetics research. This site draws on most of them
+        directly — from variant registration to population frequencies to clinical interpretation to literature
+        discovery — plus a few more worth knowing about for your own digging.
       </p>
     </div>
   </section>
@@ -57,163 +58,235 @@
 
     <div style="margin:36px 0;display:flex;flex-direction:column">
 
-      <a href="https://www.researchrabbitapp.com/" target="_blank" rel="noopener" class="db-card-link">
-        <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <img src="/images/logo_researchrabbit.ico" alt="ResearchRabbit" width="24" height="24"
-               style="image-rendering:crisp-edges">
-        </div>
-        <div class="db-card-text">
-          <div class="db-card-title">
-            ResearchRabbit
-            <span class="db-card-domain">researchrabbit.ai</span>
+      <div class="db-card">
+        <a href="https://www.researchrabbitapp.com/" target="_blank" rel="noopener" class="db-card-main">
+          <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <img src="/images/logo_researchrabbit.ico" alt="ResearchRabbit" width="24" height="24"
+                 style="image-rendering:crisp-edges">
           </div>
-          <p class="db-card-desc">
-            A free literature-mapping tool that builds citation networks around a paper or search
-            term — surfacing related, similar, and citing work far beyond what a plain keyword search
-            returns. Used here to widen the study search around a variant beyond what PubMed and
-            Semantic Scholar turn up directly.
-          </p>
-          <span class="db-card-action">researchrabbit.ai ↗</span>
-        </div>
-      </a>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              ResearchRabbit
+              <span class="db-card-domain">researchrabbit.ai</span>
+            </div>
+            <p class="db-card-desc">
+              A free literature-mapping tool that builds citation networks around a paper or search
+              term — surfacing related, similar, and citing work far beyond what a plain keyword search
+              returns. Used here to widen the study search around a variant beyond what PubMed and
+              Semantic Scholar turn up directly.
+            </p>
+          </div>
+        </a>
+        <a href="https://www.researchrabbitapp.com/" target="_blank" rel="noopener" class="btn-sm db-card-btn">researchrabbit.ai ↗</a>
+      </div>
 
-      <a href="https://www.ncbi.nlm.nih.gov/snp/rs2236225" target="_blank" rel="noopener" class="db-card-link">
-        <img src="/images/logo_dbsnp.png" alt="NCBI dbSNP" width="52" height="52"
-             style="border-radius:10px;flex-shrink:0;display:block">
-        <div class="db-card-text">
-          <div class="db-card-title">
-            NCBI dbSNP
-            <span class="db-card-domain">ncbi.nlm.nih.gov/snp</span>
+      <div class="db-card">
+        <a href="https://www.ncbi.nlm.nih.gov/snp/" target="_blank" rel="noopener" class="db-card-main">
+          <img src="/images/logo_dbsnp.png" alt="NCBI dbSNP" width="52" height="52"
+               style="border-radius:10px;flex-shrink:0;display:block">
+          <div class="db-card-text">
+            <div class="db-card-title">
+              NCBI dbSNP
+              <span class="db-card-domain">ncbi.nlm.nih.gov/snp</span>
+            </div>
+            <p class="db-card-desc">
+              The authoritative registry for every known SNP. Run by the National Center for
+              Biotechnology Information, it assigns each variant its rsID — the universal naming
+              system used across all genetics research globally. The source of allele frequencies,
+              consequence annotations (synonymous, missense, stop-gained), and chromosomal coordinates.
+            </p>
           </div>
-          <p class="db-card-desc">
-            The authoritative registry for every known SNP. Run by the National Center for
-            Biotechnology Information, it assigns each variant its rsID — the universal naming
-            system used across all genetics research globally. The source of allele frequencies,
-            consequence annotations (synonymous, missense, stop-gained), and chromosomal coordinates.
-          </p>
-          <span class="db-card-action">rs2236225 — example SNP ↗</span>
-        </div>
-      </a>
+        </a>
+        <a href="https://www.ncbi.nlm.nih.gov/snp/rs2236225" target="_blank" rel="noopener" class="btn-sm db-card-btn">Check out rs2236225 — example SNP ↗</a>
+      </div>
 
-      <a href="https://www.snpedia.com/index.php/rs2236225" target="_blank" rel="noopener" class="db-card-link">
-        <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <img src="/images/logo_snpedia.png" alt="SNPedia" width="24" height="24"
-               style="image-rendering:crisp-edges">
-        </div>
-        <div class="db-card-text">
-          <div class="db-card-title">
-            SNPedia
-            <span class="db-card-domain">snpedia.com</span>
+      <div class="db-card">
+        <a href="https://www.snpedia.com/" target="_blank" rel="noopener" class="db-card-main">
+          <div class="db-card-badge">SP</div>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              SNPedia
+              <span class="db-card-domain">snpedia.com</span>
+            </div>
+            <p class="db-card-desc">
+              A community-maintained wiki of clinical SNP interpretations. Each rsID page carries a
+              magnitude score (0–10) summarising the strength of associated evidence, links to
+              supporting studies, and plain-language summaries of what the variant is thought to do.
+              Less formal than ClinVar, but often more readable — and frequently updated faster.
+            </p>
           </div>
-          <p class="db-card-desc">
-            A community-maintained wiki of clinical SNP interpretations. Each rsID page carries a
-            magnitude score (0–10) summarising the strength of associated evidence, links to
-            supporting studies, and plain-language summaries of what the variant is thought to do.
-            Less formal than ClinVar, but often more readable — and frequently updated faster.
-          </p>
-          <span class="db-card-action">rs2236225 — example SNP ↗</span>
-        </div>
-      </a>
+        </a>
+        <a href="https://www.snpedia.com/index.php/rs2236225" target="_blank" rel="noopener" class="btn-sm db-card-btn">Check out rs2236225 — example SNP ↗</a>
+      </div>
 
-      <a href="https://www.genecards.org/card/MTHFD1?Search=rs2236225#Variants_Variants" target="_blank" rel="noopener" class="db-card-link">
-        <img src="/images/logo_genecards.png" alt="GeneCards" width="52" height="52"
-             style="border-radius:10px;flex-shrink:0;display:block;object-fit:cover">
-        <div class="db-card-text">
-          <div class="db-card-title">
-            GeneCards
-            <span class="db-card-domain">genecards.org</span>
+      <div class="db-card">
+        <a href="https://www.genecards.org/" target="_blank" rel="noopener" class="db-card-main">
+          <img src="/images/logo_genecards.png" alt="GeneCards" width="52" height="52"
+               style="border-radius:10px;flex-shrink:0;display:block;object-fit:cover">
+          <div class="db-card-text">
+            <div class="db-card-title">
+              GeneCards
+              <span class="db-card-domain">genecards.org</span>
+            </div>
+            <p class="db-card-desc">
+              A gene-centric portal from the Weizmann Institute of Science. Each card aggregates
+              data from over 150 sources into one page — known variants, protein structure, expression
+              patterns by tissue, disease associations, drug interactions, and pathway memberships.
+              A good first stop when you want the full picture around a specific gene rather than a
+              specific variant.
+            </p>
           </div>
-          <p class="db-card-desc">
-            A gene-centric portal from the Weizmann Institute of Science. Each card aggregates
-            data from over 150 sources into one page — known variants, protein structure, expression
-            patterns by tissue, disease associations, drug interactions, and pathway memberships.
-            A good first stop when you want the full picture around a specific gene rather than a
-            specific variant.
-          </p>
-          <span class="db-card-action">MTHFD1 · rs2236225 — example ↗</span>
-        </div>
-      </a>
+        </a>
+        <a href="https://www.genecards.org/card/MTHFD1?Search=rs2236225#Variants_Variants" target="_blank" rel="noopener" class="btn-sm db-card-btn">Check out MTHFD1 · rs2236225 — example ↗</a>
+      </div>
 
-      <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener" class="db-card-link">
-        <img src="/images/logo_gnomad.png" alt="gnomAD" width="52" height="52"
-             style="border-radius:10px;flex-shrink:0;display:block">
-        <div class="db-card-text">
-          <div class="db-card-title">
-            gnomAD
-            <span class="db-card-domain">gnomad.broadinstitute.org</span>
+      <div class="db-card">
+        <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener" class="db-card-main">
+          <img src="/images/logo_gnomad.png" alt="gnomAD" width="52" height="52"
+               style="border-radius:10px;flex-shrink:0;display:block">
+          <div class="db-card-text">
+            <div class="db-card-title">
+              gnomAD
+              <span class="db-card-domain">gnomad.broadinstitute.org</span>
+            </div>
+            <p class="db-card-desc">
+              The Genome Aggregation Database, produced by the Broad Institute. Contains
+              whole-genome and whole-exome sequencing data from over 125,000 individuals across
+              diverse ancestry groups — making it the gold standard for population-level allele
+              frequency data. Particularly valuable for understanding how rare or common a variant
+              is in specific ancestral populations, and whether it's ever been observed in a
+              healthy cohort.
+            </p>
           </div>
-          <p class="db-card-desc">
-            The Genome Aggregation Database, produced by the Broad Institute. Contains
-            whole-genome and whole-exome sequencing data from over 125,000 individuals across
-            diverse ancestry groups — making it the gold standard for population-level allele
-            frequency data. Particularly valuable for understanding how rare or common a variant
-            is in specific ancestral populations, and whether it's ever been observed in a
-            healthy cohort.
-          </p>
-          <span class="db-card-action">gnomad.broadinstitute.org ↗</span>
-        </div>
-      </a>
+        </a>
+        <a href="https://gnomad.broadinstitute.org/" target="_blank" rel="noopener" class="btn-sm db-card-btn">gnomad.broadinstitute.org ↗</a>
+      </div>
 
-      <a href="https://www.omim.org/" target="_blank" rel="noopener" class="db-card-link">
-        <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <img src="/images/logo_omim.png" alt="OMIM" width="24" height="24"
-               style="image-rendering:crisp-edges">
-        </div>
-        <div class="db-card-text">
-          <div class="db-card-title">
-            OMIM
-            <span class="db-card-domain">omim.org</span>
+      <div class="db-card">
+        <a href="https://www.omim.org/" target="_blank" rel="noopener" class="db-card-main">
+          <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <img src="/images/logo_omim.png" alt="OMIM" width="24" height="24"
+                 style="image-rendering:crisp-edges">
           </div>
-          <p class="db-card-desc">
-            Online Mendelian Inheritance in Man — the authoritative catalogue of human genes and
-            genetic disorders, continuously updated since 1966. Each entry links a gene or locus
-            to its known phenotypic effects, with evidence classifications and references to the
-            original discovery literature. The bedrock resource for understanding gene–disease
-            relationships.
-          </p>
-          <span class="db-card-action">omim.org ↗</span>
-        </div>
-      </a>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              OMIM
+              <span class="db-card-domain">omim.org</span>
+            </div>
+            <p class="db-card-desc">
+              Online Mendelian Inheritance in Man — the authoritative catalogue of human genes and
+              genetic disorders, continuously updated since 1966. Each entry links a gene or locus
+              to its known phenotypic effects, with evidence classifications and references to the
+              original discovery literature. The bedrock resource for understanding gene–disease
+              relationships.
+            </p>
+          </div>
+        </a>
+        <a href="https://www.omim.org/" target="_blank" rel="noopener" class="btn-sm db-card-btn">omim.org ↗</a>
+      </div>
 
-      <a href="https://www.ncbi.nlm.nih.gov/clinvar/" target="_blank" rel="noopener" class="db-card-link" style="border-bottom:none">
-        <img src="/images/logo_clinvar.png" alt="ClinVar" width="52" height="52"
-             style="border-radius:10px;flex-shrink:0;display:block">
-        <div class="db-card-text">
-          <div class="db-card-title">
-            ClinVar
-            <span class="db-card-domain">ncbi.nlm.nih.gov/clinvar</span>
+      <div class="db-card">
+        <a href="https://www.ncbi.nlm.nih.gov/clinvar/" target="_blank" rel="noopener" class="db-card-main">
+          <img src="/images/logo_clinvar.png" alt="ClinVar" width="52" height="52"
+               style="border-radius:10px;flex-shrink:0;display:block">
+          <div class="db-card-text">
+            <div class="db-card-title">
+              ClinVar
+              <span class="db-card-domain">ncbi.nlm.nih.gov/clinvar</span>
+            </div>
+            <p class="db-card-desc">
+              NCBI's database of clinically interpreted variants, aggregating submissions from
+              diagnostic laboratories, research groups, and clinicians worldwide. Each variant
+              receives a clinical significance rating — pathogenic, likely pathogenic, benign,
+              likely benign, or uncertain — based on the cumulative weight of evidence submitted.
+              Essential for understanding whether a specific variant has a formally recognised
+              disease connection.
+            </p>
           </div>
-          <p class="db-card-desc">
-            NCBI's database of clinically interpreted variants, aggregating submissions from
-            diagnostic laboratories, research groups, and clinicians worldwide. Each variant
-            receives a clinical significance rating — pathogenic, likely pathogenic, benign,
-            likely benign, or uncertain — based on the cumulative weight of evidence submitted.
-            Essential for understanding whether a specific variant has a formally recognised
-            disease connection.
-          </p>
-          <span class="db-card-action">ncbi.nlm.nih.gov/clinvar ↗</span>
+        </a>
+        <a href="https://www.ncbi.nlm.nih.gov/clinvar/" target="_blank" rel="noopener" class="btn-sm db-card-btn">ncbi.nlm.nih.gov/clinvar ↗</a>
+      </div>
+
+      <div class="db-card">
+        <a href="https://scholar.google.com/" target="_blank" rel="noopener" class="db-card-main">
+          <div style="width:52px;height:52px;border-radius:10px;background:var(--card);border:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <img src="/images/logo_scholar.ico" alt="Google Scholar" width="28" height="28"
+                 style="image-rendering:crisp-edges">
+          </div>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              Google Scholar
+              <span class="db-card-domain">scholar.google.com</span>
+            </div>
+            <p class="db-card-desc">
+              A general academic search engine, not genetics-specific — but still one of the widest
+              nets you can cast over the published literature for a variant or gene. Not used
+              programmatically on this site (it has no public API and rate-limits automated access
+              hard), but still worth knowing about for manual literature digging.
+            </p>
+          </div>
+        </a>
+        <a href="https://scholar.google.com/scholar?q=%22rs2236225%22&amp;hl=en&amp;as_sdt=0,48" target="_blank" rel="noopener" class="btn-sm db-card-btn">Check out rs2236225 — example search ↗</a>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-main">
+          <div class="db-card-badge">LO</div>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              LOVD
+              <span class="db-card-domain">databases.lovd.nl</span>
+            </div>
+            <p class="db-card-desc">
+              Leiden Open Variation Database — a federated network of gene-specific variant
+              databases, each independently curated by a research group or diagnostic lab
+              specialising in that gene. This shared instance is the index of which genes have
+              their own LOVD database and where to find it.
+            </p>
+          </div>
         </div>
-      </a>
+        <a href="https://databases.lovd.nl/shared/genes" target="_blank" rel="noopener" class="btn-sm db-card-btn">databases.lovd.nl/shared/genes ↗</a>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-main">
+          <div class="db-card-badge">VS</div>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              VarSome
+              <span class="db-card-domain">varsome.com</span>
+            </div>
+            <p class="db-card-desc">
+              A variant search and annotation engine that aggregates dbSNP, ClinVar, gnomAD, and
+              dozens of other sources into a single lookup per variant, plus ACMG classification
+              guidance. Useful as a one-stop cross-reference once you already have an rsID from
+              elsewhere on this site.
+            </p>
+          </div>
+        </div>
+        <a href="https://varsome.com/" target="_blank" rel="noopener" class="btn-sm db-card-btn">varsome.com ↗</a>
+      </div>
+
+      <div class="db-card" style="border-bottom:none">
+        <a href="https://www.ebi.ac.uk/gwas/" target="_blank" rel="noopener" class="db-card-main">
+          <div class="db-card-badge">GC</div>
+          <div class="db-card-text">
+            <div class="db-card-title">
+              GWAS Catalog
+              <span class="db-card-domain">ebi.ac.uk/gwas</span>
+            </div>
+            <p class="db-card-desc">
+              EMBL-EBI's catalogue of published genome-wide association studies — every SNP that's
+              been statistically linked to a trait or disease across a study population, with the
+              effect size and the paper it came from. The place to check whether a variant has ever
+              turned up in a large population study, beyond single-gene reports.
+            </p>
+          </div>
+        </a>
+        <a href="https://www.ebi.ac.uk/gwas/variants/rs2236225" target="_blank" rel="noopener" class="btn-sm db-card-btn">Check out rs2236225 — example SNP ↗</a>
+      </div>
 
     </div>
-
-    <h2>How they fit together</h2>
-    <p>
-      A typical lookup starts at <strong>dbSNP</strong> — it's the canonical source for an rsID's
-      chromosomal position, the reference and alternate alleles, and the population-level frequencies
-      used on this site. From there, <strong>SNPedia</strong> and <strong>ClinVar</strong> supply
-      the clinical interpretation: whether the variant has been linked to a phenotype, and how strong
-      that evidence is. <strong>GeneCards</strong> zooms out to the gene level — useful when the
-      variant is intronic or when you want to understand the biological context before diving into
-      individual SNPs. <strong>gnomAD</strong> answers the population question: how often does this
-      variant appear in healthy individuals, and does its frequency differ by ancestry? And
-      <strong>OMIM</strong> grounds everything in the longer history — the decades of Mendelian
-      genetics that established which genes matter and why.
-    </p>
-    <p>
-      No single database tells the whole story. This site tries to surface the most relevant data
-      from each one without requiring you to cross-reference all six yourself.
-    </p>
 
   </div>
 

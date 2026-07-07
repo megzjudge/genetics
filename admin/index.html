@@ -99,8 +99,8 @@
           </div>
           <button class="btn-sm" id="snp-lookup-btn" onclick="lookupSnp()" style="margin-bottom:1px;flex-shrink:0">Lookup</button>
           <div style="flex-shrink:0">
-            <label>Genotype <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
-            <input type="text" id="snp-genotype" placeholder="CT" maxlength="4"
+            <label>Alleles <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
+            <input type="text" id="snp-alleles" placeholder="CT" maxlength="4"
                    oninput="this.value=this.value.toUpperCase()" style="margin-bottom:0;width:90px">
           </div>
         </div>
@@ -114,8 +114,7 @@
             <input id="prev-gene" type="text" style="font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:2px 8px;width:120px" oninput="checkSnpGeneWarn()" title="Click to override gene">
             <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="prev-chr"></span>
           </div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px" id="prev-consequence"></div>
-          <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px" id="prev-magnitude"></div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px" id="prev-consequence"></div>
           <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px" id="prev-summary"></div>
           <div style="display:flex;gap:18px;align-items:center;font-family:var(--mono);font-size:11px">
             <a id="prev-ncbi" href="#" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
@@ -133,7 +132,7 @@
 
       <table class="admin-table" id="snp-table" style="margin-top:28px">
         <thead><tr>
-          <th>Gene</th><th>rsID</th><th>Genotype</th><th></th><th></th>
+          <th>Gene</th><th>rsID</th><th>Alleles</th><th></th><th></th>
         </tr></thead>
         <tbody id="snp-tbody"></tbody>
       </table>
