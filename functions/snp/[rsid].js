@@ -28,7 +28,7 @@ function nav() {
 function foot() {
   return `<footer class="site-footer">
   <div class="footer-inner">
-    <span>Megan Judge · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
+    <span>Megan Judge · <a href="/admin">Admin</a> · <button id="personal-signin" class="personal-signin-btn" style="font-family:var(--mono);font-size:inherit;color:var(--accent);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline">Login</button> · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
     <div style="display:flex;gap:20px">
       <a href="https://hereditary.substack.com">Hereditary →</a>
       <a href="https://research.jdge.cc">Other Research Alerts →</a>
@@ -171,7 +171,6 @@ ${nav()}
         ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
         ${snp.consequence ? `<span>${esc(snp.consequence)}</span>` : ""}
-        <button id="personal-signin" class="personal-signin-btn" style="display:none;font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;cursor:pointer">Sign in to view</button>
       </div>
 
       <div data-personal-notes="${esc(rsid)}"></div>
@@ -201,14 +200,13 @@ ${foot()}
   const rsid = ${JSON.stringify(rsid)};
   async function load() {
     const res = await PersonalAuth.fetchPersonal({ rsid });
-    const btn = document.getElementById("personal-signin");
-    if (!res.ok) { btn.style.display = "inline-block"; return; }
-    btn.style.display = "none";
+    if (!res.ok) return false;
     const n = document.querySelector('[data-personal-notes="' + rsid + '"]');
     if (n && res.personal && res.personal.notes) {
       n.innerHTML = '<p class="gene-desc"></p>';
       n.firstChild.textContent = res.personal.notes;
     }
+    return true;
   }
   PersonalAuth.wireSignIn("personal-signin", load);
   load();

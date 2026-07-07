@@ -1,5 +1,5 @@
-// Shared by /gene/[name] and /snp/[rsid] pages — gates "My Variants" alleles
-// and notes (personal data) behind the same AUTH password used by /admin.
+// Shared by /gene/[name] and /snp/[rsid] pages — gates personal alleles and
+// notes behind the same AUTH password used by /admin.
 // The password is remembered in localStorage so you don't re-enter it every visit.
 (function () {
   const KEY = "geneticsPersonalAuth";
@@ -22,12 +22,9 @@
     }
   }
 
-  function signInLinkHtml(id) {
-    return `<button id="${id}" class="personal-signin-btn" style="font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;cursor:pointer">Sign in to view</button>`;
-  }
-
-  // Wires a "Sign in" button: prompts for the password, stores it, re-runs `onSuccess`.
-  // If the password is wrong, onSuccess's own fetch will 401 and clear the token again.
+  // Wires the footer "Login" button: prompts for the password, stores it, re-runs
+  // `onSuccess` (expected to return true/false). Alerts on a wrong password, since
+  // the button itself no longer changes state to signal success/failure.
   function wireSignIn(btnId, onSuccess) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
@@ -35,9 +32,10 @@
       const pw = prompt("Password:");
       if (!pw) return;
       setToken(pw);
-      await onSuccess();
+      const ok = await onSuccess();
+      if (ok === false) alert("Incorrect password.");
     };
   }
 
-  window.PersonalAuth = { getToken, setToken, fetchPersonal, signInLinkHtml, wireSignIn };
+  window.PersonalAuth = { getToken, setToken, fetchPersonal, wireSignIn };
 })();

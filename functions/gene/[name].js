@@ -28,7 +28,7 @@ function nav() {
 function foot() {
   return `<footer class="site-footer">
   <div class="footer-inner">
-    <span>Megan Judge · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
+    <span>Megan Judge · <a href="/admin">Admin</a> · <button id="personal-signin" class="personal-signin-btn" style="font-family:var(--mono);font-size:inherit;color:var(--accent);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline">Login</button> · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
     <div style="display:flex;gap:20px">
       <a href="https://hereditary.substack.com">Hereditary →</a>
       <a href="https://research.jdge.cc">Other Research Alerts →</a>
@@ -161,10 +161,8 @@ ${nav()}
   <div class="gene-body">
 
     <div class="gene-section">
-      <h2 class="studies-heading">
-        My Variants<span class="section-count">${snps.length}</span>
-        <button id="personal-signin" class="personal-signin-btn" style="display:none;font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;cursor:pointer;margin-left:10px">Sign in to view</button>
-      </h2>
+      <h2 class="studies-heading">SNPs<span class="section-count">${snps.length}</span></h2>
+      <p style="font-size:13px;color:var(--muted);margin:-8px 0 20px">These are a select few set of SNPs chosen to research within ${esc(geneName)}${primaryGroup ? ` to do with the area ${esc(primaryGroup.name)}` : ""}.</p>
       ${snps.length === 0
         ? `<p class="empty-state">No variant data entered yet.</p>`
         : snps.map(s => {
@@ -174,7 +172,7 @@ ${nav()}
             return `<div class="snp-block">
           <div class="snp-row">
             <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
-            <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}">···</span>
+            <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}"></span>
             ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
           </div>
           <div data-personal-notes="${esc(s.rsid)}"></div>
@@ -248,9 +246,7 @@ ${foot()}
   const geneName = ${JSON.stringify(geneName)};
   async function load() {
     const res = await PersonalAuth.fetchPersonal({ gene: geneName });
-    const btn = document.getElementById("personal-signin");
-    if (!res.ok) { btn.style.display = "inline-block"; return; }
-    btn.style.display = "none";
+    if (!res.ok) return false;
     for (const p of (res.personal || [])) {
       const a = document.querySelector('[data-personal-alleles="' + p.rsid + '"]');
       if (a) a.textContent = p.alleles || "—";
@@ -258,6 +254,7 @@ ${foot()}
       if (n && p.notes) n.innerHTML = '<p class="snp-notes"></p>';
       if (n && p.notes) n.firstChild.textContent = p.notes;
     }
+    return true;
   }
   PersonalAuth.wireSignIn("personal-signin", load);
   load();
