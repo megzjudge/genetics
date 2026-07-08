@@ -179,6 +179,10 @@ export default {
     });
   },
 
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(weeklyStudyPull(env));
+  },
+
   async email(message, env, ctx) {
     console.log(VERSION);
 
@@ -636,6 +640,156 @@ function dedupeByLink(arr) {
     seen.add(p.link);
     return true;
   });
+}
+
+/* ------------------------- weekly PubMed/Semantic Scholar pull -------------------------
+   Cron-triggered (see wrangler.toml). Re-runs the same PubMed + Semantic Scholar
+   search used when a SNP is first added, across every existing SNP, so studies
+   published after a SNP was added still get picked up over time. Ported here
+   rather than imported from functions/api/[[route]].js since this Worker is a
+   separate deployment with no shared module between the two. */
+
+function authorsToStr(names) {
+  if (!names || !names.length) return null;
+  const shown = names.slice(0, 3);
+  return shown.join(", ") + (names.length > 3 ? " et al." : "");
+}
+
+function truncateText(str, n) {
+  if (!str) return null;
+  const s = String(str).trim();
+  return s.length > n ? s.slice(0, n).trim() + "…" : s;
+}
+
+async function fetchPubmedAbstractsWeekly(pmids) {
+  try {
+    const xml = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&rettype=abstract&retmode=xml&id=${pmids.join(",")}`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then((r) => (r.ok ? r.text() : ""));
+    const map = {};
+    const blocks = xml.match(/<PubmedArticle>[\s\S]*?<\/PubmedArticle>/g) || [];
+    for (const block of blocks) {
+      const pmidM = block.match(/<PMID[^>]*>(\d+)<\/PMID>/);
+      if (!pmidM) continue;
+      const abs = (block.match(/<AbstractText[^>]*>([\s\S]*?)<\/AbstractText>/g) || [])
+        .map((t) => t.replace(/<[^>]+>/g, "").trim())
+        .join(" ");
+      if (abs) map[pmidM[1]] = abs;
+    }
+    return map;
+  } catch (e) {
+    console.log("weekly: PubMed abstract fetch error: " + String(e));
+    return {};
+  }
+}
+
+async function fetchAutoStudiesWeekly(rsid) {
+  const term = `"${rsid}"`;
+  const results = [];
+
+  try {
+    const search = await fetch(
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=20&term=${encodeURIComponent(term)}`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    ).then((r) => (r.ok ? r.json() : null));
+    const pmids = search?.esearchresult?.idlist || [];
+    if (pmids.length) {
+      const [summary, abstracts] = await Promise.all([
+        fetch(
+          `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmids.join(",")}`,
+          { headers: { "User-Agent": "genetics.jdge.cc" } }
+        ).then((r) => (r.ok ? r.json() : null)),
+        fetchPubmedAbstractsWeekly(pmids),
+      ]);
+      for (const uid of summary?.result?.uids || pmids) {
+        const rec = summary?.result?.[uid];
+        if (!rec) continue;
+        const yearM = (rec.pubdate || "").match(/\d{4}/);
+        results.push({
+          title: rec.title || null,
+          authors: authorsToStr((rec.authors || []).map((a) => a.name)),
+          year: yearM ? parseInt(yearM[0]) : null,
+          url: `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
+          pid: rec.articleids?.find((a) => a.idtype === "doi")?.value || null,
+          snippet: truncateText(abstracts[uid], 500) || rec.title || null,
+        });
+      }
+    }
+  } catch (e) { console.log("weekly: PubMed auto-search error: " + String(e)); }
+
+  try {
+    const r = await fetch(
+      `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(rsid)}&fields=title,year,abstract,authors,externalIds&limit=20`,
+      { headers: { "User-Agent": "genetics.jdge.cc" } }
+    );
+    if (r.ok) {
+      const data = await r.json();
+      for (const p of data.data || []) {
+        const pid = p.externalIds?.DOI || null;
+        const url = pid
+          ? (/^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`)
+          : (p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : null);
+        results.push({
+          title: p.title || null,
+          authors: authorsToStr((p.authors || []).map((a) => a.name)),
+          year: p.year || null,
+          url,
+          pid,
+          snippet: truncateText(p.abstract, 500) || p.title || null,
+        });
+      }
+    }
+  } catch (e) { console.log("weekly: Semantic Scholar auto-search error: " + String(e)); }
+
+  return results.filter((s) => s.title && s.url);
+}
+
+// Unlike the same-named function on the Pages site (which runs at SNP-creation
+// time and defaults to curated), this always inserts as used=NULL ("New Unread
+// Studies") — a background pull finding something isn't the same as a human
+// having reviewed it.
+async function insertAutoStudiesWeekly(gene_name, rsid, env) {
+  const candidates = await fetchAutoStudiesWeekly(rsid);
+  let inserted = 0;
+  for (const c of candidates) {
+    const dupe = await env.genetic
+      .prepare(`SELECT 1 FROM studies WHERE rsid = ? AND (url = ? OR (pid IS NOT NULL AND pid = ?)) LIMIT 1`)
+      .bind(rsid, c.url, c.pid)
+      .first();
+    if (dupe) continue;
+    await env.genetic
+      .prepare(
+        `INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year, used)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`
+      )
+      .bind(gene_name.toUpperCase(), rsid, c.snippet, c.authors, c.title, c.url, c.pid, c.year)
+      .run();
+    inserted++;
+  }
+  return inserted;
+}
+
+async function weeklyStudyPull(env) {
+  if (!env.genetic) {
+    console.log("weekly: missing D1 binding env.genetic — check worker bindings.");
+    return;
+  }
+  const { results } = await env.genetic.prepare(`SELECT DISTINCT gene_name, rsid FROM personal`).all();
+  const snps = results || [];
+  let totalInserted = 0, errors = 0;
+
+  for (const s of snps) {
+    try {
+      totalInserted += await insertAutoStudiesWeekly(s.gene_name, s.rsid, env);
+    } catch (e) {
+      errors++;
+      console.log(`weekly: failed for ${s.rsid} (${s.gene_name}): ${String(e)}`);
+    }
+    await new Promise((r) => setTimeout(r, 400)); // pace PubMed/Semantic Scholar requests
+  }
+
+  console.log(`Weekly study pull complete: ${totalInserted} new studies across ${snps.length} SNPs, ${errors} errors.`);
 }
 
 export { parseScholarHtml, extractHtmlBodies, unwrapLink, normalizeLink, deriveGeneAndRsid };

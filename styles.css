@@ -429,6 +429,16 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .study-meta a { color: var(--accent); text-decoration: none; }
 .study-meta a:hover { text-decoration: underline; }
+.study-assign {
+  align-items: center; gap: 8px; margin-top: 12px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--faint);
+}
+.study-assign select {
+  font-family: var(--mono); font-size: 11px; text-transform: none;
+  background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 8px; cursor: pointer;
+}
 
 /* Alerts */
 .alerts-section { margin-bottom: 40px; }
@@ -462,6 +472,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .group-page-title {
   font-size: clamp(32px, 5vw, 54px); font-weight: 700;
   letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 14px;
+  color: var(--accent);
 }
 .group-body { max-width: var(--max-w); margin: 0 auto; padding: 40px 36px 80px; }
 @media (max-width: 600px) {

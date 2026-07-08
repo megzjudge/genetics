@@ -29,6 +29,14 @@ function studyCard(s, extraClass) {
             s.year    ? esc(String(s.year)) : null,
           ].filter(Boolean).join(" · ")}</p>
           ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
+          <div class="study-assign" data-study-assign style="display:none">
+            <label>Move to</label>
+            <select onchange="window.assignStudy(${s.id},this.value)">
+              <option value=""  ${s.used == null ? "selected" : ""}>New</option>
+              <option value="1" ${s.used === 1   ? "selected" : ""}>Curated</option>
+              <option value="0" ${s.used === 0   ? "selected" : ""}>Unused</option>
+            </select>
+          </div>
         </div>`;
 }
 
@@ -259,13 +267,6 @@ ${nav()}
           }).join("")}
     </div>
 
-    <div class="studies-section gene-section">
-      <h2 class="studies-heading">Curated Studies<span class="section-count">${studies.length}</span></h2>
-      ${studies.length === 0
-        ? `<p class="empty-state">No studies added yet.</p>`
-        : studies.map(s => studyCard(s)).join("")}
-    </div>
-
     <div class="alerts-section gene-section">
       <h2 class="studies-heading">Scholar Alerts${
         unread > 0 ? `<span class="unread-tag">${unread} new</span>` : ""
@@ -305,8 +306,21 @@ ${foot()}
       if (n && p.notes) n.innerHTML = '<p class="snp-notes"></p>';
       if (n && p.notes) n.firstChild.textContent = p.notes;
     }
+    document.querySelectorAll('[data-study-assign]').forEach(function (el) { el.style.display = "flex"; });
     return true;
   }
+  window.assignStudy = async function (id, value) {
+    const token = PersonalAuth.getToken();
+    if (!token) return;
+    const used = value === "" ? null : parseInt(value);
+    const r = await fetch("/api/study/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ used }),
+    });
+    if (r.ok) location.reload();
+    else alert("Failed to update — check you're still signed in.");
+  };
   PersonalAuth.wireSignIn("personal-signin", load);
   load();
 })();

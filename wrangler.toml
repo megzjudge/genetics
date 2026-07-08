@@ -1,6 +1,11 @@
 name = "email-genetics"
 compatibility_date = "2024-06-19"
 
+[triggers]
+# Weekly PubMed/Semantic Scholar re-check across all SNPs — Monday 5am UTC,
+# offset an hour from the D1 backup cron so they don't overlap.
+crons = ["0 5 * * 1"]
+
 [[d1_databases]]
 binding = "genetic"
 database_name = "genetic"

@@ -242,8 +242,8 @@ async function insertAutoStudies(gene_name, rsid, env) {
     ).bind(rsid, c.url, c.pid).first();
     if (dupe) continue;
     await env.genetic.prepare(`
-      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year, used)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
     `).bind(gene_name.toUpperCase(), rsid, c.snippet, c.authors, c.title, c.url, c.pid, c.year).run();
     inserted++;
   }
@@ -804,10 +804,10 @@ export async function onRequest({ request, env }) {
   if (method === "POST" && route === "study" && !param) {
     const { gene_name, rsid, snippet, authors, title, url, pid, year, used } = await request.json();
     if (!gene_name || !snippet) return err("gene_name and snippet required");
-    // used omitted entirely -> 1 (curated; matches the manual "Add Study" form,
-    // a deliberate one-at-a-time action). Bulk CSV import explicitly sends
-    // used: null so freshly-imported papers start as "New Unread" pending review.
-    const usedVal = used === undefined ? 1 : used;
+    // Every insert path (manual "Add Study", bulk CSV import, auto-search)
+    // now starts as NULL ("New") regardless — nothing is assumed curated
+    // until a human explicitly promotes it via the gene page or admin.
+    const usedVal = used === undefined ? null : used;
     await env.genetic.prepare(`
       INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year, used)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -827,8 +827,11 @@ export async function onRequest({ request, env }) {
     const id = parseInt(param);
     if (!id) return err("invalid id");
     const { used } = await request.json();
+    // Tri-state: null -> New, 1 -> Curated, 0 -> Unused. (A plain `used ? 1 : 0`
+    // would wrongly coerce null to 0, making "revert to New" impossible.)
+    const usedVal = used === null || used === undefined ? null : (used ? 1 : 0);
     await env.genetic.prepare(`UPDATE studies SET used = ? WHERE id = ?`)
-      .bind(used ? 1 : 0, id).run();
+      .bind(usedVal, id).run();
     return json({ ok: true });
   }
 
