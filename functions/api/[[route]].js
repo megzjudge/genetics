@@ -143,6 +143,15 @@ function truncate(str, n) {
   return s.length > n ? s.slice(0, n).trim() + "…" : s;
 }
 
+// PID = persistent identifier, the umbrella term — DOI (10.xxxx/yyyy, the
+// namespace reserved for DOIs within the Handle System) resolves via
+// doi.org; anything else (e.g. Handle/HDL-format ids from theses/repository
+// items) resolves via hdl.handle.net.
+function pidUrl(pid) {
+  if (!pid) return null;
+  return /^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`;
+}
+
 async function fetchPubmedAbstracts(pmids, env) {
   try {
     const xml = await fetch(
@@ -192,7 +201,7 @@ async function fetchAutoStudies(rsid, env) {
           authors: authorsToStr((rec.authors || []).map(a => a.name)),
           year:    yearM ? parseInt(yearM[0]) : null,
           url:     `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
-          doi:     rec.articleids?.find(a => a.idtype === "doi")?.value || null,
+          pid:     rec.articleids?.find(a => a.idtype === "doi")?.value || null,
           snippet: truncate(abstracts[uid], 500) || rec.title || null,
         });
       }
@@ -208,13 +217,13 @@ async function fetchAutoStudies(rsid, env) {
     if (r.ok) {
       const data = await r.json();
       for (const p of (data.data || [])) {
-        const doi = p.externalIds?.DOI || null;
+        const pid = p.externalIds?.DOI || null;
         results.push({
           title:   p.title || null,
           authors: authorsToStr((p.authors || []).map(a => a.name)),
           year:    p.year || null,
-          url:     doi ? `https://doi.org/${doi}` : (p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : null),
-          doi,
+          url:     pidUrl(pid) || (p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : null),
+          pid,
           snippet: truncate(p.abstract, 500) || p.title || null,
         });
       }
@@ -229,13 +238,13 @@ async function insertAutoStudies(gene_name, rsid, env) {
   let inserted = 0;
   for (const c of candidates) {
     const dupe = await env.genetic.prepare(
-      `SELECT 1 FROM studies WHERE rsid = ? AND (url = ? OR (doi IS NOT NULL AND doi = ?)) LIMIT 1`
-    ).bind(rsid, c.url, c.doi).first();
+      `SELECT 1 FROM studies WHERE rsid = ? AND (url = ? OR (pid IS NOT NULL AND pid = ?)) LIMIT 1`
+    ).bind(rsid, c.url, c.pid).first();
     if (dupe) continue;
     await env.genetic.prepare(`
-      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, doi, year)
+      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(gene_name.toUpperCase(), rsid, c.snippet, c.authors, c.title, c.url, c.doi, c.year).run();
+    `).bind(gene_name.toUpperCase(), rsid, c.snippet, c.authors, c.title, c.url, c.pid, c.year).run();
     inserted++;
   }
   return inserted;
@@ -376,10 +385,10 @@ export async function onRequest({ request, env }) {
       `).bind(name).all(),
     ]);
     const rows = [];
-    rows.push("type,gene_name,rsid,snippet,authors,title,url,doi,year,alleles,chromosome,position,ref_allele,alt_allele,protein_change,consequence,summary,notes");
+    rows.push("type,gene_name,rsid,snippet,authors,title,url,pid,year,alleles,chromosome,position,ref_allele,alt_allele,protein_change,consequence,summary,notes");
     for (const s of studies.results || []) {
       rows.push([
-        "study", s.gene_name, s.rsid, s.snippet, s.authors, s.title, s.url, s.doi, s.year,
+        "study", s.gene_name, s.rsid, s.snippet, s.authors, s.title, s.url, s.pid, s.year,
         "", "", "", "", "", "", "", "", "",
       ].map(csvEscape).join(","));
     }
@@ -699,6 +708,25 @@ export async function onRequest({ request, env }) {
           const cm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>[^:]+:\s*([^<\n]+)/i);
           if (cm) consequence = cm[1].trim();
         }
+        // Same fallback also recovers chromosome/position/alleles when the
+        // beta variation API 404s outright (happens for a real chunk of older
+        // rsIDs — the classic report page still has them). Frequencies aren't
+        // recovered this way; the freq table on that page is too unreliable
+        // to regex-scrape, so snp_pop stays empty for these.
+        if (!chromosome || position == null) {
+          const posM = ncbiHtml.match(/<dt>Position<\/dt>[\s\S]*?<span>chr(\w+):(\d+)/i);
+          if (posM) {
+            if (!chromosome) chromosome = posM[1];
+            if (position == null) position = parseInt(posM[2]);
+          }
+        }
+        if (!ref_allele || !alt_allele) {
+          const alleleM = ncbiHtml.match(/<dt>Alleles<\/dt>[\s\S]*?<dd>[\s\S]*?([ACGT])>([ACGT])/i);
+          if (alleleM) {
+            if (!ref_allele) ref_allele = alleleM[1];
+            if (!alt_allele) alt_allele = alleleM[2];
+          }
+        }
       }
     }
 
@@ -774,19 +802,19 @@ export async function onRequest({ request, env }) {
 
   // ── POST /api/study ──────────────────────────────
   if (method === "POST" && route === "study" && !param) {
-    const { gene_name, rsid, snippet, authors, title, url, doi, year, used } = await request.json();
+    const { gene_name, rsid, snippet, authors, title, url, pid, year, used } = await request.json();
     if (!gene_name || !snippet) return err("gene_name and snippet required");
     // used omitted entirely -> 1 (curated; matches the manual "Add Study" form,
     // a deliberate one-at-a-time action). Bulk CSV import explicitly sends
     // used: null so freshly-imported papers start as "New Unread" pending review.
     const usedVal = used === undefined ? 1 : used;
     await env.genetic.prepare(`
-      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, doi, year, used)
+      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year, used)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       gene_name.toUpperCase(), rsid || null,
       snippet, authors || null, title || null,
-      url || null, doi || null, year || null, usedVal
+      url || null, pid || null, year || null, usedVal
     ).run();
     return json({ ok: true });
   }
@@ -810,7 +838,7 @@ export async function onRequest({ request, env }) {
   // covers many SNPs, but was only "useful" for one of them).
   if (method === "GET" && route === "studies") {
     const { results } = await env.genetic.prepare(
-      `SELECT gene_name, rsid, title, url, doi FROM studies`
+      `SELECT gene_name, rsid, title, url, pid FROM studies`
     ).all();
     return json({ studies: results || [] });
   }

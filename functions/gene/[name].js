@@ -12,13 +12,19 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// PID = persistent identifier (umbrella term for DOI, Handle/HDL, etc.)
+function pidUrl(pid) {
+  if (!pid) return null;
+  return /^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`;
+}
+
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
           ${s.title ? `<p class="study-title">${s.url
               ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
               : esc(s.title)}</p>` : ""}
           <p class="study-meta">${[
-            s.doi     ? `<a href="https://doi.org/${esc(s.doi)}" target="_blank" rel="noopener">DOI</a>` : null,
+            s.pid     ? `<a href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
             s.authors ? esc(s.authors) : null,
             s.year    ? esc(String(s.year)) : null,
           ].filter(Boolean).join(" · ")}</p>

@@ -414,7 +414,7 @@ function addStudy() {
     year:      parseInt(document.getElementById("study-year").value) || null,
     title:     document.getElementById("study-title").value.trim(),
     url:       document.getElementById("study-url").value.trim() || null,
-    doi:       document.getElementById("study-doi").value.trim() || null,
+    pid:       document.getElementById("study-pid").value.trim() || null,
   };
   if (!body.snippet) return toast("Snippet is required.", true);
   apiFetch("/api/study", {
@@ -424,7 +424,7 @@ function addStudy() {
   }).then(async r => {
     if (r.ok) {
       toast("Study saved.");
-      ["study-rsid","study-snippet","study-authors","study-year","study-title","study-url","study-doi"]
+      ["study-rsid","study-snippet","study-authors","study-year","study-title","study-url","study-pid"]
         .forEach(id => document.getElementById(id).value = "");
     } else {
       const d = await r.json().catch(() => ({}));
@@ -783,14 +783,20 @@ function bulkSnpPicked() {
   bulkGene = null; bulkRsid = null;
 }
 
-// doi.org resolves any real DOI directly — if a row already has a DOI but no
-// URL, this is the primary, deterministic way to fill it (no search needed).
-function bulkDeriveDoiUrl(row) {
-  if (row.doi && !row.url) row.url = `https://doi.org/${row.doi}`;
+// PID = persistent identifier (umbrella term for DOI, Handle/HDL, etc.).
+// DOI (10.xxxx/yyyy) resolves via doi.org; anything else assumed Handle-format,
+// resolves via hdl.handle.net. If a row already has a PID but no URL, this is
+// the primary, deterministic way to fill it (no search needed).
+function bulkPidUrl(pid) {
+  if (!pid) return null;
+  return /^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`;
+}
+function bulkDerivePidUrl(row) {
+  if (row.pid && !row.url) row.url = bulkPidUrl(row.pid);
 }
 
 function bulkIsFlagged(row) {
-  return !row.title || !row.authors || !row.year || !row.abstract || (!row.url && !row.doi);
+  return !row.title || !row.authors || !row.year || !row.abstract || (!row.url && !row.pid);
 }
 
 // Manual convenience link, not an automated fetch — opens Scholar with the
@@ -812,7 +818,7 @@ function bulkFindDuplicate(row, existingStudies) {
   const normTitle = bulkNormTitle(row.title);
   for (const s of existingStudies) {
     const matched = [];
-    if (row.doi && s.doi && row.doi.toLowerCase() === s.doi.toLowerCase()) matched.push("doi");
+    if (row.pid && s.pid && row.pid.toLowerCase() === s.pid.toLowerCase()) matched.push("pid");
     if (row.url && s.url && row.url.toLowerCase() === s.url.toLowerCase()) matched.push("url");
     if (normTitle && normTitle === bulkNormTitle(s.title)) matched.push("title");
     if (matched.length) return { study: s, matched };
@@ -841,7 +847,7 @@ async function bulkScanCsv() {
   if (!table.length) return toast("CSV appears empty.", true);
   const header = table[0].map(h => h.trim().toLowerCase());
   const idx = {
-    doi: header.indexOf("doi"),
+    pid: header.indexOf("doi"), // ResearchRabbit's own CSV column is literally named "DOI"
     title: header.indexOf("title"),
     authors: header.indexOf("authors"),
     year: header.indexOf("year"),
@@ -849,7 +855,7 @@ async function bulkScanCsv() {
     url: header.indexOf("pubmedid"),
   };
   bulkRows = table.slice(1).map(r => ({
-    doi:      bulkNormalize(r[idx.doi]),
+    pid:      bulkNormalize(r[idx.pid]),
     title:    bulkNormalize(r[idx.title]),
     authors:  bulkNormalize(r[idx.authors]),
     year:     bulkNormalize(r[idx.year]),
@@ -857,7 +863,7 @@ async function bulkScanCsv() {
     url:      bulkNormalize(r[idx.url]),
     _open:    false,
   }));
-  bulkRows.forEach(bulkDeriveDoiUrl);
+  bulkRows.forEach(bulkDerivePidUrl);
 
   document.getElementById("bulk-scan-btn").disabled = true;
   bulkExistingStudies = await safeFetchJson("/api/studies").then(d => (d && d.studies) || []);
@@ -870,10 +876,10 @@ async function bulkScanCsv() {
 
 function bulkField(i, key, value) {
   bulkRows[i][key] = value;
-  // Re-derive the url from doi if either was just edited, then recheck
+  // Re-derive the url from pid if either was just edited, then recheck
   // flagged/duplicate state so the red/grey/blue highlight actually updates
   // once a row becomes complete (previously only computed once, at scan time).
-  if (key === "doi" || key === "url") bulkDeriveDoiUrl(bulkRows[i]);
+  if (key === "pid" || key === "url") bulkDerivePidUrl(bulkRows[i]);
   bulkRows[i]._state = bulkComputeState(bulkRows[i], bulkExistingStudies);
 }
 
@@ -898,7 +904,7 @@ async function bulkSubmitOne(row) {
     body: JSON.stringify({
       gene_name: bulkGene, rsid: bulkRsid,
       snippet, authors: row.authors || null, title: row.title || null,
-      url: row.url || null, doi: row.doi || null,
+      url: row.url || null, pid: row.pid || null,
       year: row.year ? parseInt(row.year) : null,
       used: null, // bulk-imported, not yet triaged -> "New Unread Studies"
     }),
@@ -928,7 +934,7 @@ function renderBulkTable() {
   const tbody = document.getElementById("bulk-tbody");
   document.getElementById("bulk-count").textContent = `${bulkRows.length} rows`;
   tbody.innerHTML = bulkRows.map((row, i) => {
-    const link = row.url || (row.doi ? `https://doi.org/${row.doi}` : "");
+    const link = row.url || bulkPidUrl(row.pid) || "";
     const scholarUrl = bulkScholarUrl(row);
     const compact = `
     <tr class="${BULK_ROW_CLASS[row._state] || ""}">
@@ -969,8 +975,8 @@ function renderBulkTable() {
             <input type="text" value="${escAttr(row.url)}" style="${bulkFieldStyle(row, "url")}" oninput="bulkField(${i},'url',this.value)">
           </div>
           <div style="flex:1">
-            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">DOI</label>
-            <input type="text" value="${escAttr(row.doi)}" style="${bulkFieldStyle(row, "doi")}" oninput="bulkField(${i},'doi',this.value)">
+            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">PID</label>
+            <input type="text" value="${escAttr(row.pid)}" style="${bulkFieldStyle(row, "pid")}" oninput="bulkField(${i},'pid',this.value)">
           </div>
         </div>
         <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Abstract / Snippet</label>
