@@ -14,10 +14,10 @@ function slugify(name) {
 
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
-          <p class="study-meta">${[
-            s.title   ? (s.url
+          ${s.title ? `<p class="study-title">${s.url
               ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
-              : esc(s.title)) : null,
+              : esc(s.title)}</p>` : ""}
+          <p class="study-meta">${[
             s.doi     ? `<a href="https://doi.org/${esc(s.doi)}" target="_blank" rel="noopener">DOI</a>` : null,
             s.authors ? esc(s.authors) : null,
             s.year    ? esc(String(s.year)) : null,
@@ -31,6 +31,21 @@ function studyRow(s, i) {
     <div class="snp-study-num">${i + 1}</div>
     ${studyCard(s, i % 2 === 0 ? "study-card--pastel-a" : "study-card--pastel-b")}
   </div>`;
+}
+
+// One nested accordion within a SNP's own accordion — e.g. "Curated Studies".
+function studiesSubAccordion(pinkWord, restOfLabel, desc, studiesArr) {
+  if (!studiesArr.length) return "";
+  return `<details class="snp-substudies">
+    <summary>
+      <span class="snp-studies-subhead"><span class="text-pink">${esc(pinkWord)}</span> ${esc(restOfLabel)}<span class="section-count">${studiesArr.length}</span></span>
+      <span class="snp-chevron snp-chevron--sm">▼</span>
+    </summary>
+    <div class="snp-substudies-body">
+      ${desc ? `<p class="snp-studies-subdesc">${esc(desc)}</p>` : ""}
+      ${studiesArr.map(studyRow).join("")}
+    </div>
+  </details>`;
 }
 
 function nav() {
@@ -222,17 +237,15 @@ ${nav()}
             }).join("")}
           </div>` : ""}
           ${snpStudies.length ? (() => {
-            const usedStudies   = snpStudies.filter(st => st.used !== 0);
-            const unusedStudies = snpStudies.filter(st => st.used === 0);
+            const curatedStudies = snpStudies.filter(st => st.used === 1);
+            const unusedStudies  = snpStudies.filter(st => st.used === 0);
+            const newStudies     = snpStudies.filter(st => st.used == null);
             return `<div class="snp-studies-inline">
-            <p class="snp-studies-label"><span class="text-pink">Studies</span> for ${esc(s.rsid)}</p>
-            ${usedStudies.length ? `
-            <p class="snp-studies-subhead"><span class="text-pink">Used</span> Studies</p>
-            <p class="snp-studies-subdesc">These studies were determined to be useful for this gene, please check list further down for "Unused Studies".</p>
-            ${usedStudies.map(studyRow).join("")}` : ""}
-            ${unusedStudies.length ? `
-            <p class="snp-studies-subhead"><span class="text-pink">Unused</span> Studies</p>
-            ${unusedStudies.map(studyRow).join("")}` : ""}
+            ${studiesSubAccordion("Curated", "Studies",
+              `These studies were determined to be useful for this gene, please check list further down for "Unused Studies" if curious.`,
+              curatedStudies)}
+            ${studiesSubAccordion("Unused", "Studies", null, unusedStudies)}
+            ${studiesSubAccordion("New Unread", "Studies", null, newStudies)}
           </div>`;
           })() : ""}
           </div>

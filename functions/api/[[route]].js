@@ -774,15 +774,19 @@ export async function onRequest({ request, env }) {
 
   // ── POST /api/study ──────────────────────────────
   if (method === "POST" && route === "study" && !param) {
-    const { gene_name, rsid, snippet, authors, title, url, doi, year } = await request.json();
+    const { gene_name, rsid, snippet, authors, title, url, doi, year, used } = await request.json();
     if (!gene_name || !snippet) return err("gene_name and snippet required");
+    // used omitted entirely -> 1 (curated; matches the manual "Add Study" form,
+    // a deliberate one-at-a-time action). Bulk CSV import explicitly sends
+    // used: null so freshly-imported papers start as "New Unread" pending review.
+    const usedVal = used === undefined ? 1 : used;
     await env.genetic.prepare(`
-      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, doi, year)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, doi, year, used)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       gene_name.toUpperCase(), rsid || null,
       snippet, authors || null, title || null,
-      url || null, doi || null, year || null
+      url || null, doi || null, year || null, usedVal
     ).run();
     return json({ ok: true });
   }

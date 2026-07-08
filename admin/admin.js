@@ -894,6 +894,7 @@ async function bulkSubmitOne(row) {
       snippet, authors: row.authors || null, title: row.title || null,
       url: row.url || null, doi: row.doi || null,
       year: row.year ? parseInt(row.year) : null,
+      used: null, // bulk-imported, not yet triaged -> "New Unread Studies"
     }),
   });
   if (!r.ok) throw new Error("HTTP " + r.status);
