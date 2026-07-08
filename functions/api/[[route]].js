@@ -17,6 +17,20 @@ const ALFA_POP = {
 
 function pct(n) { return n != null ? Math.round(n * 100) : null; }
 
+// NCBI's protein SPDI uses 1-letter amino acid codes (e.g. "A"->"V") — spelled
+// out in full rather than left as a cryptic single letter or 3-letter code.
+const AMINO_ACIDS = {
+  A: "Alanine", R: "Arginine", N: "Asparagine", D: "Aspartic Acid",
+  C: "Cysteine", E: "Glutamic Acid", Q: "Glutamine", G: "Glycine",
+  H: "Histidine", I: "Isoleucine", L: "Leucine", K: "Lysine",
+  M: "Methionine", F: "Phenylalanine", P: "Proline", S: "Serine",
+  T: "Threonine", W: "Tryptophan", Y: "Tyrosine", V: "Valine",
+  "*": "Stop",
+};
+function aminoAcidName(code) {
+  return AMINO_ACIDS[code] || code;
+}
+
 function seqIdToChrom(seqId) {
   const m = seqId?.match(/^NC_(\d+)\./);
   if (!m) return null;
@@ -24,6 +38,21 @@ function seqIdToChrom(seqId) {
   if (n >= 1 && n <= 22) return String(n);
   if (n === 23) return "X";
   if (n === 24) return "Y";
+  return null;
+}
+
+// A Ref/Alt Allele table cell can hold multiple "X=freq" pairs, comma-
+// separated, for multi-allelic sites (e.g. "A=0.000000, C=0.145567" — rs212091
+// carries a third allele essentially never observed here). Drop 0-frequency
+// entries and return the first real one; null if nothing qualifies.
+function parseAlleleCell(raw) {
+  const parts = (raw || "").split(",").map(p => p.trim());
+  for (const part of parts) {
+    const m = part.match(/^([A-Za-z-]+)=([\d.]+)$/);
+    if (!m) continue;
+    const freq = parseFloat(m[2]);
+    if (freq > 0) return { allele: m[1], freq };
+  }
   return null;
 }
 
@@ -51,15 +80,18 @@ async function fetchNcbiFreqsFromHtml(rsid) {
         .map(t => t.replace(/<[^>]+>/g, "").trim());
       if (tds.length !== 6) continue;
       const [study, population, group, sampleSize, refRaw, altRaw] = tds;
-      const refM = refRaw.match(/^(.+?)=([\d.]+)$/);
-      const altM = altRaw.match(/^(.+?)=([\d.]+)$/);
-      if (!refM || !altM) continue;
+      // Ref/Alt Allele cells can hold more than one "X=freq" pair, comma-
+      // separated, for multi-allelic sites — e.g. "A=0.000000, C=0.145567".
+      // Drop zero-frequency entries and take the first real one.
+      const ref = parseAlleleCell(refRaw);
+      const alt = parseAlleleCell(altRaw);
+      if (!ref || !alt) continue;
       if (!studies[study]) studies[study] = [];
       studies[study].push({
         population, pop_type: group.toLowerCase() === "sub" ? "Sub" : "Total",
         sample_size: parseInt(sampleSize) || null,
-        allele1: refM[1], allele1_freq: parseFloat(refM[2]),
-        allele2: altM[1], allele2_freq: parseFloat(altM[2]),
+        allele1: ref.allele, allele1_freq: ref.freq,
+        allele2: alt.allele, allele2_freq: alt.freq,
         geno_hom1: null, geno_het: null, geno_hom2: null,
       });
     }
@@ -86,7 +118,7 @@ async function fetchNcbiFreqs(rsid, env) {
   const numId = rsid.replace(/^rs/i, "");
   try {
     const r = await fetch(
-      `https://api.ncbi.nlm.nih.gov/variation/v0/beta/refsnp/${numId}`,
+      `https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/${numId}`,
       { headers: { "Accept": "application/json", "User-Agent": "genetics.jdge.cc" } }
     );
     if (!r.ok) return await fetchNcbiFreqsFromHtml(rsid);
@@ -687,7 +719,7 @@ export async function onRequest({ request, env }) {
     const numId = rsid.replace(/^rs/i, "");
 
     const [ncbiRes, snpediaRes] = await Promise.allSettled([
-      fetch(`https://api.ncbi.nlm.nih.gov/variation/v0/beta/refsnp/${numId}`, {
+      fetch(`https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/${numId}`, {
         headers: { Accept: "application/json", "User-Agent": "genetics.jdge.cc" },
       }).then(r => r.ok ? r.json() : null),
       fetch(`https://www.snpedia.com/api.php?action=query&prop=revisions&titles=${rsid}&rvprop=content&rvslots=main&format=json`, {
@@ -716,7 +748,7 @@ export async function onRequest({ request, env }) {
                 if (spdi?.deleted_sequence && spdi?.inserted_sequence
                     && spdi.deleted_sequence !== spdi.inserted_sequence
                     && spdi.position != null) {
-                  entry.protein_change = `${spdi.deleted_sequence}${spdi.position + 1}${spdi.inserted_sequence}`;
+                  entry.protein_change = `${aminoAcidName(spdi.deleted_sequence)} ${spdi.position + 1} → ${aminoAcidName(spdi.inserted_sequence)}`;
                   break;
                 }
               }

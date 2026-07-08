@@ -115,7 +115,7 @@
           <a class="group-card-text" href="/group/folate-metabolism">
             <div class="group-card-head">
               <span class="group-name">Folate Metabolism</span>
-              <span class="group-count">44 genes</span>
+              <span class="group-count" data-group-count="Folate Metabolism">…</span>
             </div>
             <p class="group-desc">
               The one-carbon cycle — MTHFR, MTR, MTRR, all folate transporters,
@@ -135,7 +135,7 @@
           <a class="group-card-text" href="/group/dopamine">
             <div class="group-card-head">
               <span class="group-name">Dopamine</span>
-              <span class="group-count">__GENE_COUNT__ genes</span>
+              <span class="group-count" data-group-count="Dopamine">…</span>
             </div>
             <p class="group-desc">
               Dopaminergic and noradrenergic pathways — DRD4, DAT1, COMT, MAOA,
@@ -265,6 +265,21 @@
     var res = await PersonalAuth.fetchPersonal({ gene: "__ping__" });
     return res.ok;
   });
+
+  fetch("/api/genes").then(function (r) { return r.json(); }).then(function (d) {
+    var genes = d.genes || d || [];
+    var counts = {};
+    genes.forEach(function (g) {
+      var key = (g.group_name || "").trim().toLowerCase();
+      if (!key) return;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    document.querySelectorAll("[data-group-count]").forEach(function (el) {
+      var key = el.getAttribute("data-group-count").trim().toLowerCase();
+      var n = counts[key] || 0;
+      el.textContent = n + (n === 1 ? " gene" : " genes");
+    });
+  }).catch(function () { /* leave placeholders as-is on failure */ });
 </script>
 
 </body>
