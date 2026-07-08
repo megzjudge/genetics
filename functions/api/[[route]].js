@@ -27,6 +27,61 @@ function seqIdToChrom(seqId) {
   return null;
 }
 
+// Fallback: scrape the classic NCBI report page's frequency table when the
+// beta REST API 404s (confirmed happening for a real chunk of older rsIDs —
+// e.g. rs119774 has a normal report page but no REST API entry at all).
+// Picks one study's full population breakdown — prefers "Allele Frequency
+// Aggregator" (ALFA under its full display name in this table) to match
+// what the REST API path itself uses; otherwise picks whichever study has
+// the richest breakdown available.
+async function fetchNcbiFreqsFromHtml(rsid) {
+  try {
+    const html = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
+      headers: { "User-Agent": "genetics.jdge.cc/bot", "Accept": "text/html" }
+    }).then(r => r.ok ? r.text() : null).catch(() => null);
+    if (!html) return [];
+
+    const tableM = html.match(/<table id="dbsnp_freq_datatable"[\s\S]*?<\/table>/);
+    if (!tableM) return [];
+
+    const blocks = tableM[0].match(/<tr class="(?:par_row|chi_row)">[\s\S]*?<\/tr>/g) || [];
+    const studies = {};
+    for (const block of blocks) {
+      const tds = (block.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
+        .map(t => t.replace(/<[^>]+>/g, "").trim());
+      if (tds.length !== 6) continue;
+      const [study, population, group, sampleSize, refRaw, altRaw] = tds;
+      const refM = refRaw.match(/^(.+?)=([\d.]+)$/);
+      const altM = altRaw.match(/^(.+?)=([\d.]+)$/);
+      if (!refM || !altM) continue;
+      if (!studies[study]) studies[study] = [];
+      studies[study].push({
+        population, pop_type: group.toLowerCase() === "sub" ? "Sub" : "Total",
+        sample_size: parseInt(sampleSize) || null,
+        allele1: refM[1], allele1_freq: parseFloat(refM[2]),
+        allele2: altM[1], allele2_freq: parseFloat(altM[2]),
+        geno_hom1: null, geno_het: null, geno_hom2: null,
+      });
+    }
+
+    const names = Object.keys(studies);
+    if (!names.length) return [];
+    const chosen = names.find(n => n.toLowerCase().includes("allele frequency aggregator"))
+      || names.reduce((best, n) => studies[n].length > studies[best].length ? n : best, names[0]);
+
+    const rows = studies[chosen];
+    rows.sort((a, b) => {
+      if (a.pop_type === "Total") return -1;
+      if (b.pop_type === "Total") return 1;
+      return a.population.localeCompare(b.population);
+    });
+    return rows;
+  } catch (e) {
+    console.error("NCBI HTML freq scrape error:", e.message);
+    return [];
+  }
+}
+
 async function fetchNcbiFreqs(rsid, env) {
   const numId = rsid.replace(/^rs/i, "");
   try {
@@ -34,7 +89,7 @@ async function fetchNcbiFreqs(rsid, env) {
       `https://api.ncbi.nlm.nih.gov/variation/v0/beta/refsnp/${numId}`,
       { headers: { "Accept": "application/json", "User-Agent": "genetics.jdge.cc" } }
     );
-    if (!r.ok) return [];
+    if (!r.ok) return await fetchNcbiFreqsFromHtml(rsid);
     const data = await r.json();
 
     // Build per-study allele buckets: { studyName: { allele: { count, total } } }
@@ -110,7 +165,7 @@ async function fetchNcbiFreqs(rsid, env) {
     return rows;
   } catch (e) {
     console.error("NCBI fetch error:", e.message);
-    return [];
+    return await fetchNcbiFreqsFromHtml(rsid);
   }
 }
 
