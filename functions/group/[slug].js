@@ -114,8 +114,8 @@ ${nav()}
         ? `<p class="empty-state">No genes in this group yet.</p>`
         : genes.map(g => {
             const countParts = [];
-            if (g.snp_count > 0) countParts.push(`${g.snp_count} ${g.snp_count === 1 ? "SNP" : "SNPs"}`);
-            if (g.study_count > 0) countParts.push(`${g.study_count} ${g.study_count === 1 ? "study" : "studies"}`);
+            if (g.snp_count > 0) countParts.push(`<span class="count-num">${g.snp_count}</span> ${g.snp_count === 1 ? "SNP" : "SNPs"}`);
+            if (g.study_count > 0) countParts.push(`<span class="count-num">${g.study_count}</span> ${g.study_count === 1 ? "study" : "studies"}`);
             if (g.unread_count > 0) countParts.push(`<span class="unread-tag">${g.unread_count} new</span>`);
             return `<a class="gene-row" href="/gene/${esc(g.gene_name)}">
         <span class="gene-row-name">${esc(g.gene_name)}</span>

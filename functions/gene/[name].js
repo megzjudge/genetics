@@ -12,8 +12,8 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function studyCard(s) {
-  return `<div class="study-card">
+function studyCard(s, extraClass) {
+  return `<div class="study-card${extraClass ? " " + extraClass : ""}">
           <p class="study-meta">${[
             s.title   ? (s.url
               ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
@@ -24,6 +24,13 @@ function studyCard(s) {
           ].filter(Boolean).join(" · ")}</p>
           ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
         </div>`;
+}
+
+function studyRow(s, i) {
+  return `<div class="snp-study-row">
+    <div class="snp-study-num">${i + 1}</div>
+    ${studyCard(s, i % 2 === 0 ? "study-card--pastel-a" : "study-card--pastel-b")}
+  </div>`;
 }
 
 function nav() {
@@ -214,10 +221,20 @@ ${nav()}
               </div>`;
             }).join("")}
           </div>` : ""}
-          ${snpStudies.length ? `<div class="snp-studies-inline">
-            <p class="snp-studies-label">Studies for ${esc(s.rsid)}</p>
-            ${snpStudies.map(studyCard).join("")}
-          </div>` : ""}
+          ${snpStudies.length ? (() => {
+            const usedStudies   = snpStudies.filter(st => st.used !== 0);
+            const unusedStudies = snpStudies.filter(st => st.used === 0);
+            return `<div class="snp-studies-inline">
+            <p class="snp-studies-label"><span class="text-pink">Studies</span> for ${esc(s.rsid)}</p>
+            ${usedStudies.length ? `
+            <p class="snp-studies-subhead"><span class="text-pink">Used</span> Studies</p>
+            <p class="snp-studies-subdesc">These studies were determined to be useful for this gene, please check list further down for "Unused Studies".</p>
+            ${usedStudies.map(studyRow).join("")}` : ""}
+            ${unusedStudies.length ? `
+            <p class="snp-studies-subhead"><span class="text-pink">Unused</span> Studies</p>
+            ${unusedStudies.map(studyRow).join("")}` : ""}
+          </div>`;
+          })() : ""}
           </div>
         </details>`;
           }).join("")}
@@ -227,7 +244,7 @@ ${nav()}
       <h2 class="studies-heading">Curated Studies<span class="section-count">${studies.length}</span></h2>
       ${studies.length === 0
         ? `<p class="empty-state">No studies added yet.</p>`
-        : studies.map(studyCard).join("")}
+        : studies.map(s => studyCard(s)).join("")}
     </div>
 
     <div class="alerts-section gene-section">

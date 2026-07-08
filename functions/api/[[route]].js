@@ -787,6 +787,19 @@ export async function onRequest({ request, env }) {
     return json({ ok: true });
   }
 
+  // ── PATCH /api/study/:id ─────────────────────────
+  // Toggles whether a study turned out to be useful for the gene it's filed
+  // under — the same paper can be "used" for one SNP and "unused" for another
+  // if it's filed twice under different rsids.
+  if (method === "PATCH" && route === "study" && param) {
+    const id = parseInt(param);
+    if (!id) return err("invalid id");
+    const { used } = await request.json();
+    await env.genetic.prepare(`UPDATE studies SET used = ? WHERE id = ?`)
+      .bind(used ? 1 : 0, id).run();
+    return json({ ok: true });
+  }
+
   // ── GET /api/studies ──────────────────────────────
   // Used by the bulk-import review table to detect duplicate papers already
   // in the DB (possibly under a different gene/rsid — the same paper often
