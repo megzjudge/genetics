@@ -109,8 +109,8 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX, numberFont) {
 
   return `
   <rect x="20" y="20" width="270" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
-  <text x="87.5"  y="66" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#7a8fa6" letter-spacing="1.2" font-weight="600">CHROMOSOME</text>
-  <text x="222.5" y="90" text-anchor="middle" font-family="${numberFont || "'Outfit',system-ui,sans-serif"}" font-size="69" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
+  <text x="87.5"  y="66" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#7a8fa6" letter-spacing="3" font-weight="600">CHROMOSOME</text>
+  <text x="222.5" y="96" text-anchor="middle" font-family="${numberFont || "'Mrs Saint Delafield',cursive"}" font-size="71" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
   <defs><clipPath id="chr-clip-${suffix}"><path d="${path}"/></clipPath></defs>
   <g clip-path="url(#chr-clip-${suffix})">
     <rect x="${CX-HW}" y="${TOP}" width="${HW*2}" height="${H}" fill="#3d5068"/>
