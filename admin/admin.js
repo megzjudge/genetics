@@ -7,6 +7,7 @@ let snpList = [];
 let bulkRawCsv = null;
 let bulkGene = null, bulkRsid = null;
 let bulkRows = [];
+let bulkExistingStudies = [];
 
 // ── Auth ──────────────────────────────────────────
 function tryAuth() {
@@ -859,8 +860,8 @@ async function bulkScanCsv() {
   bulkRows.forEach(bulkDeriveDoiUrl);
 
   document.getElementById("bulk-scan-btn").disabled = true;
-  const existing = await safeFetchJson("/api/studies").then(d => (d && d.studies) || []);
-  bulkRows.forEach(row => { row._state = bulkComputeState(row, existing); });
+  bulkExistingStudies = await safeFetchJson("/api/studies").then(d => (d && d.studies) || []);
+  bulkRows.forEach(row => { row._state = bulkComputeState(row, bulkExistingStudies); });
   document.getElementById("bulk-scan-btn").disabled = false;
 
   renderBulkTable();
@@ -869,6 +870,11 @@ async function bulkScanCsv() {
 
 function bulkField(i, key, value) {
   bulkRows[i][key] = value;
+  // Re-derive the url from doi if either was just edited, then recheck
+  // flagged/duplicate state so the red/grey/blue highlight actually updates
+  // once a row becomes complete (previously only computed once, at scan time).
+  if (key === "doi" || key === "url") bulkDeriveDoiUrl(bulkRows[i]);
+  bulkRows[i]._state = bulkComputeState(bulkRows[i], bulkExistingStudies);
 }
 
 function bulkToggleEdit(i) {
