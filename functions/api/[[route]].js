@@ -56,13 +56,86 @@ function parseAlleleCell(raw) {
   return null;
 }
 
-// Fallback: scrape the classic NCBI report page's frequency table when the
-// beta REST API 404s (confirmed happening for a real chunk of older rsIDs —
-// e.g. rs119774 has a normal report page but no REST API entry at all).
-// Picks one study's full population breakdown — prefers "Allele Frequency
-// Aggregator" (ALFA under its full display name in this table) to match
-// what the REST API path itself uses; otherwise picks whichever study has
-// the richest breakdown available.
+function sortFreqRows(rows) {
+  rows.sort((a, b) => {
+    if (a.pop_type === "Total") return -1;
+    if (b.pop_type === "Total") return 1;
+    return a.population.localeCompare(b.population);
+  });
+  return rows;
+}
+
+// The report page has TWO different frequency tables, confirmed by directly
+// inspecting rs924135's HTML — they can disagree on sample size for the same
+// named sub-population (e.g. dbsnp_freq_datatable showed Latin American 1 as
+// 16 where popfreq_datatable correctly shows 98, matching NCBI's own display).
+// popfreq_datatable is the dedicated ALFA breakdown: no "Study" column (it's
+// ALFA only), but has Ref HMOZ / Alt HMOZ / HTRZ genotype columns the other
+// table lacks entirely. Always prefer it.
+function parsePopfreqTable(html) {
+  const tableM = html.match(/<table id="popfreq_datatable"[\s\S]*?<\/table>/);
+  if (!tableM) return [];
+  const blocks = tableM[0].match(/<tr class="(?:par_row|chi_row)">[\s\S]*?<\/tr>/g) || [];
+  const rows = [];
+  for (const block of blocks) {
+    const tds = (block.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
+      .map(t => t.replace(/<[^>]+>/g, "").trim());
+    if (tds.length !== 9) continue;
+    const [population, group, sampleSize, refRaw, altRaw, refHmoz, altHmoz, htrz] = tds;
+    const ref = parseAlleleCell(refRaw);
+    const alt = parseAlleleCell(altRaw);
+    if (!ref || !alt) continue;
+    rows.push({
+      population, pop_type: group.toLowerCase() === "sub" ? "Sub" : "Total",
+      sample_size: parseInt(sampleSize) || null,
+      allele1: ref.allele, allele1_freq: ref.freq,
+      allele2: alt.allele, allele2_freq: alt.freq,
+      geno_hom1: parseFloat(refHmoz) || null,
+      geno_het:  parseFloat(htrz)    || null,
+      geno_hom2: parseFloat(altHmoz) || null,
+    });
+  }
+  return sortFreqRows(rows);
+}
+
+// Secondary fallback for SNPs with no popfreq_datatable at all (no ALFA data
+// on the page). Multi-study comparison table — no genotype columns, so
+// geno_* stays null. Prefers "Allele Frequency Aggregator" (ALFA under its
+// full display name here) if present; otherwise the richest breakdown.
+function parseDbsnpFreqTable(html) {
+  const tableM = html.match(/<table id="dbsnp_freq_datatable"[\s\S]*?<\/table>/);
+  if (!tableM) return [];
+
+  const blocks = tableM[0].match(/<tr class="(?:par_row|chi_row)">[\s\S]*?<\/tr>/g) || [];
+  const studies = {};
+  for (const block of blocks) {
+    const tds = (block.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
+      .map(t => t.replace(/<[^>]+>/g, "").trim());
+    if (tds.length !== 6) continue;
+    const [study, population, group, sampleSize, refRaw, altRaw] = tds;
+    const ref = parseAlleleCell(refRaw);
+    const alt = parseAlleleCell(altRaw);
+    if (!ref || !alt) continue;
+    if (!studies[study]) studies[study] = [];
+    studies[study].push({
+      population, pop_type: group.toLowerCase() === "sub" ? "Sub" : "Total",
+      sample_size: parseInt(sampleSize) || null,
+      allele1: ref.allele, allele1_freq: ref.freq,
+      allele2: alt.allele, allele2_freq: alt.freq,
+      geno_hom1: null, geno_het: null, geno_hom2: null,
+    });
+  }
+
+  const names = Object.keys(studies);
+  if (!names.length) return [];
+  const chosen = names.find(n => n.toLowerCase().includes("allele frequency aggregator"))
+    || names.reduce((best, n) => studies[n].length > studies[best].length ? n : best, names[0]);
+
+  return sortFreqRows(studies[chosen]);
+}
+
+// Fallback: scrape the classic NCBI report page when the REST API either
+// fails outright or (more often) succeeds but has nothing ALFA-tagged.
 async function fetchNcbiFreqsFromHtml(rsid) {
   try {
     const html = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
@@ -70,44 +143,9 @@ async function fetchNcbiFreqsFromHtml(rsid) {
     }).then(r => r.ok ? r.text() : null).catch(() => null);
     if (!html) return [];
 
-    const tableM = html.match(/<table id="dbsnp_freq_datatable"[\s\S]*?<\/table>/);
-    if (!tableM) return [];
-
-    const blocks = tableM[0].match(/<tr class="(?:par_row|chi_row)">[\s\S]*?<\/tr>/g) || [];
-    const studies = {};
-    for (const block of blocks) {
-      const tds = (block.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
-        .map(t => t.replace(/<[^>]+>/g, "").trim());
-      if (tds.length !== 6) continue;
-      const [study, population, group, sampleSize, refRaw, altRaw] = tds;
-      // Ref/Alt Allele cells can hold more than one "X=freq" pair, comma-
-      // separated, for multi-allelic sites — e.g. "A=0.000000, C=0.145567".
-      // Drop zero-frequency entries and take the first real one.
-      const ref = parseAlleleCell(refRaw);
-      const alt = parseAlleleCell(altRaw);
-      if (!ref || !alt) continue;
-      if (!studies[study]) studies[study] = [];
-      studies[study].push({
-        population, pop_type: group.toLowerCase() === "sub" ? "Sub" : "Total",
-        sample_size: parseInt(sampleSize) || null,
-        allele1: ref.allele, allele1_freq: ref.freq,
-        allele2: alt.allele, allele2_freq: alt.freq,
-        geno_hom1: null, geno_het: null, geno_hom2: null,
-      });
-    }
-
-    const names = Object.keys(studies);
-    if (!names.length) return [];
-    const chosen = names.find(n => n.toLowerCase().includes("allele frequency aggregator"))
-      || names.reduce((best, n) => studies[n].length > studies[best].length ? n : best, names[0]);
-
-    const rows = studies[chosen];
-    rows.sort((a, b) => {
-      if (a.pop_type === "Total") return -1;
-      if (b.pop_type === "Total") return 1;
-      return a.population.localeCompare(b.population);
-    });
-    return rows;
+    const popRows = parsePopfreqTable(html);
+    if (popRows.length) return popRows;
+    return parseDbsnpFreqTable(html);
   } catch (e) {
     console.error("NCBI HTML freq scrape error:", e.message);
     return [];
@@ -193,6 +231,12 @@ async function fetchNcbiFreqs(rsid, env) {
       if (b.pop_type === "Total") return 1;
       return a.population.localeCompare(b.population);
     });
+
+    // A 200 response doesn't guarantee ALFA data — plenty of SNPs come back
+    // with only other studies (dbGaP_PopFreq, 1000Genomes, etc.) and zero
+    // "ALFA:"-prefixed entries, silently producing nothing here. Same
+    // fallback as an outright failure in that case.
+    if (!rows.length) return await fetchNcbiFreqsFromHtml(rsid);
 
     return rows;
   } catch (e) {
@@ -588,9 +632,15 @@ export async function onRequest({ request, env }) {
     const { name } = await request.json();
     if (!name) return err("name required");
 
-    const firstTwo = text => {
-      const sentences = text.match(/[^.!?]*[.!?]+/g) || [];
-      return sentences.slice(0, 2).join(" ").trim() || text.slice(0, 220).trim();
+    // No longer splits on ./!/? — that treated abbreviations and initials
+    // (e.g. a middle initial like "A.") as sentence ends, cutting text off
+    // mid-name. Just a plain character cap, snapped to the last full word.
+    const trimDesc = text => {
+      const max = 280;
+      if (text.length <= max) return text.trim();
+      const cut = text.slice(0, max);
+      const lastSpace = cut.lastIndexOf(" ");
+      return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim() + "…";
     };
 
     // 1. DuckDuckGo Instant Answer
@@ -600,7 +650,7 @@ export async function onRequest({ request, env }) {
         { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
       ).then(r => r.ok ? r.json() : null).catch(() => null);
       const text = ddg?.AbstractText?.trim();
-      if (text) return json({ description: firstTwo(text) });
+      if (text) return json({ description: trimDesc(text) });
     } catch (_) {}
 
     // 2. Wikipedia REST API fallback
@@ -611,7 +661,7 @@ export async function onRequest({ request, env }) {
         { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
       ).then(r => r.ok ? r.json() : null).catch(() => null);
       const text = wiki?.extract?.trim();
-      if (text) return json({ description: firstTwo(text) });
+      if (text) return json({ description: trimDesc(text) });
     } catch (_) {}
 
     return json({ description: null });
