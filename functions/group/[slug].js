@@ -49,11 +49,13 @@ export async function onRequestGet({ params, env }) {
     SELECT
       gi.gene_name,
       gi.full_name,
+      COUNT(DISTINCT p.rsid)                                AS snp_count,
       COUNT(DISTINCT s.id)                                  AS study_count,
       COUNT(DISTINCT ea.id)                                 AS alert_count,
       SUM(CASE WHEN ea.read = 0 THEN 1 ELSE 0 END)         AS unread_count
     FROM genes gi
     JOIN gene_topics gg ON gi.gene_name = gg.gene_name
+    LEFT JOIN personal p     ON gi.gene_name = p.gene_name
     LEFT JOIN studies s     ON gi.gene_name = s.gene_name
     LEFT JOIN email_alerts ea ON gi.gene_name = ea.gene_name
     WHERE gg.group_id = ?
@@ -112,6 +114,7 @@ ${nav()}
         ? `<p class="empty-state">No genes in this group yet.</p>`
         : genes.map(g => {
             const countParts = [];
+            if (g.snp_count > 0) countParts.push(`${g.snp_count} ${g.snp_count === 1 ? "SNP" : "SNPs"}`);
             if (g.study_count > 0) countParts.push(`${g.study_count} ${g.study_count === 1 ? "study" : "studies"}`);
             if (g.unread_count > 0) countParts.push(`<span class="unread-tag">${g.unread_count} new</span>`);
             return `<a class="gene-row" href="/gene/${esc(g.gene_name)}">

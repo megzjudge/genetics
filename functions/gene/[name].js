@@ -12,6 +12,20 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function studyCard(s) {
+  return `<div class="study-card">
+          <p class="study-meta">${[
+            s.title   ? (s.url
+              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
+              : esc(s.title)) : null,
+            s.doi     ? `<a href="https://doi.org/${esc(s.doi)}" target="_blank" rel="noopener">DOI</a>` : null,
+            s.authors ? esc(s.authors) : null,
+            s.year    ? esc(String(s.year)) : null,
+          ].filter(Boolean).join(" · ")}</p>
+          ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
+        </div>`;
+}
+
 function nav() {
   return `<header class="site-nav">
   <a class="nav-brand" href="/">
@@ -169,12 +183,18 @@ ${nav()}
             const freqs = (() => { try { return JSON.parse(s.freq_json || "[]"); } catch(e) { return []; } })();
             const a1 = freqs[0]?.allele1 || "";
             const a2 = freqs[0]?.allele2 || "";
-            return `<div class="snp-block">
-          <div class="snp-row">
-            <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
-            <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}"></span>
-            ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
-          </div>
+            const snpStudies = studies.filter(st => st.rsid === s.rsid);
+            return `<details class="snp-block">
+          <summary>
+            <div class="snp-row">
+              <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
+              <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}"></span>
+              ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
+              ${snpStudies.length ? `<span class="snp-meta-item">${snpStudies.length} ${snpStudies.length === 1 ? "study" : "studies"}</span>` : ""}
+            </div>
+            <span class="snp-chevron">▼</span>
+          </summary>
+          <div class="snp-block-body">
           <div data-personal-notes="${esc(s.rsid)}"></div>
           ${freqs.length > 0 ? `<div class="freq-table">
             ${freqs.map(f => {
@@ -194,7 +214,12 @@ ${nav()}
               </div>`;
             }).join("")}
           </div>` : ""}
-        </div>`;
+          ${snpStudies.length ? `<div class="snp-studies-inline">
+            <p class="snp-studies-label">Studies for ${esc(s.rsid)}</p>
+            ${snpStudies.map(studyCard).join("")}
+          </div>` : ""}
+          </div>
+        </details>`;
           }).join("")}
     </div>
 
@@ -202,17 +227,7 @@ ${nav()}
       <h2 class="studies-heading">Curated Studies<span class="section-count">${studies.length}</span></h2>
       ${studies.length === 0
         ? `<p class="empty-state">No studies added yet.</p>`
-        : studies.map(s => `<div class="study-card">
-          ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
-          <p class="study-meta">${[
-            s.authors ? esc(s.authors) : null,
-            s.year    ? esc(String(s.year)) : null,
-            s.title   ? (s.url
-              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
-              : esc(s.title)) : null,
-            s.doi     ? `<a href="https://doi.org/${esc(s.doi)}" target="_blank" rel="noopener">DOI</a>` : null,
-          ].filter(Boolean).join(" · ")}</p>
-        </div>`).join("")}
+        : studies.map(studyCard).join("")}
     </div>
 
     <div class="alerts-section gene-section">
