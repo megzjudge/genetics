@@ -54,7 +54,8 @@ export function chrFromMaploc(maploc) {
 
 // ── Panel 1: chromosome schematic ────────────────────────────────────────────
 // panelTwoX: if provided, draw zoom connector lines pointing to that x (Panel 2 left edge)
-function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
+// numberFont: CSS font-family for the big chromosome number only (defaults to the site's Outfit)
+function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX, numberFont) {
   const chr    = String(chrNum || "?");
   const cenFrac = parseFloat(CHR_CEN[chr] || "0.40");
   const suffix  = String(idSuffix || chr).replace(/\W/g, "");
@@ -109,7 +110,7 @@ function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX) {
   return `
   <rect x="20" y="20" width="270" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
   <text x="87.5"  y="66" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#7a8fa6" letter-spacing="1.2" font-weight="600">CHROMOSOME</text>
-  <text x="222.5" y="82" text-anchor="middle" font-family="'Outfit',system-ui,sans-serif" font-size="46" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
+  <text x="222.5" y="90" text-anchor="middle" font-family="${numberFont || "'Outfit',system-ui,sans-serif"}" font-size="69" fill="#e2e8f2" font-weight="700">${esc(chr)}</text>
   <defs><clipPath id="chr-clip-${suffix}"><path d="${path}"/></clipPath></defs>
   <g clip-path="url(#chr-clip-${suffix})">
     <rect x="${CX-HW}" y="${TOP}" width="${HW*2}" height="${H}" fill="#3d5068"/>
@@ -256,10 +257,11 @@ export function snpViz({ chrNum, geneName, maploc, rsid, refAllele, altAllele, p
 }
 
 // Panel 1 only — inline string (for embedding in gene page HTML)
-export function geneViz({ chrNum, geneName, maploc }) {
+// numberFont: optional override for the big chromosome number's font-family (used by /font-preview)
+export function geneViz({ chrNum, geneName, maploc, numberFont }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 560" style="width:100%;height:auto;display:block;border-radius:8px">
   <rect width="310" height="560" fill="#0e1117"/>
-  ${chrPanel(chrNum, geneName, maploc, String(geneName || "gene").replace(/\W/g,""), null)}
+  ${chrPanel(chrNum, geneName, maploc, String(geneName || "gene").replace(/\W/g,""), null, numberFont)}
   <text x="278" y="522" text-anchor="end" font-family="ui-monospace,monospace" font-size="12" fill="#7a8fa6" opacity="0.3" letter-spacing="0.05em">genetics.jdge.cc</text>
 </svg>`;
 }
