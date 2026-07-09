@@ -255,12 +255,17 @@
       <p class="section-divider" style="margin-top:0">Backfill Missing Data from NCBI</p>
       <p style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">
         Loops through every gene / SNP and fetches fresh data from NCBI, filling in anything that's missing.
-        Run <strong>Backfill Genes</strong> first (adds maplocation), then <strong>Backfill SNPs</strong> (adds ref/alt alleles and protein change).
-        Each request is throttled to stay within NCBI's rate limit — expect ~0.4 s per item.
+        Run <strong>Backfill Genes</strong> first (adds maplocation), then one of the SNP options below.
+        <strong>Backfill SNPs</strong> re-checks every SNP against NCBI regardless of current state (NCBI's own
+        data changes over time) — run this every few months. <strong>Backfill Missing SNPs</strong> only touches
+        SNPs missing a core field (chromosome/position/alleles/consequence) or with no population data at all —
+        much faster, safe to run any time. Each NCBI request is throttled and retried on failure, so actual time
+        is closer to 1–3 s per item than a flat rate.
       </p>
       <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <button class="btn-sm" id="bf-genes-btn" onclick="backfillGenes()">Backfill Genes</button>
         <button class="btn-sm" id="bf-snps-btn"  onclick="backfillSnps()">Backfill SNPs</button>
+        <button class="btn-sm" id="bf-snps-missing-btn" onclick="backfillMissingSnps()">Backfill Missing SNPs</button>
         <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)"
                 onclick="document.getElementById('bf-log').textContent=''">Clear log</button>
       </div>

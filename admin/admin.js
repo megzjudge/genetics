@@ -561,6 +561,7 @@ function bfProgress(msg) {
 function bfSetBtns(disabled) {
   document.getElementById("bf-genes-btn").disabled = disabled;
   document.getElementById("bf-snps-btn").disabled  = disabled;
+  document.getElementById("bf-snps-missing-btn").disabled = disabled;
 }
 
 async function backfillGenes() {
@@ -605,13 +606,28 @@ async function backfillGenes() {
   init();
 }
 
+// Full rewrite — re-checks every SNP against NCBI regardless of current
+// state, since NCBI's own data (esp. population frequencies) changes over
+// time. Meant to be run periodically (e.g. every few months), not routinely.
 async function backfillSnps() {
+  return runSnpBackfill("/api/snps", "No SNPs found in database.");
+}
+
+// Quick scan — only SNPs missing a core field that should always be
+// derivable (chromosome/position/ref_allele/alt_allele/consequence) or with
+// zero snp_pop rows. Skips anything already complete, so it's much faster
+// than the full rewrite and safe to run any time you suspect a gap.
+async function backfillMissingSnps() {
+  return runSnpBackfill("/api/snps/incomplete", "No incomplete SNPs found — everything already has core data.");
+}
+
+async function runSnpBackfill(listUrl, emptyMessage) {
   bfSetBtns(true);
   bfProgress("Fetching SNP list…");
 
   let snps = [];
   try {
-    const r = await apiFetch("/api/snps");
+    const r = await apiFetch(listUrl);
     const d = await r.json();
     snps = d.snps || [];
   } catch (e) {
@@ -621,7 +637,7 @@ async function backfillSnps() {
   }
 
   if (!snps.length) {
-    bfProgress("No SNPs found in database.");
+    bfProgress(emptyMessage);
     bfSetBtns(false);
     return;
   }

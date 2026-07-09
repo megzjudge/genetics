@@ -514,6 +514,29 @@ export async function onRequest({ request, env }) {
     return json({ snps: results || [] });
   }
 
+  // ── GET /api/snps/incomplete ─────────────────────
+  // For the quick "fill true gaps" backfill — chromosome/position/
+  // ref_allele/alt_allele/consequence should always be derivable for any
+  // real SNP, unlike protein_change (genuinely null for non-coding variants)
+  // or summary (only exists if SNPedia has a page), which are excluded here
+  // so this doesn't keep re-flagging SNPs that are actually complete.
+  if (method === "GET" && route === "snps" && param === "incomplete") {
+    const { results } = await env.genetic.prepare(`
+      SELECT p.gene_name, p.rsid
+      FROM personal p
+      LEFT JOIN snps s ON s.rsid = p.rsid
+      WHERE s.rsid IS NULL
+         OR s.chromosome IS NULL
+         OR s.position IS NULL
+         OR s.ref_allele IS NULL
+         OR s.alt_allele IS NULL
+         OR s.consequence IS NULL
+         OR NOT EXISTS (SELECT 1 FROM snp_pop WHERE snp_pop.rsid = p.rsid)
+      ORDER BY p.gene_name, p.rsid
+    `).all();
+    return json({ snps: results || [] });
+  }
+
   // ── GET /api/genes ───────────────────────────────
   if (method === "GET" && route === "genes") {
     const { results } = await env.genetic.prepare(`
