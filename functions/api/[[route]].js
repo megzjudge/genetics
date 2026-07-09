@@ -72,6 +72,15 @@ function sortFreqRows(rows) {
 // popfreq_datatable is the dedicated ALFA breakdown: no "Study" column (it's
 // ALFA only), but has Ref HMOZ / Alt HMOZ / HTRZ genotype columns the other
 // table lacks entirely. Always prefer it.
+// A genuine 0.0 genotype frequency is real data ("nobody in this sample was
+// homozygous alt"), not a missing value — `parseFloat(x) || null` would wrongly
+// null it out since 0 is falsy in JS. Only actually-unparseable values (e.g.
+// NCBI's own "N/A") should become null.
+function parseNum(raw) {
+  const n = parseFloat(raw);
+  return Number.isNaN(n) ? null : n;
+}
+
 function parsePopfreqTable(html) {
   const tableM = html.match(/<table id="popfreq_datatable"[\s\S]*?<\/table>/);
   if (!tableM) return [];
@@ -90,9 +99,9 @@ function parsePopfreqTable(html) {
       sample_size: parseInt(sampleSize) || null,
       allele1: ref.allele, allele1_freq: ref.freq,
       allele2: alt.allele, allele2_freq: alt.freq,
-      geno_hom1: parseFloat(refHmoz) || null,
-      geno_het:  parseFloat(htrz)    || null,
-      geno_hom2: parseFloat(altHmoz) || null,
+      geno_hom1: parseNum(refHmoz),
+      geno_het:  parseNum(htrz),
+      geno_hom2: parseNum(altHmoz),
     });
   }
   return sortFreqRows(rows);
@@ -246,6 +255,12 @@ async function fetchNcbiFreqs(rsid, env) {
 }
 
 async function storeFreqs(rsid, rows, env) {
+  // Full replace, not a partial upsert — the frequency source has changed
+  // more than once (JSON API vs HTML scrape label the same row differently,
+  // e.g. "Global" vs "Total"), so a plain INSERT OR REPLACE keyed on
+  // (rsid, population) can leave orphaned rows from an older run sitting
+  // alongside fresh ones under a different population name. Clear first.
+  await env.genetic.prepare(`DELETE FROM snp_pop WHERE rsid = ?`).bind(rsid).run();
   for (const row of rows) {
     await env.genetic.prepare(`
       INSERT OR REPLACE INTO snp_pop

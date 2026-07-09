@@ -1,4 +1,5 @@
 import { snpViz, chrFromMaploc } from "../lib/viz.js";
+import { nav, foot } from "../lib/layout.js";
 
 const BASE = "https://genetics.jdge.cc";
 
@@ -12,36 +13,72 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function nav() {
-  return `<header class="site-nav">
-  <a class="nav-brand" href="/">
-    <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
-    Genetics Research
-  </a>
-  <nav class="nav-links">
-    <a href="/basics">Basics</a>
-    <a href="/groups">Genes</a>
-  </nav>
-</header>`;
+// Math.round(x*100) rounds anything under 0.5% down to a flat "0%" — for a
+// Show the raw fraction exactly as pulled from NCBI (e.g. 0.000119) — no
+// ×100 conversion, no rounding. Only trims meaningless trailing zeros
+// (0.561860 -> 0.56186), never touches significant digits.
+function fmtFreq(n) {
+  if (n == null) return null;
+  let s = n.toFixed(6);
+  s = s.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  return s;
 }
 
-function foot() {
-  return `<footer class="site-footer">
-  <div class="footer-inner">
-    <span>Megan Judge · <a href="/admin">Admin</a> · <button id="personal-signin" class="personal-signin-btn">Login</button> · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
-    <div style="display:flex;gap:20px">
-      <a href="https://hereditary.substack.com">Hereditary →</a>
-      <a href="https://research.jdge.cc">Other Research Alerts →</a>
+// PID = persistent identifier (umbrella term for DOI, Handle/HDL, etc.)
+function pidUrl(pid) {
+  if (!pid) return null;
+  return /^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`;
+}
+
+function studyCard(s, extraClass) {
+  return `<div class="study-card${extraClass ? " " + extraClass : ""}">
+          ${s.title ? `<p class="study-title">${s.url
+              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
+              : esc(s.title)}</p>` : ""}
+          <p class="study-meta">${[
+            s.pid     ? `<a href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
+            s.authors ? esc(s.authors) : null,
+            s.year    ? esc(String(s.year)) : null,
+          ].filter(Boolean).join(" · ")}</p>
+          ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
+          <div class="study-assign" data-study-assign style="display:none">
+            <label>Move to</label>
+            <select onchange="window.assignStudy(${s.id},this.value)">
+              <option value=""  ${s.used == null ? "selected" : ""}>New</option>
+              <option value="1" ${s.used === 1   ? "selected" : ""}>Curated</option>
+              <option value="0" ${s.used === 0   ? "selected" : ""}>Unused</option>
+            </select>
+          </div>
+        </div>`;
+}
+
+function studyRow(s, i) {
+  return `<div class="snp-study-row">
+    <div class="snp-study-num">${i + 1}</div>
+    ${studyCard(s, i % 2 === 0 ? "study-card--pastel-a" : "study-card--pastel-b")}
+  </div>`;
+}
+
+// One nested accordion — e.g. "Curated Studies".
+function studiesSubAccordion(pinkWord, restOfLabel, desc, studiesArr) {
+  if (!studiesArr.length) return "";
+  return `<details class="snp-substudies">
+    <summary>
+      <span class="snp-studies-subhead"><span class="text-pink">${esc(pinkWord)}</span> ${esc(restOfLabel)}<span class="section-count">${studiesArr.length}</span></span>
+      <span class="snp-chevron snp-chevron--sm">▼</span>
+    </summary>
+    <div class="snp-substudies-body">
+      ${desc ? `<p class="snp-studies-subdesc">${esc(desc)}</p>` : ""}
+      ${studiesArr.map(studyRow).join("")}
     </div>
-  </div>
-</footer>`;
+  </details>`;
 }
 
 export async function onRequestGet({ params, env }) {
   const rawRsid  = (params.rsid || "").toLowerCase();
   const rsid     = /^rs/i.test(rawRsid) ? rawRsid : "rs" + rawRsid;
 
-  const [snp, freqsRes] = await Promise.all([
+  const [snp, freqsRes, studiesRes] = await Promise.all([
     env.genetic.prepare(
       `SELECT g.rsid, g.alleles, g.notes, g.gene_name, gi.full_name, gi.maplocation,
               si.chromosome, si.position, si.ref_allele, si.alt_allele,
@@ -54,6 +91,9 @@ export async function onRequestGet({ params, env }) {
     env.genetic.prepare(
       `SELECT * FROM snp_pop WHERE rsid = ?
        ORDER BY pop_type = 'Total' DESC, population ASC`
+    ).bind(rsid).all(),
+    env.genetic.prepare(
+      `SELECT * FROM studies WHERE rsid = ? ORDER BY year DESC, created_at DESC`
     ).bind(rsid).all(),
   ]);
 
@@ -79,6 +119,10 @@ ${foot()}
   }
 
   const freqs      = freqsRes.results || [];
+  const studies    = studiesRes.results || [];
+  const curatedStudies = studies.filter(s => s.used === 1);
+  const unusedStudies  = studies.filter(s => s.used === 0);
+  const newStudies     = studies.filter(s => s.used == null);
   const geneName   = snp.gene_name   || "";
   const maploc     = snp.maplocation || "";
   const chrNum     = snp.chromosome  || chrFromMaploc(maploc) || "";
@@ -110,18 +154,20 @@ ${foot()}
   // Frequency table rows
   const freqRows = freqs.map(f => {
     const fa1 = f.allele1 || "?", fa2 = f.allele2 || "?";
-    const a1pct = f.allele1_freq != null ? Math.round(f.allele1_freq * 100) + "%" : null;
-    const a2pct = f.allele2_freq != null ? Math.round(f.allele2_freq * 100) + "%" : null;
-    const hom1  = f.geno_hom1 != null ? Math.round(f.geno_hom1 * 100) + "%" : null;
-    const het   = f.geno_het  != null ? Math.round(f.geno_het  * 100) + "%" : null;
-    const hom2  = f.geno_hom2 != null ? Math.round(f.geno_hom2 * 100) + "%" : null;
+    const a1pct = fmtFreq(f.allele1_freq);
+    const a2pct = fmtFreq(f.allele2_freq);
+    const hom1  = fmtFreq(f.geno_hom1);
+    const het   = fmtFreq(f.geno_het);
+    const hom2  = fmtFreq(f.geno_hom2);
     const allelePart = (a1pct && a2pct) ? `${fa1} ${a1pct} / ${fa2} ${a2pct}` : "";
     const genoPart   = (hom1 && het && hom2) ? `${fa1+fa1} ${hom1} / ${fa1+fa2}&amp;${fa2+fa1} ${het} / ${fa2+fa2} ${hom2}` : "";
-    const nPart      = f.sample_size ? `n=${Number(f.sample_size).toLocaleString()}` : "";
+    const nPart      = f.sample_size ? `pop=${Number(f.sample_size).toLocaleString()}` : "";
     return `<div class="freq-row${f.pop_type === "Total" ? " freq-row--total" : ""}">
       <span class="freq-pop">${esc(f.population)}</span>
       <span class="freq-data">${[allelePart, genoPart, nPart].filter(Boolean).join(" | ")}</span>
-      <a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>
+      ${f.pop_type === "Total"
+        ? `<a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>`
+        : `<span></span>`}
     </div>`;
   }).join("");
 
@@ -180,6 +226,7 @@ ${nav()}
         ${snp.rr_url ? `<a href="${esc(snp.rr_url)}" target="_blank" rel="noopener" style="color:var(--accent)">Research Rabbit ↗</a>` : ""}
         <a href="https://www.snpedia.com/index.php/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
         ${geneName ? `<a href="https://www.genecards.org/card/${esc(geneName)}?Search=${esc(rsid)}#Variants_Variants" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>` : ""}
+        <a href="/databases" style="color:var(--accent)">All Databases →</a>
       </div>
     </div>
   </section>
@@ -190,6 +237,17 @@ ${nav()}
       ${freqs.length === 0
         ? `<p class="empty-state">No frequency data stored yet.</p>`
         : `<div class="freq-table">${freqRows}</div>`}
+    </div>
+
+    <div class="gene-section">
+      <h2 class="studies-heading">Studies<span class="section-count">${studies.length}</span></h2>
+      ${studies.length === 0
+        ? `<p class="empty-state">No studies added yet.</p>`
+        : `${studiesSubAccordion("Curated", "Studies",
+            `These studies were determined to be useful for this variant, please check list further down for "Unused Studies" if curious.`,
+            curatedStudies)}
+          ${studiesSubAccordion("Unused", "Studies", null, unusedStudies)}
+          ${studiesSubAccordion("New Unread", "Studies", null, newStudies)}`}
     </div>
   </div>
 
@@ -207,8 +265,21 @@ ${foot()}
       n.innerHTML = '<p class="gene-desc"></p>';
       n.firstChild.textContent = res.personal.notes;
     }
+    document.querySelectorAll('[data-study-assign]').forEach(function (el) { el.style.display = "flex"; });
     return true;
   }
+  window.assignStudy = async function (id, value) {
+    const token = PersonalAuth.getToken();
+    if (!token) return;
+    const used = value === "" ? null : parseInt(value);
+    const r = await fetch("/api/study/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ used }),
+    });
+    if (r.ok) location.reload();
+    else alert("Failed to update — check you're still signed in.");
+  };
   PersonalAuth.wireSignIn("personal-signin", load);
   load();
 })();

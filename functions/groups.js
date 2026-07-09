@@ -1,3 +1,5 @@
+import { nav, foot } from "./lib/layout.js";
+
 const BASE = "https://genetics.jdge.cc";
 
 function esc(str) {
@@ -8,31 +10,6 @@ function esc(str) {
 
 function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function nav() {
-  return `<header class="site-nav">
-  <a class="nav-brand" href="/">
-    <img class="nav-icon" src="/images/icon.png" alt="Genetics" width="26" height="26">
-    Genetics Research
-  </a>
-  <nav class="nav-links">
-    <a href="/basics">Basics</a>
-    <a href="/groups">Genes</a>
-  </nav>
-</header>`;
-}
-
-function foot() {
-  return `<footer class="site-footer">
-  <div class="footer-inner">
-    <span>Megan Judge · <a href="/admin">Admin</a> · <button id="personal-signin" class="personal-signin-btn">Login</button> · <a href="https://github.com/megzjudge/genetics/" target="_blank" rel="noopener">Github</a></span>
-    <div style="display:flex;gap:20px">
-      <a href="https://hereditary.substack.com">Hereditary →</a>
-      <a href="https://research.jdge.cc">Other Research Alerts →</a>
-    </div>
-  </div>
-</footer>`;
 }
 
 export async function onRequestGet({ env }) {
