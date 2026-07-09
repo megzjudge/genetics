@@ -13,25 +13,10 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-// Show the raw fraction exactly as pulled from NCBI (e.g. 0.000119) — no
-// ×100 conversion, no rounding. Only trims meaningless trailing zeros
-// (0.561860 -> 0.56186), never touches significant digits.
-function fmtFreq(n) {
-  if (n == null) return null;
-  let s = n.toFixed(6);
-  s = s.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
-  return s;
-}
-
-function formatDate(str) {
-  if (!str) return "";
-  return new Date(str).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
-}
-
 export async function onRequestGet({ params, env }) {
   const geneName = (params.name || "").toUpperCase();
 
-  const [info, groupsRes, studiesRes, alertsRes, snpsRes] = await Promise.all([
+  const [info, groupsRes, studiesRes, snpsRes] = await Promise.all([
     env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ?`).bind(geneName).first(),
     env.genetic.prepare(`
       SELECT tg.id, tg.name FROM topics tg
@@ -42,23 +27,9 @@ export async function onRequestGet({ params, env }) {
       SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC, created_at DESC
     `).bind(geneName).all(),
     env.genetic.prepare(`
-      SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC
-    `).bind(geneName).all(),
-    env.genetic.prepare(`
       SELECT g.rsid, g.alleles, g.notes, g.gene_name,
              si.chromosome, si.position, si.consequence,
-             si.ref_allele, si.alt_allele, si.protein_change, si.summary,
-             (
-        SELECT json_group_array(json_object(
-          'population', f.population, 'pop_type', f.pop_type,
-          'sample_size', f.sample_size,
-          'allele1', f.allele1, 'allele1_freq', f.allele1_freq,
-          'allele2', f.allele2, 'allele2_freq', f.allele2_freq,
-          'geno_hom1', f.geno_hom1, 'geno_het', f.geno_het, 'geno_hom2', f.geno_hom2
-        ))
-        FROM snp_pop f WHERE f.rsid = g.rsid
-        ORDER BY f.pop_type = 'Total' DESC, f.population ASC
-      ) AS freq_json
+             si.ref_allele, si.alt_allele, si.protein_change, si.summary
       FROM personal g LEFT JOIN snps si ON si.rsid = g.rsid
       WHERE g.gene_name = ?
       ORDER BY g.rsid ASC
@@ -88,13 +59,11 @@ ${foot()}
 
   const groups  = groupsRes.results  || [];
   const studies = studiesRes.results  || [];
-  const alerts  = alertsRes.results   || [];
   const snps    = snpsRes.results     || [];
-  const unread  = alerts.filter(a => a.read === 0).length;
 
   const primaryGroup = groups[0] || null;
   const groupSlug    = primaryGroup ? slugify(primaryGroup.name) : "";
-  const descMeta     = esc(info.description || `${geneName} — curated research and Scholar alerts.`);
+  const descMeta     = esc(info.description || `${geneName} — SNPs, population frequencies, and curated research.`);
 
   const maploc  = info.maplocation || "";
   const chrNum  = chrFromMaploc(maploc) || snps[0]?.chromosome || null;
@@ -152,67 +121,13 @@ ${nav()}
       ${snps.length === 0
         ? `<p class="empty-state">No variant data entered yet.</p>`
         : snps.map(s => {
-            const freqs = (() => { try { return JSON.parse(s.freq_json || "[]"); } catch(e) { return []; } })();
-            const a1 = freqs[0]?.allele1 || "";
-            const a2 = freqs[0]?.allele2 || "";
             const snpStudies = studies.filter(st => st.rsid === s.rsid);
-            return `<details class="snp-block">
-          <summary>
-            <div class="snp-row">
-              <a class="rsid-link" href="/snp/${esc(s.rsid)}">${esc(s.rsid)}</a>
+            return `<a class="snp-row snp-row--link" href="/snp/${esc(s.rsid)}">
+              <span class="rsid-link">${esc(s.rsid)}</span>
               <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}"></span>
-              ${s.chromosome ? `<span class="snp-meta-item">Chr ${esc(s.chromosome)}${s.position ? ":" + esc(s.position) : ""}</span>` : ""}
               ${snpStudies.length ? `<span class="snp-meta-item">${snpStudies.length} ${snpStudies.length === 1 ? "study" : "studies"}</span>` : ""}
-            </div>
-            <span class="snp-chevron">▼</span>
-          </summary>
-          <div class="snp-block-body">
-          <div data-personal-notes="${esc(s.rsid)}"></div>
-          ${freqs.length > 0 ? `<div class="freq-table">
-            ${freqs.map(f => {
-              const fa1 = f.allele1 || "?", fa2 = f.allele2 || "?";
-              const a1pct = fmtFreq(f.allele1_freq);
-              const a2pct = fmtFreq(f.allele2_freq);
-              const hom1  = fmtFreq(f.geno_hom1);
-              const het   = fmtFreq(f.geno_het);
-              const hom2  = fmtFreq(f.geno_hom2);
-              const allelePart = (a1pct && a2pct) ? `${fa1} ${a1pct} / ${fa2} ${a2pct}` : "";
-              const genoPart   = (hom1 && het && hom2) ? `${fa1+fa1} ${hom1} / ${fa1+fa2}&amp;${fa2+fa1} ${het} / ${fa2+fa2} ${hom2}` : "";
-              const nPart      = f.sample_size ? `pop=${Number(f.sample_size).toLocaleString()}` : "";
-              return `<div class="freq-row${f.pop_type === "Total" ? " freq-row--total" : ""}">
-                <span class="freq-pop">${esc(f.population)}</span>
-                <span class="freq-data">${[allelePart, genoPart, nPart].filter(Boolean).join(" | ")}</span>
-                ${f.pop_type === "Total"
-                  ? `<a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(s.rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>`
-                  : `<span></span>`}
-              </div>`;
-            }).join("")}
-          </div>` : ""}
-          </div>
-        </details>`;
+            </a>`;
           }).join("")}
-    </div>
-
-    <div class="alerts-section gene-section">
-      <h2 class="studies-heading">Scholar Alerts${
-        unread > 0 ? `<span class="unread-tag">${unread} new</span>` : ""
-      }<span class="section-count">${alerts.length}</span></h2>
-      ${alerts.length === 0
-        ? `<p class="empty-state">No alerts received yet.</p>`
-        : alerts.map(a => `<div class="alert-card${a.read === 0 ? " unread" : ""}">
-          <p class="alert-title">
-            ${a.read === 0 ? `<span class="unread-dot"></span>` : ""}
-            ${a.link
-              ? `<a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.title || "Untitled")}</a>`
-              : esc(a.title || "Untitled")}
-          </p>
-          ${a.authors ? `<p class="alert-authors">${esc(a.authors)}</p>` : ""}
-          ${a.snippet ? `<p class="alert-snippet">${esc(a.snippet)}</p>` : ""}
-          <div class="alert-foot">
-            <span>${esc(a.gene_name)}${a.rsid ? ` · ${esc(a.rsid)}` : ""}</span>
-            <span>${formatDate(a.received_at)}</span>
-          </div>
-        </div>`).join("")}
     </div>
 
   </div>
@@ -228,9 +143,6 @@ ${foot()}
     for (const p of (res.personal || [])) {
       const a = document.querySelector('[data-personal-alleles="' + p.rsid + '"]');
       if (a) a.textContent = p.alleles || "—";
-      const n = document.querySelector('[data-personal-notes="' + p.rsid + '"]');
-      if (n && p.notes) n.innerHTML = '<p class="snp-notes"></p>';
-      if (n && p.notes) n.firstChild.textContent = p.notes;
     }
     return true;
   }
