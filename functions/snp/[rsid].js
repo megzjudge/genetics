@@ -228,7 +228,7 @@ ${nav()}
           : ""} / ${esc(rsid)}
       </nav>
 
-      <div class="snp-viz-wrap" style="margin:24px 0 44px;border-radius:10px;overflow:hidden;line-height:0">
+      <div class="snp-viz-wrap" style="margin:38px 0 44px;border-radius:10px;overflow:hidden;line-height:0">
         ${vizSvg}
       </div>
 
