@@ -228,13 +228,14 @@ ${nav()}
           : ""} / ${esc(rsid)}
       </nav>
 
-      <div class="snp-viz-wrap" style="margin:24px 0 28px;border-radius:10px;overflow:hidden;line-height:0">
+      <div class="snp-viz-wrap" style="margin:24px 0 44px;border-radius:10px;overflow:hidden;line-height:0">
         ${vizSvg}
       </div>
 
-      <h1 class="gene-title" style="font-size:38px">${esc(rsid)}${protChange ? ` <span style="font-family:var(--mono);font-size:0.6em;color:var(--muted);font-weight:400">${esc(protChange)}</span>` : ""}</h1>
+      <h1 class="gene-title" style="font-size:38px">${esc(rsid)}</h1>
 
-      <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 0 20px;font-family:var(--mono);font-size:16px;color:var(--muted)">
+      <div style="display:flex;flex-wrap:wrap;gap:18px;margin:28px 0 10px;font-family:var(--mono);font-size:16px;color:var(--muted)">
+        ${protChange ? `<span style="color:var(--ink);font-weight:600">${esc(protChange)}</span>` : ""}
         ${geneName ? `<span>Gene: <a href="/gene/${esc(geneName)}" style="color:var(--accent)">${esc(geneName)}</a>${snp.full_name ? ` — ${esc(snp.full_name)}` : ""}</span>` : ""}
         ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
