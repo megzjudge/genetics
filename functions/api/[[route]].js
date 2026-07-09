@@ -858,16 +858,28 @@ export async function onRequest({ request, env }) {
     const genes_found = [];
     const ncbi = ncbiRes.status === "fulfilled" ? ncbiRes.value : null;
     if (ncbi) {
+      // NCBI returns a SEPARATE allele_annotations entry per observed allele,
+      // including the reference allele itself — whose SPDI is always
+      // deleted===inserted (a no-op "change"), and often has no
+      // sequence_ontology either. Confirmed for rs4148356: the first ABCC1
+      // entry encountered is the reference (R->R, empty SO); the real R->Q
+      // missense change only shows up in a LATER entry for the same gene.
+      // Merge into the existing entry for a gene instead of skipping once
+      // seen once, so a later, more complete entry can still fill the gaps.
       const anns = ncbi?.primary_snapshot_data?.allele_annotations || [];
       for (const ann of anns) {
         for (const asm of (ann.assembly_annotation || [])) {
           for (const gene of (asm.genes || [])) {
-            if (gene.locus && !genes_found.find(g => g.name === gene.locus)) {
-              const entry = {
-                name:        gene.locus,
-                consequence: gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null,
-                protein_change: null,
-              };
+            if (!gene.locus) continue;
+            let entry = genes_found.find(g => g.name === gene.locus);
+            if (!entry) {
+              entry = { name: gene.locus, consequence: null, protein_change: null };
+              genes_found.push(entry);
+            }
+            if (!entry.consequence) {
+              entry.consequence = gene.sequence_ontology?.[0]?.name?.replace(/_/g, " ") ?? null;
+            }
+            if (!entry.protein_change) {
               for (const rna of (gene.rnas || [])) {
                 const spdi = rna?.protein?.variant?.spdi;
                 if (spdi?.deleted_sequence && spdi?.inserted_sequence
@@ -877,7 +889,6 @@ export async function onRequest({ request, env }) {
                   break;
                 }
               }
-              genes_found.push(entry);
             }
           }
         }
