@@ -171,12 +171,22 @@ ${foot()}
     const hom1  = fmtFreq(f.geno_hom1);
     const het   = fmtFreq(f.geno_het);
     const hom2  = fmtFreq(f.geno_hom2);
-    const allelePart = (a1pct && a2pct) ? `${fa1} ${a1pct} / ${fa2} ${a2pct}` : "";
-    const genoPart   = (hom1 && het && hom2) ? `${fa1+fa1} ${hom1} / ${fa1+fa2}&amp;${fa2+fa1} ${het} / ${fa2+fa2} ${hom2}` : "";
-    const nPart      = f.sample_size ? `pop=${Number(f.sample_size).toLocaleString()}` : "";
+    const chips = [];
+    if (a1pct && a2pct) {
+      chips.push(`<span class="freq-chip freq-chip--a">${esc(fa1)} ${a1pct}</span>`);
+      chips.push(`<span class="freq-chip freq-chip--a">${esc(fa2)} ${a2pct}</span>`);
+    }
+    if (hom1 && het && hom2) {
+      chips.push(`<span class="freq-chip freq-chip--g">${esc(fa1+fa1)} ${hom1}</span>`);
+      chips.push(`<span class="freq-chip freq-chip--g">${esc(fa1+fa2)}/${esc(fa2+fa1)} ${het}</span>`);
+      chips.push(`<span class="freq-chip freq-chip--g">${esc(fa2+fa2)} ${hom2}</span>`);
+    }
+    if (f.sample_size) {
+      chips.push(`<span class="freq-chip freq-chip--n">pop=${Number(f.sample_size).toLocaleString()}</span>`);
+    }
     return `<div class="freq-row${f.pop_type === "Total" ? " freq-row--total" : ""}">
       <span class="freq-pop">${esc(f.population)}</span>
-      <span class="freq-data">${[allelePart, genoPart, nPart].filter(Boolean).join(" | ")}</span>
+      <span class="freq-data">${chips.join("")}</span>
       ${f.pop_type === "Total"
         ? `<a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>`
         : `<span></span>`}

@@ -611,16 +611,16 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .snp-substudies > summary::marker { content: ""; }
 .snp-substudies > summary:hover .snp-chevron { color: var(--accent); }
 .snp-substudies[open] > summary .snp-chevron { transform: rotate(180deg); }
-.snp-chevron--sm { font-size: 13px; }
+.snp-chevron--sm { font-size: 16px; }
 .snp-substudies-body { margin-top: 10px; }
 .snp-studies-subhead {
   display: block;
-  font-family: var(--serif); font-weight: 400; font-size: 17px;
+  font-family: var(--serif); font-weight: 400; font-size: 21px;
   letter-spacing: 0.01em; color: var(--ink);
   padding: 16px 0;
 }
 .snp-studies-subdesc {
-  font-size: 13.5px; font-style: italic; color: var(--muted);
+  font-size: 15px; font-style: italic; color: var(--muted);
   line-height: 1.55; margin: 6px 0 14px;
 }
 /* Numbered study rows inside the SNP accordion — number column aligns with
@@ -683,7 +683,17 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .freq-pop { color: var(--faint); font-size: 14.5px; letter-spacing: 0.03em; }
 .freq-row--total .freq-pop { color: var(--muted); }
-.freq-data { font-size: 15px; }
+.freq-data { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; }
+.freq-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  white-space: nowrap;
+  color: var(--body-text);
+}
+.freq-chip--a { background: rgba(52, 211, 153, 0.13); }
+.freq-chip--g { background: rgba(232, 69, 128, 0.13); }
+.freq-chip--n { background: var(--card); border: 1px solid var(--line); color: var(--muted); }
 .freq-link {
   color: var(--faint); text-decoration: none; font-size: 35px; line-height: 1;
   text-align: right; display: block; overflow: visible;
@@ -708,7 +718,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .gene-section:last-child { margin-bottom: 0; }
 
 .section-count {
-  font-family: var(--mono); font-size: 13px; font-weight: 400;
+  font-family: var(--mono); font-size: 15px; font-weight: 400;
   color: var(--faint); margin-left: 10px; letter-spacing: 0;
 }
 
@@ -722,7 +732,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 
 .empty-state {
-  font-family: var(--mono); font-size: 13px; color: var(--faint);
+  font-family: var(--mono); font-size: 15px; color: var(--faint);
   padding: 24px 0; margin: 0;
 }
 
