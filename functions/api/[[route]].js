@@ -182,16 +182,10 @@ async function fetchNcbiFreqsFromHtml(rsid) {
   }
 }
 
-async function fetchNcbiFreqs(rsid, env) {
-  const numId = rsid.replace(/^rs/i, "");
-  try {
-    const r = await fetch(
-      `https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/${numId}`,
-      { headers: { "Accept": "application/json", "User-Agent": "genetics.jdge.cc" } }
-    );
-    if (!r.ok) return await fetchNcbiFreqsFromHtml(rsid);
-    const data = await r.json();
-
+// Extracted so the lookup endpoint can reuse an NCBI JSON response it already
+// fetched for gene_name/consequence, instead of fetching it a second time
+// just to also check for frequency data.
+function parseAlfaJsonFreqs(data) {
     // Build per-study allele buckets: { studyName: { allele: { count, total } } }
     const buckets = {};
     const annotations = data?.primary_snapshot_data?.allele_annotations || [];
@@ -255,19 +249,36 @@ async function fetchNcbiFreqs(rsid, env) {
       });
     }
 
-    // Sort: Total first, then subs alphabetically
-    rows.sort((a, b) => {
-      if (a.pop_type === "Total") return -1;
-      if (b.pop_type === "Total") return 1;
-      return a.population.localeCompare(b.population);
-    });
+  // Sort: Total first, then subs alphabetically
+  rows.sort((a, b) => {
+    if (a.pop_type === "Total") return -1;
+    if (b.pop_type === "Total") return 1;
+    return a.population.localeCompare(b.population);
+  });
+
+  return rows;
+}
+
+// Standalone fetch-and-parse — used by callers (e.g. the individual "Pop"
+// rescan) that don't already have an NCBI JSON response lying around. Prefer
+// reusing parseAlfaJsonFreqs() directly when you already fetched the JSON
+// for something else (see POST /api/snp/lookup) to avoid a duplicate fetch.
+async function fetchNcbiFreqs(rsid, env) {
+  const numId = rsid.replace(/^rs/i, "");
+  try {
+    const r = await fetch(
+      `https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/${numId}`,
+      { headers: { "Accept": "application/json", "User-Agent": "genetics.jdge.cc" } }
+    );
+    if (!r.ok) return await fetchNcbiFreqsFromHtml(rsid);
+    const data = await r.json();
 
     // A 200 response doesn't guarantee ALFA data — plenty of SNPs come back
     // with only other studies (dbGaP_PopFreq, 1000Genomes, etc.) and zero
     // "ALFA:"-prefixed entries, silently producing nothing here. Same
     // fallback as an outright failure in that case.
+    const rows = parseAlfaJsonFreqs(data);
     if (!rows.length) return await fetchNcbiFreqsFromHtml(rsid);
-
     return rows;
   } catch (e) {
     console.error("NCBI fetch error:", e.message);
@@ -609,7 +620,7 @@ export async function onRequest({ request, env }) {
   if (method === "PATCH" && route === "snp" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change, consequence,
-            chromosome, position, summary, rr_url } = await request.json();
+            chromosome, position, summary, rr_url, frequencies } = await request.json();
     if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
         INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)
@@ -635,9 +646,14 @@ export async function onRequest({ request, env }) {
         ON CONFLICT(rsid) DO UPDATE SET rr_url = excluded.rr_url
       `).bind(rsid, rr_url || null).run();
     }
-    // Refresh NCBI ALFA population frequencies too — this endpoint is also the
-    // backfill path, and backfill previously never touched snp_pop at all.
-    const freqRows = await fetchNcbiFreqs(rsid, env);
+    // Population frequencies — if the caller already looked these up (the
+    // admin backfill flow calls /api/snp/lookup first and forwards its
+    // `frequencies` here), reuse them rather than firing a second NCBI
+    // fetch for the same rsid. Only fetch fresh if none were provided at
+    // all (frequencies === undefined), so a plain PATCH with no lookup
+    // step still works — but an explicit [] means "already checked, found
+    // nothing", not "please go fetch".
+    const freqRows = frequencies !== undefined ? frequencies : await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
     return json({ ok: true, frequencies_fetched: freqRows.length, frequencies: freqRows });
   }
@@ -875,8 +891,15 @@ export async function onRequest({ request, env }) {
     // missing gene) found the gene but left consequence empty. Each sub-block
     // below only fills a field that's still actually missing, so this never
     // overwrites something the JSON path already got right.
+    // ncbiHtml stays in scope below so the frequency lookup can reuse it
+    // rather than firing a second fetch at the same URL — the previous
+    // two-separate-fetches setup (this endpoint + PATCH /api/snp/:rsid each
+    // hitting NCBI independently) was confirmed causing one or the other to
+    // fail intermittently, most likely NCBI throttling rapid duplicate
+    // requests to the same rsid's page.
+    let ncbiHtml = null;
     if (!gene_name || !consequence) {
-      const ncbiHtml = await fetchNcbiHtml(rsid);
+      ncbiHtml = await fetchNcbiHtml(rsid);
       if (ncbiHtml) {
         if (!gene_name) {
           const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
@@ -918,7 +941,20 @@ export async function onRequest({ request, env }) {
       if (sumM) summary = sumM[1].trim().replace(/\[\[([^\]|]+)\|?[^\]]*\]\]/g, "$1");
     }
 
-    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, position, consequence, protein_change, ref_allele, alt_allele, summary });
+    // Population frequencies — reuse whatever's already in hand (the JSON
+    // response, or the HTML fetched above for consequence) before ever
+    // firing a fresh fetch, so a lookup call costs at most one NCBI HTML
+    // request total, not two.
+    let frequencies = ncbi ? parseAlfaJsonFreqs(ncbi) : [];
+    if (!frequencies.length) {
+      if (!ncbiHtml) ncbiHtml = await fetchNcbiHtml(rsid);
+      if (ncbiHtml) {
+        frequencies = parsePopfreqTable(ncbiHtml);
+        if (!frequencies.length) frequencies = parseDbsnpFreqTable(ncbiHtml);
+      }
+    }
+
+    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, position, consequence, protein_change, ref_allele, alt_allele, summary, frequencies });
   }
 
   // ── POST /api/snp ────────────────────────────────

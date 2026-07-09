@@ -267,7 +267,7 @@ async function scanOnePop(rsid) {
       body: JSON.stringify({
         ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
         consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
-        summary: ld.summary,
+        summary: ld.summary, frequencies: ld.frequencies,
       }),
     });
     if (!pr.ok) throw new Error("PATCH failed " + pr.status);
@@ -648,7 +648,7 @@ async function backfillSnps() {
         body: JSON.stringify({
           ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
           consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
-          summary: ld.summary,
+          summary: ld.summary, frequencies: ld.frequencies,
         }),
       });
       if (!pr.ok) throw new Error("PATCH failed " + pr.status);
