@@ -234,7 +234,7 @@ ${nav()}
 
       <h1 class="gene-title" style="font-size:38px">${esc(rsid)}${protChange ? ` <span style="font-family:var(--mono);font-size:0.6em;color:var(--muted);font-weight:400">${esc(protChange)}</span>` : ""}</h1>
 
-      <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 0 20px;font-family:var(--mono);font-size:12px;color:var(--muted)">
+      <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 0 20px;font-family:var(--mono);font-size:16px;color:var(--muted)">
         ${geneName ? `<span>Gene: <a href="/gene/${esc(geneName)}" style="color:var(--accent)">${esc(geneName)}</a>${snp.full_name ? ` — ${esc(snp.full_name)}` : ""}</span>` : ""}
         ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
@@ -243,7 +243,7 @@ ${nav()}
 
       <div data-personal-notes="${esc(rsid)}"></div>
 
-      <div style="display:flex;gap:20px;font-family:var(--mono);font-size:11px;margin-top:8px">
+      <div style="display:flex;gap:20px;font-family:var(--mono);font-size:15px;margin-top:8px">
         <a href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
         ${snp.rr_url ? `<a href="${esc(snp.rr_url)}" target="_blank" rel="noopener" style="color:var(--accent)">Research Rabbit ↗</a>` : ""}
         ${snp.has_snpedia === 1

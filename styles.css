@@ -432,7 +432,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 /* Studies */
 .studies-section { margin-bottom: 56px; }
 .studies-heading {
-  font-family: var(--serif); font-weight: 400; font-size: 23px;
+  font-family: var(--serif); font-weight: 400; font-size: 30px;
   letter-spacing: 0.02em;
   color: var(--ink); margin: 0 0 28px;
   padding-bottom: 18px; border-bottom: 1px solid var(--line);
@@ -448,7 +448,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   font-size: 15.5px; line-height: 1.68; margin: 0;
 }
 .study-title {
-  font-family: var(--serif); font-size: 16.5px; font-weight: 600;
+  font-family: var(--sans); font-size: 16.5px; font-weight: 600;
   color: var(--ink); line-height: 1.4; margin: 0 0 6px;
 }
 .study-title a { color: var(--ink); text-decoration: none; }
@@ -681,8 +681,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   color: var(--ink);
   font-weight: 500;
 }
-.freq-pop { color: var(--faint); font-size: 14.5px; letter-spacing: 0.03em; }
-.freq-row--total .freq-pop { color: var(--muted); }
+.freq-pop { color: var(--muted); font-size: 17px; font-weight: 600; letter-spacing: 0.02em; }
+.freq-row--total .freq-pop { color: var(--ink); }
 .freq-data { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 15px; }
 .freq-chip {
   display: inline-block;
