@@ -143,21 +143,35 @@ function parseDbsnpFreqTable(html) {
   return sortFreqRows(studies[chosen]);
 }
 
+// Confirmed the actual data exists and parses fine even for SNPs that
+// intermittently come back with nothing during a backfill run — pointing to
+// NCBI throttling rapid sequential requests rather than a per-SNP data gap.
+// Shared by both HTML scrape call sites; retries with backoff before giving up.
+async function fetchNcbiHtml(rsid) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(res => setTimeout(res, 500 * attempt));
+    try {
+      const r = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html",
+        },
+      });
+      if (r.ok) return await r.text();
+      console.error(`NCBI HTML fetch: ${rsid} attempt ${attempt + 1} responded ${r.status}`);
+    } catch (e) {
+      console.error(`NCBI HTML fetch: ${rsid} attempt ${attempt + 1} error: ${e.message}`);
+    }
+  }
+  return null;
+}
+
 // Fallback: scrape the classic NCBI report page when the REST API either
 // fails outright or (more often) succeeds but has nothing ALFA-tagged.
 async function fetchNcbiFreqsFromHtml(rsid) {
   try {
-    const r = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html",
-      },
-    });
-    if (!r.ok) {
-      console.error(`NCBI HTML freq scrape: ${rsid} responded ${r.status}`);
-      return [];
-    }
-    const html = await r.text();
+    const html = await fetchNcbiHtml(rsid);
+    if (!html) return [];
 
     const popRows = parsePopfreqTable(html);
     if (popRows.length) return popRows;
@@ -862,12 +876,7 @@ export async function onRequest({ request, env }) {
     // below only fills a field that's still actually missing, so this never
     // overwrites something the JSON path already got right.
     if (!gene_name || !consequence) {
-      const ncbiHtml = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Accept": "text/html",
-        },
-      }).then(r => r.ok ? r.text() : null).catch(() => null);
+      const ncbiHtml = await fetchNcbiHtml(rsid);
       if (ncbiHtml) {
         if (!gene_name) {
           const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
