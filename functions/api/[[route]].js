@@ -147,10 +147,17 @@ function parseDbsnpFreqTable(html) {
 // fails outright or (more often) succeeds but has nothing ALFA-tagged.
 async function fetchNcbiFreqsFromHtml(rsid) {
   try {
-    const html = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
-      headers: { "User-Agent": "genetics.jdge.cc/bot", "Accept": "text/html" }
-    }).then(r => r.ok ? r.text() : null).catch(() => null);
-    if (!html) return [];
+    const r = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html",
+      },
+    });
+    if (!r.ok) {
+      console.error(`NCBI HTML freq scrape: ${rsid} responded ${r.status}`);
+      return [];
+    }
+    const html = await r.text();
 
     const popRows = parsePopfreqTable(html);
     if (popRows.length) return popRows;
@@ -848,23 +855,31 @@ export async function onRequest({ request, env }) {
       }
     }
 
-    // Fallback: scrape NCBI HTML for upstream/near-gene variants where JSON API lacks gene annotation
-    if (!gene_name) {
+    // Fallback: scrape NCBI HTML when the JSON API is either missing gene
+    // annotation entirely, OR (confirmed happening — e.g. rs119774's ABCC1
+    // entry comes back with sequence_ontology: [], an empty array, not a
+    // missing gene) found the gene but left consequence empty. Each sub-block
+    // below only fills a field that's still actually missing, so this never
+    // overwrites something the JSON path already got right.
+    if (!gene_name || !consequence) {
       const ncbiHtml = await fetch(`https://www.ncbi.nlm.nih.gov/snp/${rsid}`, {
-        headers: { "User-Agent": "genetics.jdge.cc/bot", "Accept": "text/html" }
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html",
+        },
       }).then(r => r.ok ? r.text() : null).catch(() => null);
       if (ncbiHtml) {
-        const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
-        if (gm) gene_name = gm[1].trim();
+        if (!gene_name) {
+          const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
+          if (gm) gene_name = gm[1].trim();
+        }
         if (!consequence) {
           const cm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>[^:]+:\s*([^<\n]+)/i);
           if (cm) consequence = cm[1].trim();
         }
         // Same fallback also recovers chromosome/position/alleles when the
-        // beta variation API 404s outright (happens for a real chunk of older
-        // rsIDs — the classic report page still has them). Frequencies aren't
-        // recovered this way; the freq table on that page is too unreliable
-        // to regex-scrape, so snp_pop stays empty for these.
+        // JSON API 404s outright (happens for a real chunk of older rsIDs —
+        // the classic report page still has them).
         if (!chromosome || position == null) {
           const posM = ncbiHtml.match(/<dt>Position<\/dt>[\s\S]*?<span>chr(\w+):(\d+)/i);
           if (posM) {
