@@ -54,7 +54,7 @@ export function chrFromMaploc(maploc) {
 
 // ── Panel 1: chromosome schematic ────────────────────────────────────────────
 // panelTwoX: if provided, draw zoom connector lines pointing to that x (Panel 2 left edge)
-// numberFont: CSS font-family for the big chromosome number only (defaults to the site's Outfit)
+// numberFont: CSS font-family for the big chromosome number only (defaults to Mrs Saint Delafield)
 function chrPanel(chrNum, geneName, maploc, idSuffix, panelTwoX, numberFont) {
   const chr    = String(chrNum || "?");
   const cenFrac = parseFloat(CHR_CEN[chr] || "0.40");
