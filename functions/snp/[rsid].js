@@ -82,7 +82,7 @@ export async function onRequestGet({ params, env }) {
     env.genetic.prepare(
       `SELECT g.rsid, g.alleles, g.notes, g.gene_name, gi.full_name, gi.maplocation,
               si.chromosome, si.position, si.ref_allele, si.alt_allele,
-              si.protein_change, si.consequence, si.summary, si.rr_url
+              si.protein_change, si.consequence, si.summary, si.rr_url, si.has_clinvar, si.has_snpedia
        FROM personal g
        LEFT JOIN genes gi ON gi.gene_name = g.gene_name
        LEFT JOIN snps si ON si.rsid = g.rsid
@@ -210,7 +210,7 @@ ${nav()}
         ${vizSvg}
       </div>
 
-      <h1 class="gene-title" style="font-size:clamp(22px,3vw,32px)">${esc(rsid)}${protChange ? ` <span style="font-family:var(--mono);font-size:0.6em;color:var(--muted);font-weight:400">${esc(protChange)}</span>` : ""}</h1>
+      <h1 class="gene-title" style="font-size:38px">${esc(rsid)}${protChange ? ` <span style="font-family:var(--mono);font-size:0.6em;color:var(--muted);font-weight:400">${esc(protChange)}</span>` : ""}</h1>
 
       <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 0 20px;font-family:var(--mono);font-size:12px;color:var(--muted)">
         ${geneName ? `<span>Gene: <a href="/gene/${esc(geneName)}" style="color:var(--accent)">${esc(geneName)}</a>${snp.full_name ? ` — ${esc(snp.full_name)}` : ""}</span>` : ""}
@@ -224,9 +224,19 @@ ${nav()}
       <div style="display:flex;gap:20px;font-family:var(--mono);font-size:11px;margin-top:8px">
         <a href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">NCBI ↗</a>
         ${snp.rr_url ? `<a href="${esc(snp.rr_url)}" target="_blank" rel="noopener" style="color:var(--accent)">Research Rabbit ↗</a>` : ""}
-        <a href="https://www.snpedia.com/index.php/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>
+        ${snp.has_snpedia === 1
+          ? `<a href="https://www.snpedia.com/index.php/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>`
+          : ""}
         ${geneName ? `<a href="https://www.genecards.org/card/${esc(geneName)}?Search=${esc(rsid)}#Variants_Variants" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>` : ""}
-        <a href="/databases" style="color:var(--accent)">All Databases →</a>
+        ${snp.chromosome && snp.position && refAllele && altAllele
+          ? `<a href="https://gnomad.broadinstitute.org/variant/${esc(snp.chromosome)}-${esc(snp.position)}-${esc(refAllele)}-${esc(altAllele)}?dataset=gnomad_r4" target="_blank" rel="noopener" style="color:var(--accent)">gnomAD ↗</a>`
+          : ""}
+        <a href="https://www.omim.org/search?index=entry&search=${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">OMIM ↗</a>
+        ${snp.has_clinvar === 1
+          ? `<a href="https://www.ncbi.nlm.nih.gov/clinvar/?term=${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">ClinVar ↗</a>`
+          : ""}
+        <a href="https://varsome.com/variant/hg38/${esc(rsid)}?" target="_blank" rel="noopener" style="color:var(--accent)">Varsome ↗</a>
+        <a href="https://databases.lovd.nl/shared/variants?search_VariantOnGenome%2FdbSNP=${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">LOVD ↗</a>
       </div>
     </div>
   </section>

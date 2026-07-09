@@ -52,7 +52,7 @@ ${nav()}
   <section class="basics-hero">
     <div class="basics-hero-inner">
       <p class="hero-eyebrow">Browse</p>
-      <h1 style="font-size:clamp(32px,5vw,54px);font-weight:700;letter-spacing:-0.03em;line-height:1.1;margin:0 0 18px">
+      <h1 style="font-family:var(--serif);font-size:clamp(32px,5vw,54px);font-weight:400;letter-spacing:-0.03em;line-height:1.1;margin:0 0 18px">
         Research Areas
       </h1>
       <p style="font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0 auto;line-height:1.6">

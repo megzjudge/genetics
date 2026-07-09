@@ -531,6 +531,8 @@ export async function onRequest({ request, env }) {
          OR s.ref_allele IS NULL
          OR s.alt_allele IS NULL
          OR s.consequence IS NULL
+         OR s.has_clinvar IS NULL
+         OR s.has_snpedia IS NULL
          OR NOT EXISTS (SELECT 1 FROM snp_pop WHERE snp_pop.rsid = p.rsid)
       ORDER BY p.gene_name, p.rsid
     `).all();
@@ -643,7 +645,7 @@ export async function onRequest({ request, env }) {
   if (method === "PATCH" && route === "snp" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change, consequence,
-            chromosome, position, summary, rr_url, frequencies } = await request.json();
+            chromosome, position, summary, rr_url, frequencies, has_clinvar, has_snpedia } = await request.json();
     if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
         INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)
@@ -660,6 +662,22 @@ export async function onRequest({ request, env }) {
         rsid, ref_allele || null, alt_allele || null, protein_change || null,
         consequence || null, chromosome || null, position || null, summary || null
       ).run();
+    }
+    // has_clinvar is 0/1, not text — `|| null` would wrongly null out a real
+    // "checked, nothing found" 0 (same class of bug as the geno_hom1 fix
+    // earlier this session). Upsert directly, no COALESCE: a fresh check
+    // should always overwrite whatever was there before.
+    if (has_clinvar !== undefined) {
+      await env.genetic.prepare(`
+        INSERT INTO snps (rsid, has_clinvar) VALUES (?, ?)
+        ON CONFLICT(rsid) DO UPDATE SET has_clinvar = excluded.has_clinvar
+      `).bind(rsid, has_clinvar === null ? null : (has_clinvar ? 1 : 0)).run();
+    }
+    if (has_snpedia !== undefined) {
+      await env.genetic.prepare(`
+        INSERT INTO snps (rsid, has_snpedia) VALUES (?, ?)
+        ON CONFLICT(rsid) DO UPDATE SET has_snpedia = excluded.has_snpedia
+      `).bind(rsid, has_snpedia === null ? null : (has_snpedia ? 1 : 0)).run();
     }
     // rr_url is set directly (not COALESCEd) so an empty string can clear it back to "no".
     // Upsert (not plain UPDATE) in case this SNP's snps row doesn't exist yet.
@@ -843,14 +861,22 @@ export async function onRequest({ request, env }) {
     const rsid  = /^rs/i.test(rawRsid) ? rawRsid : "rs" + rawRsid;
     const numId = rsid.replace(/^rs/i, "");
 
-    const [ncbiRes, snpediaRes] = await Promise.allSettled([
+    const [ncbiRes, snpediaRes, clinvarRes] = await Promise.allSettled([
       fetch(`https://api.ncbi.nlm.nih.gov/variation/v0/refsnp/${numId}`, {
         headers: { Accept: "application/json", "User-Agent": "genetics.jdge.cc" },
       }).then(r => r.ok ? r.json() : null),
       fetch(`https://www.snpedia.com/api.php?action=query&prop=revisions&titles=${rsid}&rvprop=content&rvslots=main&format=json`, {
         headers: { "User-Agent": "genetics.jdge.cc" },
       }).then(r => r.ok ? r.json() : null),
+      // Stored (not checked live per page view) so the public SNP page can
+      // show the ClinVar link only when there's actually something there,
+      // without an extra API call on every visit.
+      fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&retmode=json&term=${encodeURIComponent(rsid)}`, {
+        headers: { "User-Agent": "genetics.jdge.cc" },
+      }).then(r => r.ok ? r.json() : null),
     ]);
+    const clinvarData = clinvarRes.status === "fulfilled" ? clinvarRes.value : null;
+    const has_clinvar = (parseInt(clinvarData?.esearchresult?.count) || 0) > 0 ? 1 : 0;
 
     // Parse NCBI
     let gene_name = null, chromosome = null, consequence = null, protein_change = null;
@@ -963,12 +989,16 @@ export async function onRequest({ request, env }) {
       }
     }
 
-    // Parse SNPedia
-    let summary = null;
+    // Parse SNPedia. has_snpedia uses the MediaWiki API's own "missing"
+    // marker (present on the page object when the title doesn't exist, absent
+    // when it does) — standard MediaWiki behaviour, not summary-dependent, so
+    // a real page with no `summary=` field still correctly counts as existing.
+    let summary = null, has_snpedia = 0;
     const snpedia = snpediaRes.status === "fulfilled" ? snpediaRes.value : null;
     if (snpedia) {
       const pages = snpedia?.query?.pages || {};
       const page  = Object.values(pages)[0];
+      has_snpedia = page && page.missing === undefined ? 1 : 0;
       const wikitext = page?.revisions?.[0]?.["*"]
                     || page?.revisions?.[0]?.slots?.main?.["*"] || "";
       const sumM = wikitext.match(/\|\s*[Ss]ummary\s*=\s*([^\n|{}]+)/);
@@ -988,7 +1018,44 @@ export async function onRequest({ request, env }) {
       }
     }
 
-    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, position, consequence, protein_change, ref_allele, alt_allele, summary, frequencies });
+    return json({ rsid, gene_name, gene_names: genes_found.map(g => g.name), chromosome, position, consequence, protein_change, ref_allele, alt_allele, summary, frequencies, has_clinvar, has_snpedia });
+  }
+
+  // ── POST /api/snp/clinvar-snpedia ────────────────
+  // Dedicated fast path for the "Fix ClinVar + SNPedia" admin button — checks
+  // and stores only these two flags, skipping the NCBI variation JSON/HTML
+  // fetch entirely (that's the slow, retry-heavy, rate-limited part of a
+  // normal lookup, and irrelevant to what this button needs).
+  if (method === "POST" && route === "snp" && param === "clinvar-snpedia") {
+    const { rsid: rawRsid } = await request.json();
+    if (!rawRsid) return err("rsid required");
+    const rsid = /^rs/i.test(rawRsid) ? rawRsid : "rs" + rawRsid;
+
+    const [clinvarRes, snpediaRes] = await Promise.allSettled([
+      fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=clinvar&retmode=json&term=${encodeURIComponent(rsid)}`, {
+        headers: { "User-Agent": "genetics.jdge.cc" },
+      }).then(r => r.ok ? r.json() : null),
+      fetch(`https://www.snpedia.com/api.php?action=query&prop=revisions&titles=${rsid}&rvprop=content&rvslots=main&format=json`, {
+        headers: { "User-Agent": "genetics.jdge.cc" },
+      }).then(r => r.ok ? r.json() : null),
+    ]);
+
+    const clinvarData = clinvarRes.status === "fulfilled" ? clinvarRes.value : null;
+    const has_clinvar = (parseInt(clinvarData?.esearchresult?.count) || 0) > 0 ? 1 : 0;
+
+    const snpedia = snpediaRes.status === "fulfilled" ? snpediaRes.value : null;
+    let has_snpedia = 0;
+    if (snpedia) {
+      const page = Object.values(snpedia?.query?.pages || {})[0];
+      has_snpedia = page && page.missing === undefined ? 1 : 0;
+    }
+
+    await env.genetic.prepare(`
+      INSERT INTO snps (rsid, has_clinvar, has_snpedia) VALUES (?, ?, ?)
+      ON CONFLICT(rsid) DO UPDATE SET has_clinvar = excluded.has_clinvar, has_snpedia = excluded.has_snpedia
+    `).bind(rsid, has_clinvar, has_snpedia).run();
+
+    return json({ ok: true, rsid, has_clinvar, has_snpedia });
   }
 
   // ── POST /api/snp ────────────────────────────────

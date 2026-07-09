@@ -267,7 +267,7 @@ async function scanOnePop(rsid) {
       body: JSON.stringify({
         ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
         consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
-        summary: ld.summary, frequencies: ld.frequencies,
+        summary: ld.summary, frequencies: ld.frequencies, has_clinvar: ld.has_clinvar, has_snpedia: ld.has_snpedia,
       }),
     });
     if (!pr.ok) throw new Error("PATCH failed " + pr.status);
@@ -562,6 +562,7 @@ function bfSetBtns(disabled) {
   document.getElementById("bf-genes-btn").disabled = disabled;
   document.getElementById("bf-snps-btn").disabled  = disabled;
   document.getElementById("bf-snps-missing-btn").disabled = disabled;
+  document.getElementById("bf-clinvar-snpedia-btn").disabled = disabled;
 }
 
 async function backfillGenes() {
@@ -621,6 +622,60 @@ async function backfillMissingSnps() {
   return runSnpBackfill("/api/snps/incomplete", "No incomplete SNPs found — everything already has core data.");
 }
 
+// Fast, targeted — only checks/stores has_clinvar and has_snpedia, skipping
+// the slow NCBI variation JSON/HTML fetch entirely (that's a different
+// concern this button doesn't need). Runs across every SNP, not just
+// incomplete ones, since re-checking is cheap and either flag can change
+// over time as ClinVar/SNPedia add new entries.
+async function fixClinvarSnpedia() {
+  bfSetBtns(true);
+  bfProgress("Fetching SNP list…");
+
+  let snps = [];
+  try {
+    const r = await apiFetch("/api/snps");
+    const d = await r.json();
+    snps = d.snps || [];
+  } catch (e) {
+    bfProgress("Failed to fetch SNP list: " + e.message);
+    bfSetBtns(false);
+    return;
+  }
+
+  if (!snps.length) {
+    bfProgress("No SNPs found in database.");
+    bfSetBtns(false);
+    return;
+  }
+
+  const total = snps.length;
+  let done = 0, errs = 0;
+
+  for (let i = 0; i < snps.length; i++) {
+    const snp = snps[i];
+    bfProgress(`SNP ${i + 1} / ${total} — ${snp.rsid}`);
+    try {
+      const r = await apiFetch("/api/snp/clinvar-snpedia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rsid: snp.rsid }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      done++;
+      bfLog(`→ ${snp.rsid} (${snp.gene_name}): has_clinvar=${d.has_clinvar} has_snpedia=${d.has_snpedia}\n`);
+    } catch (e) {
+      errs++;
+      bfLog(`→ ${snp.rsid} (${snp.gene_name}): ✗ ${e.message}\n`);
+    }
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  bfProgress(`Done — ${done}/${total} updated, ${errs} errors.`);
+  bfLog(`\n✦ ClinVar/SNPedia fix complete: ${done} updated, ${errs} errors.\n`);
+  bfSetBtns(false);
+}
+
 async function runSnpBackfill(listUrl, emptyMessage) {
   bfSetBtns(true);
   bfProgress("Fetching SNP list…");
@@ -664,7 +719,7 @@ async function runSnpBackfill(listUrl, emptyMessage) {
         body: JSON.stringify({
           ref_allele: ld.ref_allele, alt_allele: ld.alt_allele, protein_change: ld.protein_change,
           consequence: ld.consequence, chromosome: ld.chromosome, position: ld.position,
-          summary: ld.summary, frequencies: ld.frequencies,
+          summary: ld.summary, frequencies: ld.frequencies, has_clinvar: ld.has_clinvar, has_snpedia: ld.has_snpedia,
         }),
       });
       if (!pr.ok) throw new Error("PATCH failed " + pr.status);
