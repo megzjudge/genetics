@@ -676,7 +676,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   font-family: var(--mono); font-size: 14px;
   background: var(--card); color: var(--muted);
   border: 1px solid var(--line); border-radius: 5px;
-  padding: 7px 14px; cursor: pointer;
+  padding: 3px 14px; cursor: pointer;
   transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
 .freq-sort-btn:hover { border-color: var(--line-strong); color: var(--ink); }
