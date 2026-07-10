@@ -1161,6 +1161,8 @@ function renderDiscoverResults() {
       ${r.description ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.description)}</p>` : ""}
       ${r._open ? `
         <div class="admin-form" style="border-top:1px solid var(--line);margin-top:4px;padding-top:16px">
+          <label>Title</label>
+          <input type="text" id="discover-title-${i}" value="${escAttr(r.title || "")}">
           <div class="field-row">
             <div class="field">
               <label>Authors</label>
@@ -1204,7 +1206,7 @@ async function discoverSubmitAdd(i) {
     snippet: document.getElementById(`discover-snippet-${i}`).value.trim() || r.title,
     authors: document.getElementById(`discover-authors-${i}`).value.trim() || null,
     year: parseInt(document.getElementById(`discover-year-${i}`).value) || null,
-    title: r.title || null,
+    title: document.getElementById(`discover-title-${i}`).value.trim() || null,
     url: r.url || null,
     pid: document.getElementById(`discover-pid-${i}`).value.trim() || null,
   };
