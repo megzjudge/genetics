@@ -184,14 +184,32 @@ ${foot()}
     if (f.sample_size) {
       chips.push(`<span class="freq-chip freq-chip--n">pop=${Number(f.sample_size).toLocaleString()}</span>`);
     }
-    return `<div class="freq-row${f.pop_type === "Total" ? " freq-row--total" : ""}">
+    const isTotal = f.pop_type === "Total";
+    return `<div class="freq-row${isTotal ? " freq-row--total" : ""}"
+      data-total="${isTotal ? "1" : "0"}"
+      data-pop="${esc(f.population || "")}"
+      data-ref="${esc(fa1)}"
+      data-alt="${esc(fa2)}"
+      data-reffreq="${f.allele1_freq != null ? f.allele1_freq : -1}"
+      data-altfreq="${f.allele2_freq != null ? f.allele2_freq : -1}"
+      data-n="${f.sample_size != null ? f.sample_size : 0}">
       <span class="freq-pop">${esc(f.population)}</span>
       <span class="freq-data">${chips.join("")}</span>
-      ${f.pop_type === "Total"
+      ${isTotal
         ? `<a class="freq-link" href="https://www.ncbi.nlm.nih.gov/snp/${esc(rsid)}" target="_blank" rel="noopener" title="View on NCBI">↬</a>`
         : `<span></span>`}
     </div>`;
   }).join("");
+
+  const freqSortBar = freqs.length > 1 ? `<div class="freq-sort-bar">
+    <span class="freq-sort-label">Sort by</span>
+    <button class="freq-sort-btn" data-sort-key="pop">Population</button>
+    <button class="freq-sort-btn" data-sort-key="ref">Ref Allele</button>
+    <button class="freq-sort-btn" data-sort-key="alt">Alt Allele</button>
+    <button class="freq-sort-btn" data-sort-key="reffreq">Ref Freq</button>
+    <button class="freq-sort-btn" data-sort-key="altfreq">Alt Freq</button>
+    <button class="freq-sort-btn" data-sort-key="n">Sample Size</button>
+  </div>` : "";
 
   const geneSlug = geneName ? slugify(snp.full_name || geneName) : null;
 
@@ -269,7 +287,7 @@ ${nav()}
       <h2 class="studies-heading">Population Frequencies<span class="section-count">${freqs.length}</span></h2>
       ${freqs.length === 0
         ? `<p class="empty-state">No frequency data stored yet.</p>`
-        : `<div class="freq-table">${freqRows}</div>`}
+        : `${freqSortBar}<div class="freq-table">${freqRows}</div>`}
     </div>
 
     <div class="gene-section">
@@ -313,6 +331,34 @@ ${foot()}
   };
   PersonalAuth.wireSignIn("personal-signin", load);
   load();
+})();
+
+(function () {
+  const bar = document.querySelector(".freq-sort-bar");
+  const table = document.querySelector(".freq-table");
+  if (!bar || !table) return;
+  let activeKey = null, dir = 1;
+  bar.querySelectorAll(".freq-sort-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const key = btn.dataset.sortKey;
+      dir = (activeKey === key) ? dir * -1 : 1;
+      activeKey = key;
+      bar.querySelectorAll(".freq-sort-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      btn.classList.toggle("freq-sort-btn--desc", dir === -1);
+
+      const rows = Array.from(table.querySelectorAll(".freq-row"));
+      const pinned = rows.filter(function (r) { return r.dataset.total === "1"; });
+      const rest   = rows.filter(function (r) { return r.dataset.total !== "1"; });
+      rest.sort(function (a, b) {
+        const va = a.dataset[key], vb = b.dataset[key];
+        const na = parseFloat(va), nb = parseFloat(vb);
+        const cmp = (!isNaN(na) && !isNaN(nb)) ? na - nb : String(va).localeCompare(String(vb));
+        return cmp * dir;
+      });
+      pinned.concat(rest).forEach(function (r) { table.appendChild(r); });
+    });
+  });
 })();
 </script>
 </body>

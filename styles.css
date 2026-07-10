@@ -659,6 +659,27 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .snp-meta-item {
   font-family: var(--mono); font-size: 12px; color: var(--faint);
 }
+.freq-sort-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 12px;
+}
+.freq-sort-label {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--faint); margin-right: 4px;
+}
+.freq-sort-btn {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--card); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 10px; cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.freq-sort-btn:hover { border-color: var(--line-strong); color: var(--ink); }
+.freq-sort-btn.active {
+  border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
+}
+.freq-sort-btn.active::after { content: " \2191"; }
+.freq-sort-btn.active.freq-sort-btn--desc::after { content: " \2193"; }
 .freq-table {
   margin: 12px auto 0;
   width: fit-content;
