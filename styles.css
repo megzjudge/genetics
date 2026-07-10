@@ -668,10 +668,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   text-transform: uppercase; color: var(--faint); margin-right: 4px;
 }
 .freq-sort-btn {
-  font-family: var(--mono); font-size: 12px;
+  font-family: var(--mono); font-size: 14px;
   background: var(--card); color: var(--muted);
-  border: 1px solid var(--line); border-radius: 4px;
-  padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 5px;
+  padding: 7px 14px; cursor: pointer;
   transition: border-color 0.12s, color 0.12s, background 0.12s;
 }
 .freq-sort-btn:hover { border-color: var(--line-strong); color: var(--ink); }
@@ -680,6 +680,14 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .freq-sort-btn.active::after { content: " \2191"; }
 .freq-sort-btn.active.freq-sort-btn--desc::after { content: " \2193"; }
+.freq-sort-btn--freq {
+  border-color: rgba(232, 69, 128, 0.35); color: var(--pink);
+  background: rgba(232, 69, 128, 0.08);
+}
+.freq-sort-btn--freq:hover { border-color: var(--pink); color: var(--pink); }
+.freq-sort-btn--freq.active {
+  border-color: var(--pink); color: var(--pink); background: rgba(232, 69, 128, 0.18);
+}
 .freq-table {
   margin: 12px auto 0;
   width: fit-content;

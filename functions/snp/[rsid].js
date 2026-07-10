@@ -201,9 +201,9 @@ ${foot()}
 
   const freqSortBar = freqs.length > 1 ? `<div class="freq-sort-bar">
     <span class="freq-sort-label">Sort by</span>
-    <button class="freq-sort-btn" data-sort-key="reffreq">Ref Allele Frequency</button>
-    <button class="freq-sort-btn" data-sort-key="altfreq">Alt Allele Frequency</button>
-    <button class="freq-sort-btn" data-sort-key="hetfreq">Hetero Frequency</button>
+    <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="reffreq">Ref Allele Frequency</button>
+    <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="hetfreq">Hetero Frequency</button>
+    <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="altfreq">Alt Allele Frequency</button>
     <button class="freq-sort-btn" data-sort-key="n">Sample Size</button>
   </div>` : "";
 
