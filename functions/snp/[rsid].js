@@ -75,17 +75,6 @@ function studiesSubAccordion(pinkWord, restOfLabel, desc, studiesArr, emptyText)
   </details>`;
 }
 
-// Curated studies aren't collapsible — always shown directly, no click needed.
-function curatedStudiesSection(desc, studiesArr) {
-  return `<div class="snp-substudies">
-    <span class="snp-studies-subhead"><span class="text-pink">Curated</span> Studies<span class="section-count">${studiesArr.length}</span></span>
-    <div class="snp-substudies-body">
-      ${desc ? `<p class="snp-studies-subdesc">${esc(desc)}</p>` : ""}
-      ${studiesArr.length ? studiesArr.map(studyRow).join("") : `<p class="empty-state">No curated studies yet.</p>`}
-    </div>
-  </div>`;
-}
-
 export async function onRequestGet({ params, env }) {
   const rawRsid  = (params.rsid || "").toLowerCase();
   const rsid     = /^rs/i.test(rawRsid) ? rawRsid : "rs" + rawRsid;
@@ -288,10 +277,10 @@ ${nav()}
 
     <div class="gene-section">
       <h2 class="studies-heading">Studies<span class="section-count">${studies.length}</span></h2>
-      ${studiesSubAccordion("New Unread", "Studies", null, newStudies, "No new studies.")}
-      ${curatedStudiesSection(
+      ${studiesSubAccordion("Curated", "Studies",
         `These studies were determined to be useful for this variant — check "Unused Studies" further down if curious what didn't make the cut.`,
-        curatedStudies)}
+        curatedStudies, "No curated studies yet.")}
+      ${studiesSubAccordion("Unread", "Studies", null, newStudies, "No new studies.")}
       ${studiesSubAccordion("Unused", "Studies", null, unusedStudies, "No unused studies.")}
     </div>
   </div>
