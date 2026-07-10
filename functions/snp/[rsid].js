@@ -189,6 +189,7 @@ ${foot()}
       data-total="${isTotal ? "1" : "0"}"
       data-reffreq="${f.allele1_freq != null ? f.allele1_freq : -1}"
       data-altfreq="${f.allele2_freq != null ? f.allele2_freq : -1}"
+      data-hetfreq="${f.geno_het != null ? f.geno_het : -1}"
       data-n="${f.sample_size != null ? f.sample_size : 0}">
       <span class="freq-pop">${esc(f.population)}</span>
       <span class="freq-data">${chips.join("")}</span>
@@ -200,8 +201,9 @@ ${foot()}
 
   const freqSortBar = freqs.length > 1 ? `<div class="freq-sort-bar">
     <span class="freq-sort-label">Sort by</span>
-    <button class="freq-sort-btn" data-sort-key="reffreq">Ref Freq</button>
-    <button class="freq-sort-btn" data-sort-key="altfreq">Alt Freq</button>
+    <button class="freq-sort-btn" data-sort-key="reffreq">Ref Allele Frequency</button>
+    <button class="freq-sort-btn" data-sort-key="altfreq">Alt Allele Frequency</button>
+    <button class="freq-sort-btn" data-sort-key="hetfreq">Hetero Frequency</button>
     <button class="freq-sort-btn" data-sort-key="n">Sample Size</button>
   </div>` : "";
 
