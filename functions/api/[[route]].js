@@ -424,7 +424,7 @@ const DISCOVER_EXCLUDED_HOSTS = new Set([
   "varsome.com",
   "databases.lovd.nl",
   "www.ebi.ac.uk",
-  "platform.opentargets.org",
+  "platform.opentargets.org", "genetics.opentargets.org",
   "app.researchrabbit.ai", "www.researchrabbitapp.com",
   "scholar.google.com",
   "en.wikipedia.org", "wikipedia.org",

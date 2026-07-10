@@ -1160,7 +1160,7 @@ function renderDiscoverResults() {
       <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin:4px 0 8px;word-break:break-all">${escHtml(r.url)}</div>
       ${r.description ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.description)}</p>` : ""}
       ${r._open ? `
-        <div style="border-top:1px solid var(--line);margin-top:4px;padding-top:12px">
+        <div class="admin-form" style="border-top:1px solid var(--line);margin-top:4px;padding-top:16px">
           <div class="field-row">
             <div class="field">
               <label>Authors</label>
@@ -1171,12 +1171,10 @@ function renderDiscoverResults() {
               <input type="number" id="discover-year-${i}" placeholder="2023" min="1950" max="2099">
             </div>
           </div>
-          <div class="field" style="margin-bottom:14px">
-            <label>PID (DOI / Handle, optional)</label>
-            <input type="text" id="discover-pid-${i}" placeholder="10.1234/example">
-          </div>
+          <label>PID (DOI / Handle, optional)</label>
+          <input type="text" id="discover-pid-${i}" placeholder="10.1234/example">
           <label>Snippet</label>
-          <textarea id="discover-snippet-${i}" style="margin-bottom:14px">${escHtml(r.description || r.title || "")}</textarea>
+          <textarea id="discover-snippet-${i}" class="mono">${escHtml(r.description || r.title || "")}</textarea>
           <div style="display:flex;gap:10px">
             <button class="btn-sm" onclick="discoverSubmitAdd(${i})">Save Study</button>
             <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverToggleAdd(${i})">Cancel</button>
