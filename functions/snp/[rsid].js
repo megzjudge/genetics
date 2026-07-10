@@ -187,9 +187,6 @@ ${foot()}
     const isTotal = f.pop_type === "Total";
     return `<div class="freq-row${isTotal ? " freq-row--total" : ""}"
       data-total="${isTotal ? "1" : "0"}"
-      data-pop="${esc(f.population || "")}"
-      data-ref="${esc(fa1)}"
-      data-alt="${esc(fa2)}"
       data-reffreq="${f.allele1_freq != null ? f.allele1_freq : -1}"
       data-altfreq="${f.allele2_freq != null ? f.allele2_freq : -1}"
       data-n="${f.sample_size != null ? f.sample_size : 0}">
@@ -203,9 +200,6 @@ ${foot()}
 
   const freqSortBar = freqs.length > 1 ? `<div class="freq-sort-bar">
     <span class="freq-sort-label">Sort by</span>
-    <button class="freq-sort-btn" data-sort-key="pop">Population</button>
-    <button class="freq-sort-btn" data-sort-key="ref">Ref Allele</button>
-    <button class="freq-sort-btn" data-sort-key="alt">Alt Allele</button>
     <button class="freq-sort-btn" data-sort-key="reffreq">Ref Freq</button>
     <button class="freq-sort-btn" data-sort-key="altfreq">Alt Freq</button>
     <button class="freq-sort-btn" data-sort-key="n">Sample Size</button>
