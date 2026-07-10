@@ -42,6 +42,7 @@
       <button class="admin-tab" onclick="switchTab('study')">Add Study</button>
       <button class="admin-tab" onclick="switchTab('bulkstudy')">Add Bulk Studies</button>
       <button class="admin-tab" onclick="switchTab('discover')">Discover</button>
+      <button class="admin-tab" onclick="switchTab('scholar')">Scholar</button>
       <button class="admin-tab" onclick="switchTab('group')">Add Group</button>
       <button class="admin-tab" onclick="switchTab('export')">Export</button>
       <button class="admin-tab" onclick="switchTab('fix')">Fix Data</button>
@@ -239,6 +240,32 @@
       <div id="discover-review" style="display:none;margin-top:28px">
         <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:14px" id="discover-count"></div>
         <div id="discover-results"></div>
+      </div>
+    </div>
+
+    <!-- TAB: SCHOLAR -->
+    <div id="panel-scholar" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Scholar Page Parser</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        Browse Google Scholar yourself for a SNP, then on the results page: right-click → <strong>View Page Source</strong>
+        (or Ctrl/Cmd+U) — not the visible page itself, which loses the links — select all, copy, and paste the HTML
+        below. Everything happens locally in your browser; nothing is fetched automatically, so there's no blocking risk.
+      </p>
+      <div class="admin-form">
+        <div class="field-row">
+          <div class="field">
+            <label>Gene — rsID</label>
+            <input type="text" id="scholar-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="scholarSnpPicked()">
+          </div>
+        </div>
+        <label>Pasted Page Source</label>
+        <textarea id="scholar-html-input" class="mono" style="min-height:160px" placeholder="Paste HTML source here…"></textarea>
+        <button class="btn-sm" id="scholar-parse-btn" onclick="scholarParse()" disabled>Parse</button>
+      </div>
+
+      <div id="scholar-review" style="display:none;margin-top:28px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:14px" id="scholar-count"></div>
+        <div id="scholar-results"></div>
       </div>
     </div>
 

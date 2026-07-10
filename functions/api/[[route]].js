@@ -429,6 +429,22 @@ const DISCOVER_EXCLUDED_HOSTS = new Set([
   "app.researchrabbit.ai", "www.researchrabbitapp.com",
   "scholar.google.com",
   "en.wikipedia.org", "wikipedia.org",
+  // Other gene/variant reference databases — never a study, same reasoning
+  // as everything above.
+  "www.proteinatlas.org", "proteinatlas.org",
+  "www.fulgentgenetics.com", "fulgentgenetics.com",
+  "medlineplus.gov",
+  "www.ensembl.org", "ensembl.org",
+  "www.uniprot.org", "uniprot.org",
+  "genome.ucsc.edu",
+  "www.pharmgkb.org", "pharmgkb.org",
+  "www.malacards.org", "malacards.org",
+  // Other model-organism databases, same category as RGD but for other species.
+  "informatics.jax.org",
+  "flybase.org",
+  "wormbase.org",
+  "zfin.org",
+  "yeastgenome.org",
 ]);
 
 function isExcludedDiscoverResult(resUrl) {
@@ -439,6 +455,9 @@ function isExcludedDiscoverResult(resUrl) {
   // NCBI hosts both reference databases (dbSNP/ClinVar/Gene — exclude) and
   // actual papers (PubMed/PMC — keep), so this one needs a path check.
   if (host.endsWith("ncbi.nlm.nih.gov")) return /^\/(snp|clinvar|gene|omim)\b/i.test(u.pathname);
+  // ScienceDirect hosts both Elsevier's auto-generated "Topics" aggregator
+  // pages (exclude) and actual individual studies (keep) — path check too.
+  if (host === "www.sciencedirect.com" || host === "sciencedirect.com") return /^\/topics\//i.test(u.pathname);
   return false;
 }
 
@@ -1212,9 +1231,22 @@ export async function onRequest({ request, env }) {
     const rsid = url.searchParams.get("rsid");
     const gene = url.searchParams.get("gene");
     if (!rsid) return err("rsid required");
-    const query = `${rsid}${gene ? " " + gene : ""} gene variant study`;
+    // Two passes: a bare rsID search (an rsID is specific enough on its own
+    // that stray false positives are unlikely) alongside the gene/keyword-
+    // qualified one, since the extra wording can filter out real studies
+    // that don't happen to match that phrasing. Results are merged and
+    // de-duped by URL before returning.
+    const queries = [rsid, `${rsid}${gene ? " " + gene : ""} gene variant study`];
     try {
-      const results = await fetchBraveResults(query, env);
+      const batches = await Promise.all(queries.map(q => fetchBraveResults(q, env)));
+      const seen = new Set();
+      const results = [];
+      for (const res of batches.flat()) {
+        const key = res.url.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push(res);
+      }
       return json({ results });
     } catch (e) {
       return err("Brave Search error: " + e.message, 502);

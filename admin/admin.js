@@ -13,6 +13,10 @@ let bulkExistingStudies = [];
 let discoverGene = null, discoverRsid = null;
 let discoverResults = [];
 
+// ── Scholar (pasted-page-source parser) state ─────
+let scholarGene = null, scholarRsid = null;
+let scholarResults = [];
+
 // ── Auth ──────────────────────────────────────────
 function tryAuth() {
   const pw = document.getElementById("auth-input").value.trim();
@@ -1239,5 +1243,165 @@ async function discoverExclude(i, duplicate, trash) {
     toast(duplicate ? "Marked as duplicate — won't resurface in future scans." : "Trashed — won't resurface in future scans.");
   } catch (e) {
     toast("Failed: " + e.message, true);
+  }
+}
+
+// ── Scholar tab (pasted-page-source parser) ───────
+// No network fetch of Scholar itself — you paste the page's HTML source
+// (View Page Source, not the rendered page, which loses hrefs) after
+// browsing it yourself, sidestepping bot-detection entirely since a real
+// browser session already rendered it.
+function scholarSnpPicked() {
+  const val = document.getElementById("scholar-snp-picker").value.trim();
+  let match = null;
+  let m = val.match(/^(.+?)\s*—\s*(rs\d+)$/i);
+  if (m) match = snpList.find(s => s.gene_name === m[1].trim().toUpperCase() && s.rsid.toLowerCase() === m[2].toLowerCase());
+  if (!match) {
+    m = val.match(/^(rs\d+)$/i);
+    if (m) match = snpList.find(s => s.rsid.toLowerCase() === m[1].toLowerCase());
+  }
+  scholarGene = match ? match.gene_name : null;
+  scholarRsid = match ? match.rsid : null;
+  document.getElementById("scholar-parse-btn").disabled = !match;
+}
+
+function scholarStripTags(s) {
+  return (s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function scholarDecodeEntities(s) {
+  return (s || "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+}
+
+// Google Scholar's results markup, per result: a div.gs_ri containing an
+// h3.gs_rt (title + link, sometimes prefixed with a [PDF]/[CITATION] tag),
+// a div.gs_a (authors/venue/year line), and a div.gs_rs (snippet). Class
+// names could drift over time — if parsing comes back empty on a real
+// paste, that's the first thing to check against the actual pasted HTML.
+function scholarParseHtml(html) {
+  const results = [];
+  const blocks = html.split(/<div class="gs_ri">/).slice(1);
+  for (const block of blocks) {
+    const h3Match = block.match(/<h3[^>]*class="gs_rt"[^>]*>([\s\S]*?)<\/h3>/i);
+    if (!h3Match) continue;
+    const linkMatch = h3Match[1].match(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
+    if (!linkMatch) continue; // e.g. [CITATION] entries with no linked source
+    const url = scholarDecodeEntities(linkMatch[1]);
+    const title = scholarStripTags(linkMatch[2]);
+    if (!title || !url) continue;
+
+    const authorsMatch = block.match(/<div[^>]*class="gs_a"[^>]*>([\s\S]*?)<\/div>/i);
+    const authors = authorsMatch ? scholarStripTags(authorsMatch[1]) : "";
+
+    const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
+    const snippet = snippetMatch ? scholarStripTags(snippetMatch[1]) : "";
+
+    const yearMatch = authors.match(/\b(19|20)\d{2}\b/);
+    const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
+    results.push({ title, url, authors, snippet, year });
+  }
+  return results;
+}
+
+async function scholarParse() {
+  if (!scholarGene || !scholarRsid) return toast("Pick a gene/rsID first.", true);
+  const html = document.getElementById("scholar-html-input").value;
+  if (!html.trim()) return toast("Paste the page source first.", true);
+
+  const parsed = scholarParseHtml(html);
+  if (!parsed.length) return toast("Nothing parsed — check you pasted View Page Source, not the visible page.", true);
+
+  const [studies, exclusions] = await Promise.all([
+    safeFetchJson("/api/studies"),
+    safeFetchJson("/api/exclusions"),
+  ]);
+  const known = (studies?.studies || []).concat(exclusions?.exclusions || []);
+  // Unlike Discover, known results stay visible (dimmed) rather than being
+  // dropped, per spec — you can see what got skipped and why.
+  scholarResults = parsed.map(r => ({ ...r, _known: !!bulkFindDuplicate(r, known) }));
+  renderScholarResults();
+  document.getElementById("scholar-review").style.display = "block";
+}
+
+function renderScholarResults() {
+  const newCount = scholarResults.filter(r => !r._known).length;
+  document.getElementById("scholar-count").textContent =
+    `${scholarResults.length} parsed for ${scholarGene} — ${scholarRsid} (${newCount} new, ${scholarResults.length - newCount} already known)`;
+  const wrap = document.getElementById("scholar-results");
+  wrap.innerHTML = scholarResults.map((r, i) => {
+    if (r._known) {
+      return `
+      <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:6px;padding:14px 16px;margin-bottom:10px;opacity:0.55">
+        <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:#34d399">${escHtml(r.title)}</a>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:4px">Already known — skipped</div>
+      </div>`;
+    }
+    return `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px">
+      <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;color:var(--accent)">${escHtml(r.title)}</a>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin:4px 0 8px;word-break:break-all">${escHtml(r.url)}</div>
+      ${r.snippet ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.snippet)}</p>` : ""}
+      ${r._open ? `
+        <div class="admin-form" style="border-top:1px solid var(--line);margin-top:4px;padding-top:16px">
+          <label>Title</label>
+          <input type="text" id="scholar-title-${i}" value="${escAttr(r.title)}">
+          <div class="field-row">
+            <div class="field">
+              <label>Authors</label>
+              <input type="text" id="scholar-authors-${i}" value="${escAttr(r.authors)}" placeholder="Smith J et al.">
+            </div>
+            <div class="field">
+              <label>Year</label>
+              <input type="number" id="scholar-year-${i}" value="${escAttr(r.year)}" placeholder="2023" min="1950" max="2099">
+            </div>
+          </div>
+          <label>PID (DOI / Handle, optional)</label>
+          <input type="text" id="scholar-pid-${i}" placeholder="10.1234/example">
+          <label>Snippet</label>
+          <textarea id="scholar-snippet-${i}" class="mono">${escHtml(r.snippet || r.title || "")}</textarea>
+          <div style="display:flex;gap:10px">
+            <button class="btn-sm" onclick="scholarSubmitAdd(${i})">Save Study</button>
+            <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="scholarToggleAdd(${i})">Cancel</button>
+          </div>
+        </div>
+      ` : `
+        <button class="btn-sm" onclick="scholarToggleAdd(${i})">+ Add as Study</button>
+      `}
+    </div>`;
+  }).join("");
+}
+
+function scholarToggleAdd(i) {
+  scholarResults[i]._open = !scholarResults[i]._open;
+  renderScholarResults();
+}
+
+async function scholarSubmitAdd(i) {
+  const r = scholarResults[i];
+  const body = {
+    gene_name: scholarGene,
+    rsid: scholarRsid,
+    snippet: document.getElementById(`scholar-snippet-${i}`).value.trim() || r.title,
+    authors: document.getElementById(`scholar-authors-${i}`).value.trim() || null,
+    year: parseInt(document.getElementById(`scholar-year-${i}`).value) || null,
+    title: document.getElementById(`scholar-title-${i}`).value.trim() || null,
+    url: r.url || null,
+    pid: document.getElementById(`scholar-pid-${i}`).value.trim() || null,
+  };
+  try {
+    const res = await apiFetch("/api/study", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    scholarResults.splice(i, 1);
+    renderScholarResults();
+    toast("Study saved.");
+  } catch (e) {
+    toast("Save failed: " + e.message, true);
   }
 }
