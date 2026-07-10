@@ -189,11 +189,11 @@ ${foot()}
   }).join("");
 
   const freqSortBar = freqs.length > 1 ? `<div class="freq-sort-bar">
-    <span class="freq-sort-label">Sort by</span>
     <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="reffreq">Ref Allele Frequency</button>
     <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="hetfreq">Hetero Frequency</button>
     <button class="freq-sort-btn freq-sort-btn--freq" data-sort-key="altfreq">Alt Allele Frequency</button>
     <button class="freq-sort-btn" data-sort-key="n">Sample Size</button>
+    <span class="freq-sort-label">Sort by</span>
   </div>` : "";
 
   const geneSlug = geneName ? slugify(snp.full_name || geneName) : null;
@@ -272,7 +272,7 @@ ${nav()}
       <h2 class="studies-heading">Population Frequencies<span class="section-count">${freqs.length}</span></h2>
       ${freqs.length === 0
         ? `<p class="empty-state">No frequency data stored yet.</p>`
-        : `${freqSortBar}<div class="freq-table">${freqRows}</div>`}
+        : `<div class="freq-section">${freqSortBar}<div class="freq-table">${freqRows}</div></div>`}
     </div>
 
     <div class="gene-section">
