@@ -26,15 +26,14 @@ export async function onRequestGet({ params, env }) {
     SELECT
       gi.gene_name,
       gi.full_name,
-      COUNT(DISTINCT p.rsid)                                AS snp_count,
-      COUNT(DISTINCT s.id)                                  AS study_count,
-      COUNT(DISTINCT ea.id)                                 AS alert_count,
-      SUM(CASE WHEN ea.read = 0 THEN 1 ELSE 0 END)         AS unread_count
+      COUNT(DISTINCT p.rsid) AS snp_count,
+      COUNT(DISTINCT s.id)   AS study_count,
+      (SELECT COUNT(*) FROM studies s2
+       WHERE s2.gene_name = gi.gene_name AND s2.used IS NULL) AS unread_count
     FROM genes gi
     JOIN gene_topics gg ON gi.gene_name = gg.gene_name
-    LEFT JOIN personal p     ON gi.gene_name = p.gene_name
-    LEFT JOIN studies s     ON gi.gene_name = s.gene_name
-    LEFT JOIN email_alerts ea ON gi.gene_name = ea.gene_name
+    LEFT JOIN personal p ON gi.gene_name = p.gene_name
+    LEFT JOIN studies s  ON gi.gene_name = s.gene_name
     WHERE gg.group_id = ?
     GROUP BY gi.gene_name, gi.full_name
     ORDER BY gi.gene_name ASC
@@ -80,7 +79,7 @@ ${nav()}
       <p class="group-stats">
         ${genes.length} genes ·
         ${totalStudies} ${totalStudies === 1 ? "study" : "studies"}
-        ${totalUnread > 0 ? ` · <span class="unread-tag">${totalUnread} new alerts</span>` : ""}
+        ${totalUnread > 0 ? ` · <span class="unread-tag">${totalUnread} new</span>` : ""}
       </p>
     </div>
   </section>

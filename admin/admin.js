@@ -208,8 +208,8 @@ function saveGene() {
 function deleteGene(name) {
   const affected = snpList.filter(s => s.gene_name === name).map(s => s.rsid);
   const msg = affected.length
-    ? `Delete ${name}, its studies/alerts, and these ${affected.length} SNPs: ${affected.join(", ")}? This cannot be undone.`
-    : `Delete ${name} and all its studies/alerts? This cannot be undone.`;
+    ? `Delete ${name}, its studies, and these ${affected.length} SNPs: ${affected.join(", ")}? This cannot be undone.`
+    : `Delete ${name} and all its studies? This cannot be undone.`;
   if (!confirm(msg)) return;
   apiFetch(`/api/gene/${name}`, { method: "DELETE" }).then(r => {
     if (r.ok) { toast("Deleted."); init(); }

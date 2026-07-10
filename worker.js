@@ -158,22 +158,6 @@ function parseAddress(headerValue) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/backfill-links") {
-      if (!env.BACKFILL_TOKEN || url.searchParams.get("token") !== env.BACKFILL_TOKEN) {
-        return new Response("forbidden", { status: 403 });
-      }
-      try {
-        const report = await backfillLinks(env.genetic);
-        return new Response(JSON.stringify(report, null, 2), {
-          headers: { "content-type": "application/json; charset=utf-8" },
-        });
-      } catch (e) {
-        return new Response("backfill error: " + String(e), { status: 500 });
-      }
-    }
-
     return new Response(VERSION, {
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
@@ -242,12 +226,13 @@ export default {
 
       const { geneName, rsid } = deriveGeneAndRsid(subject);
       let stored = 0;
+      let skipped = 0;
       let failed = 0;
 
       for (const p of papers) {
         try {
-          await upsertAlert(env.genetic, p, geneName, rsid, subject);
-          stored++;
+          const result = await upsertAlert(env.genetic, p, geneName, rsid, subject);
+          if (result.inserted) stored++; else skipped++;
         } catch (e) {
           failed++;
           console.log(
@@ -257,7 +242,7 @@ export default {
       }
 
       console.log(
-        `Ingest done: ${stored}/${papers.length} stored, ${failed} failed, gene="${geneName}" rsid="${rsid || "none"}" (subject: ${subject}).`
+        `Ingest done: ${stored}/${papers.length} stored (${skipped} already known/excluded), ${failed} failed, gene="${geneName}" rsid="${rsid || "none"}" (subject: ${subject}).`
       );
     } catch (e) {
       console.log(`email handler error: ${String(e)}`);
@@ -446,93 +431,49 @@ function titleKey(t) {
     .replace(/\s+/g, " ");
 }
 
-async function upsertAlert(db, p, geneName, rsid, subject) {
-  const title = normalizeIntakeTitle(p.title);
-
-  // Primary de-dup on normalized link.
-  await db
-    .prepare(
-      `INSERT INTO email_alerts (gene_name, rsid, title, authors, snippet, link, alert_subject)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(link) DO NOTHING`
-    )
-    .bind(geneName, rsid || null, title, p.authors, p.snippet, p.link, subject)
-    .run();
-
-  let row = await db
-    .prepare(`SELECT id FROM email_alerts WHERE link = ?`)
-    .bind(p.link)
-    .first();
-
-  // Secondary de-dup on title key for cross-host duplicates.
+// Scholar-alert papers matching an existing studies row (any gene/rsid —
+// the same paper often covers many SNPs) or a study_exclusions row
+// (previously marked Duplicate/Trash via the admin Discover tab) are
+// silently skipped, so nothing already known or already dismissed
+// resurfaces on the live site.
+async function findExistingStudyMatch(db, link, title) {
+  const linkNorm = link ? normalizeLink(link) : null;
   const key = titleKey(title);
-  if (key.length >= TITLE_DEDUP_MIN_LEN) {
-    const existing = (await db
-      .prepare(`SELECT id, title, link FROM email_alerts ORDER BY id ASC`)
-      .all()).results || [];
-    let twin = null;
-    for (const e of existing) {
-      if (titleKey(e.title) === key) { twin = e; break; }
-    }
-    if (twin && (!row || twin.id !== row.id)) {
-      if (row && row.id !== twin.id) {
-        await db.prepare(`DELETE FROM email_alerts WHERE id = ?`).bind(row.id).run();
-      }
-      row = twin;
-    }
+
+  const [studiesRes, exclRes] = await Promise.all([
+    db.prepare(`SELECT title, url FROM studies`).all(),
+    db.prepare(`SELECT title, url FROM study_exclusions`).all(),
+  ]);
+  const candidates = (studiesRes.results || []).concat(exclRes.results || []);
+
+  for (const c of candidates) {
+    if (linkNorm && c.url && normalizeLink(c.url) === linkNorm) return true;
+    if (key.length >= TITLE_DEDUP_MIN_LEN && titleKey(c.title) === key) return true;
   }
+  return false;
 }
 
-/* ------------------------- maintenance ------------------------- */
+// Inserts straight into `studies` (used = NULL, same "Unread Studies" state
+// as every other ingestion path — manual, bulk CSV, PubMed/Semantic Scholar
+// auto-search, Discover) so a new Scholar alert shows up on the live gene/
+// SNP page immediately, without waiting on manual review.
+async function upsertAlert(db, p, geneName, rsid, subject) {
+  const title = normalizeIntakeTitle(p.title);
+  const link = normalizeLink(p.link);
 
-async function backfillLinks(db) {
-  const all = (await db.prepare(`SELECT id, link FROM email_alerts ORDER BY id ASC`).all()).results || [];
-
-  const groups = new Map();
-  for (const r of all) {
-    const norm = normalizeLink(r.link || "");
-    if (!groups.has(norm)) groups.set(norm, { keep: r.id, rows: [] });
-    groups.get(norm).rows.push({ id: r.id, link: r.link });
+  if (await findExistingStudyMatch(db, link, title)) {
+    return { inserted: false, reason: "duplicate" };
   }
 
-  let relinked = 0, merged = 0;
+  await db.prepare(`
+    INSERT INTO studies (gene_name, rsid, snippet, authors, title, url, pid, year, used)
+    VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
+  `).bind(
+    (geneName || "untagged").toUpperCase(), rsid || null,
+    p.snippet || title, p.authors || null, title, link
+  ).run();
 
-  for (const [norm, g] of groups) {
-    const keep = g.keep;
-    const dups = g.rows.filter((r) => r.id !== keep);
-
-    for (const d of dups) {
-      await db.prepare(`DELETE FROM email_alerts WHERE id = ?`).bind(d.id).run();
-      merged++;
-    }
-
-    const keptRow = g.rows.find((r) => r.id === keep);
-    if (keptRow && keptRow.link !== norm) {
-      await db.prepare(`UPDATE email_alerts SET link = ? WHERE id = ?`).bind(norm, keep).run();
-      relinked++;
-    }
-  }
-
-  let titleMerged = 0;
-  const survivors = (await db.prepare(`SELECT id, title FROM email_alerts ORDER BY id ASC`).all()).results || [];
-  const byTitle = new Map();
-  for (const r of survivors) {
-    const key = titleKey(r.title);
-    if (key.length < TITLE_DEDUP_MIN_LEN) continue;
-    if (!byTitle.has(key)) { byTitle.set(key, r.id); continue; }
-    const keepId = byTitle.get(key);
-    await db.prepare(`DELETE FROM email_alerts WHERE id = ?`).bind(r.id).run();
-    titleMerged++;
-  }
-
-  return {
-    scanned: all.length,
-    unique_after: groups.size,
-    relinked,
-    merged,
-    title_merged: titleMerged,
-    remaining: all.length - merged - titleMerged,
-  };
+  return { inserted: true };
 }
 
 /* ------------------------- MIME helpers ------------------------- */

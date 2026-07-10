@@ -576,7 +576,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/gene/:name ──────────────────────────
   if (method === "GET" && route === "gene" && param) {
     const name = param.toUpperCase();
-    const [info, groups, studies, alerts, snps] = await Promise.all([
+    const [info, groups, studies, snps] = await Promise.all([
       env.genetic.prepare(`SELECT * FROM genes WHERE gene_name = ?`).bind(name).first(),
       env.genetic.prepare(`
         SELECT tg.* FROM topics tg
@@ -584,7 +584,6 @@ export async function onRequest({ request, env }) {
         WHERE gg.gene_name = ?
       `).bind(name).all(),
       env.genetic.prepare(`SELECT * FROM studies WHERE gene_name = ? ORDER BY year DESC`).bind(name).all(),
-      env.genetic.prepare(`SELECT * FROM email_alerts WHERE gene_name = ? ORDER BY received_at DESC`).bind(name).all(),
       env.genetic.prepare(`
         SELECT p.*, si.chromosome, si.position, si.ref_allele, si.alt_allele,
                si.protein_change, si.consequence, si.summary
@@ -593,7 +592,7 @@ export async function onRequest({ request, env }) {
       `).bind(name).all(),
     ]);
     if (!info) return err("Gene not found", 404);
-    return json({ info, groups: groups.results, studies: studies.results, alerts: alerts.results, snps: snps.results });
+    return json({ info, groups: groups.results, studies: studies.results, snps: snps.results });
   }
 
   // ── GET /api/export/:name ────────────────────────
@@ -630,14 +629,6 @@ export async function onRequest({ request, env }) {
         "content-disposition": `attachment; filename="${name}_export.csv"`,
       },
     });
-  }
-
-  // ── GET /api/alerts/unread ───────────────────────
-  if (method === "GET" && route === "alerts" && param === "unread") {
-    const row = await env.genetic.prepare(
-      `SELECT COUNT(*) AS count FROM email_alerts WHERE read = 0`
-    ).first();
-    return json({ unread: row?.count ?? 0 });
   }
 
   // ── Auth-gated writes ────────────────────────────
@@ -869,7 +860,6 @@ export async function onRequest({ request, env }) {
       env.genetic.prepare(`DELETE FROM gene_topics   WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM personal      WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM studies       WHERE gene_name = ?`).bind(name).run(),
-      env.genetic.prepare(`DELETE FROM email_alerts  WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM snps          WHERE gene_name = ?`).bind(name).run(),
       ...rsids.map(rsid => env.genetic.prepare(`DELETE FROM snp_pop WHERE rsid = ?`).bind(rsid).run()),
     ]);
