@@ -146,7 +146,7 @@ function genePanel(geneName, maploc, rsid) {
   <!-- ── PANEL 2: Gene view ── -->
   <rect x="310" y="20" width="460" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
   <text x="540" y="54"  text-anchor="middle" font-family="Afacad,sans-serif" font-size="13"  fill="#7a8fa6" letter-spacing="2">GENE VIEW</text>
-  <text x="540" y="76"  text-anchor="middle" font-family="'Marcellus SC',Afacad,sans-serif"          font-size="19" fill="#e2e8f2" font-weight="700">${title}</text>
+  <text x="540" y="76"  text-anchor="middle" font-family="'Mrs Saint Delafield',cursive"          font-size="22" fill="#e2e8f2" font-weight="700">${title}</text>
 
   <!-- Flanking grey bands -->
   <rect x="330" y="88"  width="420" height="24" rx="3" fill="#2a3d52" opacity="0.4"/>
@@ -220,7 +220,7 @@ function allelePanel(rsid, refA, altA, maploc, geneName, proteinChange) {
   <!-- ── PANEL 3: Allele state ── -->
   <rect x="810" y="20" width="270" height="520" rx="10" fill="#131820" stroke="#1f2d3d" stroke-width="1"/>
   <text x="945" y="54"  text-anchor="middle" font-family="Afacad,sans-serif" font-size="13"  fill="#7a8fa6" letter-spacing="2">ALLELE STATE</text>
-  <text x="945" y="76"  text-anchor="middle" font-family="Afacad,sans-serif"          font-size="19" fill="#e2e8f2" font-weight="700">${esc(rsid || "")}</text>
+  <text x="945" y="76"  text-anchor="middle" font-family="'Mrs Saint Delafield',cursive"          font-size="22" fill="#e2e8f2" font-weight="700">${esc(rsid || "")}</text>
   ${proteinChange ? `<text x="945" y="92"  text-anchor="middle" font-family="Afacad,sans-serif" font-size="13"  fill="#7a8fa6">${esc(proteinChange)}</text>` : ""}
   <text x="945" y="${proteinChange ? 108 : 94}"  text-anchor="middle" font-family="Afacad,sans-serif" font-size="13"  fill="#3d5068">${subtitle}</text>
 
