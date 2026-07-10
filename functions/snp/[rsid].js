@@ -291,6 +291,7 @@ ${nav()}
           ? `<a href="https://www.snpedia.com/index.php/${esc(rsid)}" target="_blank" rel="noopener" style="color:var(--accent)">SNPedia ↗</a>`
           : ""}
         ${geneName ? `<a href="https://www.genecards.org/card/${esc(geneName)}?Search=${esc(rsid)}#Variants_Variants" target="_blank" rel="noopener" style="color:var(--accent)">GeneCards ↗</a>` : ""}
+        ${geneName ? `<a href="https://platform.opentargets.org/search?q=${esc(geneName)}" target="_blank" rel="noopener" style="color:var(--accent)">Open Targets ↗</a>` : ""}
         ${snp.chromosome && snp.position && refAllele && altAllele
           ? `<a href="https://gnomad.broadinstitute.org/variant/${esc(snp.chromosome)}-${esc(snp.position)}-${esc(refAllele)}-${esc(altAllele)}?dataset=gnomad_r4" target="_blank" rel="noopener" style="color:var(--accent)">gnomAD ↗</a>`
           : ""}

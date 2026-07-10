@@ -1159,27 +1159,70 @@ function renderDiscoverResults() {
       <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;color:var(--accent)">${escHtml(r.title)}</a>
       <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin:4px 0 8px;word-break:break-all">${escHtml(r.url)}</div>
       ${r.description ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.description)}</p>` : ""}
-      <div style="display:flex;gap:10px">
-        <button class="btn-sm" onclick="discoverAdd(${i})">+ Add as Study</button>
-        <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, true, false)">Mark Duplicate</button>
-        <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, false, true)">Trash</button>
-      </div>
+      ${r._open ? `
+        <div style="border-top:1px solid var(--line);margin-top:4px;padding-top:12px">
+          <div class="field-row">
+            <div class="field">
+              <label>Authors</label>
+              <input type="text" id="discover-authors-${i}" placeholder="Smith J et al.">
+            </div>
+            <div class="field">
+              <label>Year</label>
+              <input type="number" id="discover-year-${i}" placeholder="2023" min="1950" max="2099">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:14px">
+            <label>PID (DOI / Handle, optional)</label>
+            <input type="text" id="discover-pid-${i}" placeholder="10.1234/example">
+          </div>
+          <label>Snippet</label>
+          <textarea id="discover-snippet-${i}" style="margin-bottom:14px">${escHtml(r.description || r.title || "")}</textarea>
+          <div style="display:flex;gap:10px">
+            <button class="btn-sm" onclick="discoverSubmitAdd(${i})">Save Study</button>
+            <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverToggleAdd(${i})">Cancel</button>
+          </div>
+        </div>
+      ` : `
+        <div style="display:flex;gap:10px">
+          <button class="btn-sm" onclick="discoverToggleAdd(${i})">+ Add as Study</button>
+          <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, true, false)">Mark Duplicate</button>
+          <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, false, true)">Trash</button>
+        </div>
+      `}
     </div>
   `).join("");
 }
 
-function discoverAdd(i) {
+function discoverToggleAdd(i) {
+  discoverResults[i]._open = !discoverResults[i]._open;
+  renderDiscoverResults();
+}
+
+async function discoverSubmitAdd(i) {
   const r = discoverResults[i];
-  document.getElementById("study-gene").value = discoverGene;
-  document.getElementById("study-rsid").value = discoverRsid;
-  document.getElementById("study-title").value = r.title || "";
-  document.getElementById("study-url").value = r.url || "";
-  document.getElementById("study-snippet").value = r.description || r.title || "";
-  document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
-  document.querySelectorAll(".admin-panel").forEach(p => p.classList.remove("active"));
-  document.querySelector('button[onclick="switchTab(\'study\')"]').classList.add("active");
-  document.getElementById("panel-study").classList.add("active");
-  toast("Study form pre-filled — review authors/year/PID, then Save Study.");
+  const body = {
+    gene_name: discoverGene,
+    rsid: discoverRsid,
+    snippet: document.getElementById(`discover-snippet-${i}`).value.trim() || r.title,
+    authors: document.getElementById(`discover-authors-${i}`).value.trim() || null,
+    year: parseInt(document.getElementById(`discover-year-${i}`).value) || null,
+    title: r.title || null,
+    url: r.url || null,
+    pid: document.getElementById(`discover-pid-${i}`).value.trim() || null,
+  };
+  try {
+    const res = await apiFetch("/api/study", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    discoverResults.splice(i, 1);
+    renderDiscoverResults();
+    toast("Study saved.");
+  } catch (e) {
+    toast("Save failed: " + e.message, true);
+  }
 }
 
 async function discoverExclude(i, duplicate, trash) {

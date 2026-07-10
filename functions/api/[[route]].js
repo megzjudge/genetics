@@ -411,6 +411,36 @@ async function fetchAutoStudies(rsid, env) {
   return results.filter(s => s.title && s.url);
 }
 
+// Domains this site already treats as standard per-variant/per-gene
+// reference databases (linked directly from every SNP page) rather than
+// primary literature — Brave reliably surfaces these for any rsID/gene
+// query, but they're never a "study" worth reviewing, so Discover scans
+// filter them out.
+const DISCOVER_EXCLUDED_HOSTS = new Set([
+  "www.snpedia.com", "snpedia.com",
+  "www.genecards.org", "genecards.org",
+  "www.omim.org", "omim.org",
+  "gnomad.broadinstitute.org",
+  "varsome.com",
+  "databases.lovd.nl",
+  "www.ebi.ac.uk",
+  "platform.opentargets.org",
+  "app.researchrabbit.ai", "www.researchrabbitapp.com",
+  "scholar.google.com",
+  "en.wikipedia.org", "wikipedia.org",
+]);
+
+function isExcludedDiscoverResult(resUrl) {
+  let u;
+  try { u = new URL(resUrl); } catch { return false; }
+  const host = u.hostname.toLowerCase();
+  if (DISCOVER_EXCLUDED_HOSTS.has(host)) return true;
+  // NCBI hosts both reference databases (dbSNP/ClinVar/Gene — exclude) and
+  // actual papers (PubMed/PMC — keep), so this one needs a path check.
+  if (host.endsWith("ncbi.nlm.nih.gov")) return /^\/(snp|clinvar|gene|omim)\b/i.test(u.pathname);
+  return false;
+}
+
 // Broad open-web search (as opposed to the scholarly-index-only PubMed/
 // Semantic Scholar auto-search above) — used by the admin Discover tab for
 // manual, per-SNP "find me things I don't already have" scans. Requires a
@@ -430,7 +460,7 @@ async function fetchBraveResults(query, env) {
       // Brave wraps matched query terms in <strong> tags in both fields.
       description: (res.description || "").replace(/<\/?strong>/g, ""),
     }))
-    .filter(res => res.title && res.url);
+    .filter(res => res.title && res.url && !isExcludedDiscoverResult(res.url));
 }
 
 async function insertAutoStudies(gene_name, rsid, env) {
