@@ -411,6 +411,28 @@ async function fetchAutoStudies(rsid, env) {
   return results.filter(s => s.title && s.url);
 }
 
+// Broad open-web search (as opposed to the scholarly-index-only PubMed/
+// Semantic Scholar auto-search above) — used by the admin Discover tab for
+// manual, per-SNP "find me things I don't already have" scans. Requires a
+// Brave Search API subscription token set as the BRAVE_API_KEY secret.
+async function fetchBraveResults(query, env) {
+  if (!env.BRAVE_API_KEY) throw new Error("BRAVE_API_KEY not configured");
+  const r = await fetch(
+    `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=15`,
+    { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+  );
+  if (!r.ok) throw new Error(`Brave Search API ${r.status}`);
+  const data = await r.json();
+  return (data.web?.results || [])
+    .map(res => ({
+      title: res.title || null,
+      url: res.url || null,
+      // Brave wraps matched query terms in <strong> tags in both fields.
+      description: (res.description || "").replace(/<\/?strong>/g, ""),
+    }))
+    .filter(res => res.title && res.url);
+}
+
 async function insertAutoStudies(gene_name, rsid, env) {
   const candidates = await fetchAutoStudies(rsid, env);
   let inserted = 0;
@@ -1157,6 +1179,48 @@ export async function onRequest({ request, env }) {
       `SELECT gene_name, rsid, title, url, pid FROM studies`
     ).all();
     return json({ studies: results || [] });
+  }
+
+  // ── GET /api/discover?rsid=&gene= ────────────────
+  // Manual, per-SNP "find me studies I don't already have" scan via Brave
+  // Search — a broader net than the PubMed/Semantic Scholar auto-search,
+  // which only look at scholarly indexes. Returns raw candidates only; the
+  // admin client cross-references against /api/studies + /api/exclusions
+  // to show just what's actually new.
+  if (method === "GET" && route === "discover") {
+    const rsid = url.searchParams.get("rsid");
+    const gene = url.searchParams.get("gene");
+    if (!rsid) return err("rsid required");
+    const query = `${rsid}${gene ? " " + gene : ""} gene variant study`;
+    try {
+      const results = await fetchBraveResults(query, env);
+      return json({ results });
+    } catch (e) {
+      return err("Brave Search error: " + e.message, 502);
+    }
+  }
+
+  // ── GET /api/exclusions ───────────────────────────
+  // Titles/URLs explicitly marked (via the Discover tab) as "don't show me
+  // this again" — either a duplicate of something already filed, or
+  // genuinely not useful (trash). Merged client-side with /api/studies to
+  // filter subsequent Discover scans.
+  if (method === "GET" && route === "exclusions") {
+    const { results } = await env.genetic.prepare(
+      `SELECT title, url, is_duplicate, is_trash FROM study_exclusions`
+    ).all();
+    return json({ exclusions: results || [] });
+  }
+
+  // ── POST /api/exclusion ───────────────────────────
+  if (method === "POST" && route === "exclusion" && !param) {
+    const { title, url: pageUrl, duplicate, trash } = await request.json();
+    if (!title && !pageUrl) return err("title or url required");
+    await env.genetic.prepare(`
+      INSERT INTO study_exclusions (title, url, is_duplicate, is_trash)
+      VALUES (?, ?, ?, ?)
+    `).bind(title || null, pageUrl || null, duplicate ? 1 : 0, trash ? 1 : 0).run();
+    return json({ ok: true });
   }
 
   return err("Not found", 404);

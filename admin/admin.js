@@ -9,6 +9,10 @@ let bulkGene = null, bulkRsid = null;
 let bulkRows = [];
 let bulkExistingStudies = [];
 
+// ── Discover (Brave Search) state ─────────────────
+let discoverGene = null, discoverRsid = null;
+let discoverResults = [];
+
 // ── Auth ──────────────────────────────────────────
 function tryAuth() {
   const pw = document.getElementById("auth-input").value.trim();
@@ -1098,4 +1102,99 @@ async function bulkImportAll() {
 
   document.getElementById("bulk-progress").textContent = `Done — ${done}/${total} imported, ${errs} errors.`;
   toast(`Imported ${done} studies.`);
+}
+
+// ── Discover tab (Brave Search) ───────────────────
+function discoverSnpPicked() {
+  const val = document.getElementById("discover-snp-picker").value.trim();
+  let match = null;
+  let m = val.match(/^(.+?)\s*—\s*(rs\d+)$/i);
+  if (m) match = snpList.find(s => s.gene_name === m[1].trim().toUpperCase() && s.rsid.toLowerCase() === m[2].toLowerCase());
+  if (!match) {
+    m = val.match(/^(rs\d+)$/i);
+    if (m) match = snpList.find(s => s.rsid.toLowerCase() === m[1].toLowerCase());
+  }
+  discoverGene = match ? match.gene_name : null;
+  discoverRsid = match ? match.rsid : null;
+  document.getElementById("discover-scan-btn").disabled = !match;
+}
+
+async function discoverScan() {
+  if (!discoverGene || !discoverRsid) return toast("Pick a gene/rsID first.", true);
+  const btn = document.getElementById("discover-scan-btn");
+  btn.disabled = true;
+  btn.textContent = "Scanning…";
+  try {
+    const [scan, studies, exclusions] = await Promise.all([
+      safeFetchJson(`/api/discover?rsid=${encodeURIComponent(discoverRsid)}&gene=${encodeURIComponent(discoverGene)}`),
+      safeFetchJson("/api/studies"),
+      safeFetchJson("/api/exclusions"),
+    ]);
+    const known = (studies?.studies || []).concat(exclusions?.exclusions || []);
+    const raw = scan?.results || [];
+    // Reuses the same normalized-title/url matching the bulk CSV importer
+    // uses (bulkFindDuplicate/bulkNormTitle) — "known" here is anything
+    // already filed as a study OR previously marked Duplicate/Trash.
+    discoverResults = raw.filter(r => !bulkFindDuplicate(r, known));
+    renderDiscoverResults();
+    document.getElementById("discover-review").style.display = "block";
+  } catch (e) {
+    toast("Scan failed: " + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Scan";
+  }
+}
+
+function renderDiscoverResults() {
+  document.getElementById("discover-count").textContent =
+    `${discoverResults.length} new result${discoverResults.length === 1 ? "" : "s"} for ${discoverGene} — ${discoverRsid}`;
+  const wrap = document.getElementById("discover-results");
+  if (!discoverResults.length) {
+    wrap.innerHTML = `<p style="font-size:13px;color:var(--faint)">Nothing new — everything Brave returned is already filed or excluded.</p>`;
+    return;
+  }
+  wrap.innerHTML = discoverResults.map((r, i) => `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px">
+      <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;color:var(--accent)">${escHtml(r.title)}</a>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin:4px 0 8px;word-break:break-all">${escHtml(r.url)}</div>
+      ${r.description ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.description)}</p>` : ""}
+      <div style="display:flex;gap:10px">
+        <button class="btn-sm" onclick="discoverAdd(${i})">+ Add as Study</button>
+        <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, true, false)">Mark Duplicate</button>
+        <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="discoverExclude(${i}, false, true)">Trash</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function discoverAdd(i) {
+  const r = discoverResults[i];
+  document.getElementById("study-gene").value = discoverGene;
+  document.getElementById("study-rsid").value = discoverRsid;
+  document.getElementById("study-title").value = r.title || "";
+  document.getElementById("study-url").value = r.url || "";
+  document.getElementById("study-snippet").value = r.description || r.title || "";
+  document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".admin-panel").forEach(p => p.classList.remove("active"));
+  document.querySelector('button[onclick="switchTab(\'study\')"]').classList.add("active");
+  document.getElementById("panel-study").classList.add("active");
+  toast("Study form pre-filled — review authors/year/PID, then Save Study.");
+}
+
+async function discoverExclude(i, duplicate, trash) {
+  const r = discoverResults[i];
+  try {
+    const res = await apiFetch("/api/exclusion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: r.title, url: r.url, duplicate, trash }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    discoverResults.splice(i, 1);
+    renderDiscoverResults();
+    toast(duplicate ? "Marked as duplicate — won't resurface in future scans." : "Trashed — won't resurface in future scans.");
+  } catch (e) {
+    toast("Failed: " + e.message, true);
+  }
 }
