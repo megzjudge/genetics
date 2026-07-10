@@ -681,12 +681,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .freq-sort-btn.active::after { content: " \2191"; }
 .freq-sort-btn.active.freq-sort-btn--desc::after { content: " \2193"; }
 .freq-sort-btn--freq {
-  border-color: rgba(232, 69, 128, 0.35); color: var(--pink);
-  background: rgba(232, 69, 128, 0.08);
+  border-color: rgba(232, 69, 128, 0.2); color: var(--body-text);
+  background: rgba(232, 69, 128, 0.13);
 }
-.freq-sort-btn--freq:hover { border-color: var(--pink); color: var(--pink); }
+.freq-sort-btn--freq:hover { border-color: rgba(232, 69, 128, 0.4); color: var(--ink); }
 .freq-sort-btn--freq.active {
-  border-color: var(--pink); color: var(--pink); background: rgba(232, 69, 128, 0.18);
+  border-color: rgba(232, 69, 128, 0.55); color: var(--ink); background: rgba(232, 69, 128, 0.22);
 }
 .freq-table {
   margin: 12px auto 0;
