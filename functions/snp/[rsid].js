@@ -30,6 +30,43 @@ function pidUrl(pid) {
   return /^10\.\d{4,9}\//.test(pid) ? `https://doi.org/${pid}` : `https://hdl.handle.net/${pid}`;
 }
 
+// Plain-English definitions for NCBI/Sequence Ontology consequence terms,
+// keyed lowercase for case-insensitive lookup.
+const CONSEQUENCE_INFO = {
+  "missense variant": "Changes one amino acid in the protein for another. May or may not affect how the protein works.",
+  "synonymous variant": "Changes the DNA but not the resulting amino acid — the protein is unaffected.",
+  "nonsense variant": "Creates a premature stop signal, cutting the protein short. Usually damaging.",
+  "stop gained": "Creates a premature stop signal, cutting the protein short. Usually damaging.",
+  "stop lost": "Removes the normal stop signal, so the protein keeps being built past where it should end.",
+  "start lost": "Destroys the site where protein-building normally begins, usually blocking normal production.",
+  "frameshift variant": "Inserts or deletes DNA in a way that shifts the reading frame, scrambling everything downstream. Usually damaging.",
+  "inframe insertion": "Adds extra amino acids to the protein without disrupting the reading frame.",
+  "inframe deletion": "Removes amino acids from the protein without disrupting the reading frame.",
+  "intron variant": "Falls within an intron — a non-coding section that gets spliced out before the protein is made. Usually has little effect.",
+  "splice donor variant": "Falls at the start of an intron, right where splicing begins — can disrupt how the gene is spliced together.",
+  "splice acceptor variant": "Falls at the end of an intron, right where splicing ends — can disrupt how the gene is spliced together.",
+  "splice region variant": "Falls near a splice site and may subtly affect splicing.",
+  "5 prime utr variant": "Falls in the region before the coding sequence starts — can affect how efficiently the protein is produced.",
+  "3 prime utr variant": "Falls in the region after the coding sequence ends — can affect mRNA stability or regulation.",
+  "coding sequence variant": "Falls within the protein-coding region; exact effect depends on additional details.",
+  "non coding transcript variant": "Falls within a gene that doesn't code for protein — affects a functional RNA instead.",
+  "upstream gene variant": "Falls just before the gene starts — may affect regulation but doesn't change the protein.",
+  "downstream gene variant": "Falls just after the gene ends — may affect regulation but doesn't change the protein.",
+  "intergenic variant": "Falls between genes, not inside any known gene.",
+  "regulatory region variant": "Falls in a region known to help control gene activity, such as a promoter or enhancer.",
+  "tf binding site variant": "Falls within a site where a transcription factor protein normally binds to help control the gene.",
+  "genic downstream transcript variant": "Falls just after a transcript ends — may affect regulation but doesn't change the protein.",
+  "genic upstream transcript variant": "Falls just before a transcript starts — may affect regulation but doesn't change the protein.",
+};
+
+// Wraps a consequence string with a hover tooltip explaining what it means,
+// when a definition is known. Falls back to plain text otherwise.
+function consequenceSpan(consequence) {
+  const def = CONSEQUENCE_INFO[consequence.toLowerCase()];
+  if (!def) return `<span>${esc(consequence)}</span>`;
+  return `<span class="tooltip" tabindex="0" data-tooltip="${esc(def)}">${esc(consequence)}</span>`;
+}
+
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
           ${s.title ? `<p class="study-title">${s.url
@@ -242,7 +279,7 @@ ${nav()}
         ${geneName ? `<span>Gene: <a href="/gene/${esc(geneName)}" style="color:var(--accent)">${esc(geneName)}</a>${snp.full_name ? ` — ${esc(snp.full_name)}` : ""}</span>` : ""}
         ${chrNum   ? `<span>Chr ${esc(chrNum)}${snp.position ? ":" + esc(snp.position) : ""}</span>` : ""}
         ${maploc   ? `<span>${esc(maploc)}</span>` : ""}
-        ${snp.consequence ? `<span>${esc(snp.consequence)}</span>` : ""}
+        ${snp.consequence ? consequenceSpan(snp.consequence) : ""}
       </div>
 
       <div data-personal-notes="${esc(rsid)}"></div>
