@@ -333,15 +333,31 @@ ${foot()}
   const bar = document.querySelector(".freq-sort-bar");
   const table = document.querySelector(".freq-table");
   if (!bar || !table) return;
-  let activeKey = null, dir = 1;
+  const originalOrder = Array.from(table.querySelectorAll(".freq-row"));
+  let activeKey = null, state = 0; // state: 0 = original, 1 = ascending, 2 = descending
+
+  function clearActive() {
+    bar.querySelectorAll(".freq-sort-btn").forEach(function (b) {
+      b.classList.remove("active", "freq-sort-btn--desc");
+    });
+  }
+
   bar.querySelectorAll(".freq-sort-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
       const key = btn.dataset.sortKey;
-      dir = (activeKey === key) ? dir * -1 : 1;
+      state = (activeKey === key) ? (state + 1) % 3 : 1;
       activeKey = key;
-      bar.querySelectorAll(".freq-sort-btn").forEach(function (b) { b.classList.remove("active"); });
+      clearActive();
+
+      if (state === 0) {
+        activeKey = null;
+        originalOrder.forEach(function (r) { table.appendChild(r); });
+        return;
+      }
+
       btn.classList.add("active");
-      btn.classList.toggle("freq-sort-btn--desc", dir === -1);
+      btn.classList.toggle("freq-sort-btn--desc", state === 2);
+      const dir = state === 2 ? -1 : 1;
 
       const rows = Array.from(table.querySelectorAll(".freq-row"));
       const pinned = rows.filter(function (r) { return r.dataset.total === "1"; });
