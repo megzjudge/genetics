@@ -689,7 +689,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border-color: rgba(232, 69, 128, 0.55); color: var(--ink); background: rgba(232, 69, 128, 0.22);
 }
 .freq-table {
-  margin: 12px auto 0;
+  margin: 12px 0 0;
   width: fit-content;
   max-width: 100%;
   border: 1px solid var(--line);
