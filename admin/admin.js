@@ -1373,9 +1373,12 @@ function renderScholarResults() {
           <input type="text" id="scholar-pid-${i}" placeholder="10.1234/example">
           <label>Snippet</label>
           <textarea id="scholar-snippet-${i}" class="mono">${escHtml(r.snippet || r.title || "")}</textarea>
-          <div style="display:flex;gap:10px">
-            <button class="btn-sm" onclick="scholarSubmitAdd(${i})">Save Study</button>
-            <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="scholarToggleAdd(${i})">Cancel</button>
+          <div style="display:flex;gap:10px;justify-content:space-between">
+            <div style="display:flex;gap:10px">
+              <button class="btn-sm" onclick="scholarSubmitAdd(${i})">Save Study</button>
+              <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="scholarToggleAdd(${i})">Cancel</button>
+            </div>
+            <button class="btn-sm" style="background:#f87171;color:#2a1418" onclick="scholarExcludeStudy(${i})">Exclude</button>
           </div>
         </div>
       ` : `
@@ -1414,5 +1417,22 @@ async function scholarSubmitAdd(i) {
     toast("Study saved.");
   } catch (e) {
     toast("Save failed: " + e.message, true);
+  }
+}
+
+async function scholarExcludeStudy(i) {
+  const r = scholarResults[i];
+  try {
+    const res = await apiFetch("/api/exclusion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: r.title, url: r.url, trash: true }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    scholarResults.splice(i, 1);
+    renderScholarResults();
+    toast("Excluded — won't resurface in future scans.");
+  } catch (e) {
+    toast("Failed: " + e.message, true);
   }
 }
