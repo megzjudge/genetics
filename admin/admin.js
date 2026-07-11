@@ -1336,7 +1336,13 @@ function renderScholarResults() {
   document.getElementById("scholar-count").textContent =
     `${scholarResults.length} parsed for ${scholarGene} — ${scholarRsid} (${newCount} new, ${scholarResults.length - newCount} already known)`;
   const wrap = document.getElementById("scholar-results");
-  wrap.innerHTML = scholarResults.map((r, i) => {
+  // New results first, already-known ones sunk to the bottom — stable within
+  // each group, so relative parse order is preserved either side of the split.
+  const order = scholarResults.map((_, i) => i).sort((a, b) => {
+    return (scholarResults[a]._known ? 1 : 0) - (scholarResults[b]._known ? 1 : 0);
+  });
+  wrap.innerHTML = order.map(i => {
+    const r = scholarResults[i];
     if (r._known) {
       return `
       <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:6px;padding:14px 16px;margin-bottom:10px;opacity:0.55">
