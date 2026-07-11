@@ -612,7 +612,7 @@ export async function onRequest({ request, env }) {
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(`
-      SELECT p.gene_name, p.rsid, p.alleles, s.rr_url,
+      SELECT p.gene_name, p.rsid, p.alleles, s.rr_url, s.scholar_scanned_at,
              (SELECT COUNT(*) FROM snp_pop WHERE snp_pop.rsid = p.rsid) AS pop_count
       FROM personal p LEFT JOIN snps s ON s.rsid = p.rsid
       ORDER BY p.gene_name, p.rsid
@@ -746,7 +746,8 @@ export async function onRequest({ request, env }) {
   if (method === "PATCH" && route === "snp" && param) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change, consequence,
-            chromosome, position, summary, rr_url, frequencies, has_clinvar, has_snpedia } = await request.json();
+            chromosome, position, summary, rr_url, frequencies, has_clinvar, has_snpedia,
+            scholar_scanned } = await request.json();
     if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
         INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)
@@ -787,6 +788,17 @@ export async function onRequest({ request, env }) {
         INSERT INTO snps (rsid, rr_url) VALUES (?, ?)
         ON CONFLICT(rsid) DO UPDATE SET rr_url = excluded.rr_url
       `).bind(rsid, rr_url || null).run();
+    }
+    // Manual "I've run the Scholar scan for this SNP" toggle — no external
+    // fetch involved, just a flag (with timestamp) the admin panel flips
+    // directly. Server stamps the date itself (Unix epoch ms, not text —
+    // sorts naturally as a plain number) rather than trusting the client.
+    if (scholar_scanned !== undefined) {
+      const stamp = scholar_scanned ? Date.now() : null;
+      await env.genetic.prepare(`
+        INSERT INTO snps (rsid, scholar_scanned_at) VALUES (?, ?)
+        ON CONFLICT(rsid) DO UPDATE SET scholar_scanned_at = excluded.scholar_scanned_at
+      `).bind(rsid, stamp).run();
     }
     // Population frequencies — if the caller already looked these up (the
     // admin backfill flow calls /api/snp/lookup first and forwards its

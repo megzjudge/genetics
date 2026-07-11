@@ -261,6 +261,28 @@ function popBadge(s) {
             onclick="scanOnePop('${s.rsid}')" title="${has ? s.pop_count + " population rows" : "Click to fetch population frequency data"}">Pop: ${has ? "Yes" : "No"}</button>`;
 }
 
+// Manual toggle, not a scan — nothing to fetch automatically for Scholar,
+// this just flips a "have I done the paste-and-parse for this SNP" flag,
+// with the date stamped server-side when turned on.
+function schlrBadge(s) {
+  const has = !!s.scholar_scanned_at;
+  const dateStr = has ? new Date(s.scholar_scanned_at).toLocaleDateString() : null;
+  const title = has ? `Scanned ${dateStr} — click to mark as not done` : "Click to mark Scholar scan as done";
+  return `<button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${has ? "#4ade80" : "var(--faint)"}"
+            onclick="toggleScholarScanned('${s.rsid}', ${has ? 0 : 1})" title="${title}">Schlr: ${has ? "Yes" : "No"}</button>`;
+}
+
+function toggleScholarScanned(rsid, value) {
+  apiFetch(`/api/snp/${rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scholar_scanned: value }),
+  }).then(r => {
+    if (r.ok) { toast(value ? "Marked as scanned." : "Marked as not scanned."); init(); }
+    else toast("Failed to update.", true);
+  });
+}
+
 async function scanOnePop(rsid) {
   toast(`Scanning ${rsid}…`);
   try {
@@ -289,6 +311,38 @@ async function scanOnePop(rsid) {
   }
 }
 
+// null = unsorted; otherwise "rr" | "pop" | "schlr". dir 1 = ascending
+// (No's first; for schlr, Yes's after that sorted oldest-scanned-first),
+// -1 = descending (Yes's first, newest-scanned-first, No's last).
+let snpSortCol = null, snpSortDir = 1;
+
+function snpSortCompare(col, a, b) {
+  if (col === "rr") return (a.rr_url ? 1 : 0) - (b.rr_url ? 1 : 0);
+  if (col === "pop") return ((a.pop_count || 0) > 0 ? 1 : 0) - ((b.pop_count || 0) > 0 ? 1 : 0);
+  if (col === "schlr") {
+    const ah = a.scholar_scanned_at ? 1 : 0, bh = b.scholar_scanned_at ? 1 : 0;
+    if (ah !== bh) return ah - bh;
+    if (!ah) return 0;
+    return a.scholar_scanned_at - b.scholar_scanned_at;
+  }
+  return 0;
+}
+
+function sortSnpTable(col) {
+  snpSortDir = (snpSortCol === col) ? -snpSortDir : 1;
+  snpSortCol = col;
+  snpList.sort((a, b) => snpSortDir * snpSortCompare(col, a, b));
+  renderSnpTable();
+}
+
+function updateSnpSortArrows() {
+  for (const col of ["rr", "pop", "schlr"]) {
+    const el = document.getElementById("snp-sort-arrow-" + col);
+    if (!el) continue;
+    el.textContent = snpSortCol === col ? (snpSortDir === 1 ? "▲" : "▼") : "⇅";
+  }
+}
+
 function renderSnpTable() {
   const tbody = document.getElementById("snp-tbody");
   if (!tbody) return;
@@ -300,7 +354,9 @@ function renderSnpTable() {
       <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
       <td>${rrBadge(s)}</td>
       <td>${popBadge(s)}</td>
+      <td>${schlrBadge(s)}</td>
     </tr>`).join("");
+  updateSnpSortArrows();
 }
 
 function deleteSnp(rsid) {
@@ -329,6 +385,13 @@ function clearSnpPreview() {
   document.getElementById("snp-preview").style.display = "none";
   document.getElementById("snp-warn").style.display = "none";
   snpLookupData = null;
+}
+
+function snpOpenScholar() {
+  const rsid = document.getElementById("snp-rsid").value.trim();
+  if (!/^rs\d+$/i.test(rsid)) return toast("Enter a valid rsID first.", true);
+  const url = `https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=%22${encodeURIComponent(rsid)}%22&btnG=`;
+  window.open(url, "_blank", "noopener");
 }
 
 async function lookupSnp() {
@@ -1265,6 +1328,21 @@ function scholarSnpPicked() {
   scholarGene = match ? match.gene_name : null;
   scholarRsid = match ? match.rsid : null;
   document.getElementById("scholar-parse-btn").disabled = !match;
+
+  const urlInput = document.getElementById("scholar-open-url");
+  const openBtn = document.getElementById("scholar-open-btn");
+  if (match) {
+    urlInput.value = `https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=%22${encodeURIComponent(match.rsid)}%22&btnG=`;
+    openBtn.disabled = false;
+  } else {
+    urlInput.value = "";
+    openBtn.disabled = true;
+  }
+}
+
+function scholarOpenUrl() {
+  const url = document.getElementById("scholar-open-url").value;
+  if (url) window.open(url, "_blank", "noopener");
 }
 
 // The pagination nav renders every neighboring page as a linked
@@ -1290,12 +1368,17 @@ function scholarStripTags(s) {
 }
 
 // Abstracts on Scholar often open with a structured header ("Background:",
-// "Aim:", "Purpose:", "Objective:", "Introduction:", "Methods:", or a pair
-// of these joined by "and"/"&", e.g. "Purpose & Aims:", "Objective and Aim")
-// — strip it so the snippet reads as plain prose instead of starting mid-label.
+// "Aim:", "Purpose:", "Objective:", "Introduction:", "Methods:",
+// "Full Article:", "Results:"), a pair joined by "and"/"&" (e.g. "Purpose
+// & Aims:"), a trailing "of the Review" (e.g. "Purpose of the Review:",
+// "Results of the Review:"), or the fixed idiom "What is known and
+// objective" (common in pharmacy-journal abstracts) — strip it so the
+// snippet reads as plain prose instead of starting mid-label.
 function scholarStripLeadLabel(s) {
-  const label = "(?:background|aims?|purpose|objectives?|introduction|methods?)";
-  const re = new RegExp(`^\\s*${label}(?:\\s*(?:and|&)\\s*${label})?\\s*:?\\s*[-—]?\\s*`, "i");
+  const label = "(?:background|aims?|purpose|objectives?|introduction|methods?|full article|results?)";
+  const combo = `(?:${label}(?:\\s*(?:and|&)\\s*${label})?(?:\\s+of\\s+the\\s+review)?)`;
+  const phrase = "what is known and objective";
+  const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*:?\\s*[-—]?\\s*`, "i");
   return (s || "").replace(re, "");
 }
 
@@ -1303,6 +1386,83 @@ function scholarDecodeEntities(s) {
   return (s || "")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+}
+
+// Ported from worker.js's email-intake path — only kicks in when a whole
+// field is genuinely SHOUTING in all-caps (titles, authors, or snippets can
+// all come through that way from certain publishers), leaving normally-cased
+// text untouched rather than reformatting it.
+const SCHOLAR_TITLE_ACRONYMS = new Set([
+  "adhd", "iq", "llm", "llms", "ai", "ml", "usa", "uk", "eu",
+  "pdf", "doi", "gpt", "nlp", "dna", "rna", "snp", "snps",
+  "mrna", "pcr", "gwas", "mthfr", "mtr", "mtrr", "dhfr",
+  "ada", "ak2", "rag1", "rag2", "phd", "covid", "hiv",
+]);
+const SCHOLAR_TITLE_SMALL = new Set([
+  "a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on",
+  "or", "the", "to", "vs", "via", "with", "from",
+]);
+
+function scholarCapTitleCore(core, idx, total) {
+  if (!core) return core;
+  for (const sep of ["–", "—", "-"]) {
+    if (core.includes(sep)) {
+      const parts = core.split(sep);
+      return parts.map((p, i) => scholarCapTitleCore(p, i, parts.length)).join(sep);
+    }
+  }
+  const low = core.toLowerCase();
+  if (SCHOLAR_TITLE_ACRONYMS.has(low)) return core.toUpperCase();
+  if (idx > 0 && idx < total - 1 && SCHOLAR_TITLE_SMALL.has(low)) return low;
+  if (core.length === 1) return core.toUpperCase();
+  return core[0].toUpperCase() + core.slice(1).toLowerCase();
+}
+
+function scholarTitleCaseFromAllCaps(text) {
+  const s = (text || "").trim().toLowerCase();
+  if (!s) return text;
+  const parts = s.split(/(\s+)/);
+  const words = parts.filter((p) => p && !/^\s+$/.test(p));
+  let wi = 0;
+  const out = [];
+  for (const p of parts) {
+    if (/^\s+$/.test(p)) { out.push(p); continue; }
+    const m = p.match(/^([\"'(\[]*)(.*?)([\"')\].,:;!?™]*)$/);
+    if (!m) { out.push(scholarCapTitleCore(p, wi, words.length)); wi++; continue; }
+    const [, pre, core, suf] = m;
+    if (core) { out.push(pre + scholarCapTitleCore(core, wi, words.length) + suf); wi++; }
+    else out.push(p);
+  }
+  return out.join("");
+}
+
+function scholarNormalizeAllCaps(text) {
+  const t = (text || "").trim();
+  if (!t) return t;
+  const letters = t.replace(/[^A-Za-z]/g, "");
+  if (!letters || letters !== letters.toUpperCase()) return t;
+  return scholarTitleCaseFromAllCaps(t);
+}
+
+// Author lines ("JY Kim, HS Cheong, …") aren't prose — the generic title-case
+// logic above would wrongly lowercase initials like "JY" into "Jy". Only
+// fires on a genuinely all-caps line. A length threshold isn't reliable (some
+// surnames, e.g. "Kim", are as short as an initials cluster) — position is:
+// the first word in each comma-separated author entry is the initials
+// cluster and stays fully capitalized, every word after it is the surname
+// and gets normal capitalization.
+function scholarNormalizeAuthorsAllCaps(text) {
+  const t = (text || "").trim();
+  if (!t) return t;
+  const letters = t.replace(/[^A-Za-z]/g, "");
+  if (!letters || letters !== letters.toUpperCase()) return t;
+  return t.split(",").map(part => {
+    let first = true;
+    return part.replace(/[A-Za-z]+/g, w => {
+      if (first) { first = false; return w.toUpperCase(); }
+      return w[0].toUpperCase() + w.slice(1).toLowerCase();
+    });
+  }).join(",");
 }
 
 // Google Scholar's results markup, per result: a div.gs_ri containing an
@@ -1319,7 +1479,7 @@ function scholarParseHtml(html) {
     const linkMatch = h3Match[1].match(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
     if (!linkMatch) continue; // e.g. [CITATION] entries with no linked source
     const url = scholarDecodeEntities(linkMatch[1]);
-    const title = scholarStripTags(linkMatch[2]);
+    const title = scholarNormalizeAllCaps(scholarStripTags(linkMatch[2]));
     if (!title || !url) continue;
 
     const authorsMatch = block.match(/<div[^>]*class="gs_a"[^>]*>([\s\S]*?)<\/div>/i);
@@ -1328,10 +1488,14 @@ function scholarParseHtml(html) {
     // required on both sides) so hyphenated surnames like "Jean-Pierre" survive.
     // Strip any digits that leak in (e.g. a year, if the split above ever
     // misfires on an unusual line) — author names shouldn't contain numbers.
-    const authors = authorsFull.split(" - ")[0].replace(/\d+/g, "").replace(/\s+/g, " ").trim();
+    const authors = scholarNormalizeAuthorsAllCaps(
+      authorsFull.split(" - ")[0].replace(/\d+/g, "").replace(/\s+/g, " ").trim()
+    );
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
-    const snippet = snippetMatch ? scholarStripLeadLabel(scholarStripTags(snippetMatch[1])) : "";
+    const snippet = snippetMatch
+      ? scholarNormalizeAllCaps(scholarStripLeadLabel(scholarStripTags(snippetMatch[1])))
+      : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : null;
