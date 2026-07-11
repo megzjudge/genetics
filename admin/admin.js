@@ -1332,14 +1332,17 @@ async function scholarParse() {
 }
 
 function renderScholarResults() {
-  const newCount = scholarResults.filter(r => !r._known).length;
+  const newCount = scholarResults.filter(r => !r._known && !r._excluded).length;
+  const knownCount = scholarResults.filter(r => r._known).length;
+  const excludedCount = scholarResults.filter(r => r._excluded).length;
   document.getElementById("scholar-count").textContent =
-    `${scholarResults.length} parsed for ${scholarGene} — ${scholarRsid} (${newCount} new, ${scholarResults.length - newCount} already known)`;
+    `${scholarResults.length} parsed for ${scholarGene} — ${scholarRsid} (${newCount} new, ${knownCount} already known, ${excludedCount} excluded)`;
   const wrap = document.getElementById("scholar-results");
-  // New results first, already-known ones sunk to the bottom — stable within
-  // each group, so relative parse order is preserved either side of the split.
+  // New results first, already-known/excluded ones sunk to the bottom — stable
+  // within each group, so relative parse order is preserved either side of the split.
   const order = scholarResults.map((_, i) => i).sort((a, b) => {
-    return (scholarResults[a]._known ? 1 : 0) - (scholarResults[b]._known ? 1 : 0);
+    const sortKey = r => (r._known || r._excluded) ? 1 : 0;
+    return sortKey(scholarResults[a]) - sortKey(scholarResults[b]);
   });
   wrap.innerHTML = order.map(i => {
     const r = scholarResults[i];
@@ -1348,6 +1351,13 @@ function renderScholarResults() {
       <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:6px;padding:14px 16px;margin-bottom:10px;opacity:0.55">
         <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:#34d399">${escHtml(r.title)}</a>
         <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:4px">Already known — skipped</div>
+      </div>`;
+    }
+    if (r._excluded) {
+      return `
+      <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:14px 16px;margin-bottom:10px;opacity:0.55">
+        <a href="${escAttr(r.url)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:#f87171">${escHtml(r.title)}</a>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:4px">Excluded — won't resurface in future scans</div>
       </div>`;
     }
     return `
@@ -1429,7 +1439,8 @@ async function scholarExcludeStudy(i) {
       body: JSON.stringify({ title: r.title, url: r.url, trash: true }),
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
-    scholarResults.splice(i, 1);
+    r._excluded = true;
+    r._open = false;
     renderScholarResults();
     toast("Excluded — won't resurface in future scans.");
   } catch (e) {

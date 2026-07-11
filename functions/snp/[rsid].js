@@ -100,6 +100,10 @@ function studyCard(s, extraClass) {
                 <input type="text" id="study-edit-authors-${s.id}" value="${esc(s.authors)}">
               </div>
               <div>
+                <label>Year</label>
+                <input type="number" id="study-edit-year-${s.id}" value="${esc(s.year)}" min="1950" max="2099">
+              </div>
+              <div>
                 <label>PID</label>
                 <input type="text" id="study-edit-pid-${s.id}" value="${esc(s.pid)}">
               </div>
@@ -354,6 +358,30 @@ ${foot()}
 <script>
 (function () {
   const rsid = ${JSON.stringify(rsid)};
+  function escC(str) {
+    return (str == null ? "" : String(str))
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function pidUrlC(pid) {
+    if (!pid) return null;
+    return /^10\.\d{4,9}\//.test(pid) ? "https://doi.org/" + pid : "https://hdl.handle.net/" + pid;
+  }
+  function showBottomToast(msg) {
+    let el = document.getElementById("study-edit-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "study-edit-toast";
+      el.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);"
+        + "background:var(--card);border:1px solid var(--accent);color:var(--accent);"
+        + "font-family:var(--mono);font-size:13px;padding:10px 20px;border-radius:6px;"
+        + "z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4)";
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(function () { el.style.display = "none"; }, 2500);
+  }
   async function load() {
     const res = await PersonalAuth.fetchPersonal({ rsid });
     if (!res.ok) return false;
@@ -378,19 +406,35 @@ ${foot()}
     const token = PersonalAuth.getToken();
     if (!token) return;
     const body = {
-      title:   document.getElementById("study-edit-title-" + id).value,
-      url:     document.getElementById("study-edit-url-" + id).value,
-      authors: document.getElementById("study-edit-authors-" + id).value,
-      pid:     document.getElementById("study-edit-pid-" + id).value,
-      snippet: document.getElementById("study-edit-snippet-" + id).value,
+      title:   document.getElementById("study-edit-title-" + id).value.trim(),
+      url:     document.getElementById("study-edit-url-" + id).value.trim(),
+      authors: document.getElementById("study-edit-authors-" + id).value.trim(),
+      year:    parseInt(document.getElementById("study-edit-year-" + id).value) || null,
+      pid:     document.getElementById("study-edit-pid-" + id).value.trim(),
+      snippet: document.getElementById("study-edit-snippet-" + id).value.trim(),
     };
     const r = await fetch("/api/study/" + id, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
       body: JSON.stringify(body),
     });
-    if (r.ok) location.reload();
-    else alert("Failed to save — check you're still signed in.");
+    if (!r.ok) { alert("Failed to save — check you're still signed in."); return; }
+
+    const view = document.querySelector('[data-study-view="' + id + '"]');
+    const assignHtml = view.querySelector(".study-assign").outerHTML;
+    const titleHtml = body.title ? '<p class="study-title">' + (body.url
+      ? '<a href="' + escC(body.url) + '" target="_blank" rel="noopener">' + escC(body.title) + '</a>'
+      : escC(body.title)) + '</p>' : "";
+    const metaParts = [];
+    if (body.pid)     metaParts.push('<a href="' + escC(pidUrlC(body.pid)) + '" target="_blank" rel="noopener">PID</a>');
+    if (body.authors) metaParts.push(escC(body.authors));
+    if (body.year)    metaParts.push(escC(String(body.year)));
+    const metaHtml = '<p class="study-meta">' + metaParts.join(" · ") + '</p>';
+    const snippetHtml = body.snippet ? '<blockquote class="study-snippet">' + escC(body.snippet) + '</blockquote>' : "";
+    view.innerHTML = titleHtml + metaHtml + snippetHtml + assignHtml;
+
+    window.toggleStudyEdit(id);
+    showBottomToast("Submitted");
   };
   window.assignStudy = async function (id, value) {
     const token = PersonalAuth.getToken();

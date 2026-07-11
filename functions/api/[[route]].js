@@ -1256,6 +1256,10 @@ export async function onRequest({ request, env }) {
         binds.push((body[field] || "").trim() || null);
       }
     }
+    if ("year" in body) {
+      sets.push("year = ?");
+      binds.push(body.year === null || body.year === undefined ? null : parseInt(body.year) || null);
+    }
     if (!sets.length) return err("nothing to update");
     binds.push(id);
     await env.genetic.prepare(`UPDATE studies SET ${sets.join(", ")} WHERE id = ?`)
