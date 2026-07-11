@@ -1272,10 +1272,13 @@ function scholarStripTags(s) {
 }
 
 // Abstracts on Scholar often open with a structured header ("Background:",
-// "Aim:", "Purpose:", "Objective:") — strip it so the snippet reads as
-// plain prose instead of starting mid-label.
+// "Aim:", "Purpose:", "Objective:", "Introduction:", or a pair of these
+// joined by "and"/"&", e.g. "Purpose & Aims:", "Objective and Aim") — strip
+// it so the snippet reads as plain prose instead of starting mid-label.
 function scholarStripLeadLabel(s) {
-  return (s || "").replace(/^\s*(background|aims?|purpose|objectives?)\s*:?\s*[-—]?\s*/i, "");
+  const label = "(?:background|aims?|purpose|objectives?|introduction)";
+  const re = new RegExp(`^\\s*${label}(?:\\s*(?:and|&)\\s*${label})?\\s*:?\\s*[-—]?\\s*`, "i");
+  return (s || "").replace(re, "");
 }
 
 function scholarDecodeEntities(s) {
