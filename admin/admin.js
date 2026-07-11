@@ -1267,6 +1267,31 @@ function scholarSnpPicked() {
   document.getElementById("scholar-parse-btn").disabled = !match;
 }
 
+// Every "start=N" occurrence in the pasted source (pagination nav, per-result
+// cite/related-articles links reconstructing the current search) points back
+// at the page you're on — the current page's value is the one repeated most,
+// since neighboring page links in the nav bar only show up once each.
+function scholarDetectStart(html) {
+  const matches = html.match(/start=(\d+)/g) || [];
+  if (!matches.length) return null;
+  const counts = {};
+  for (const m of matches) {
+    const n = m.slice(6);
+    counts[n] = (counts[n] || 0) + 1;
+  }
+  let best = null, bestCount = 0;
+  for (const n in counts) {
+    if (counts[n] > bestCount) { best = n; bestCount = counts[n]; }
+  }
+  return best;
+}
+
+function scholarDetectPageUpdate() {
+  const html = document.getElementById("scholar-html-input").value;
+  const start = scholarDetectStart(html);
+  document.getElementById("scholar-page-detect").value = start != null ? "start=" + start : "—";
+}
+
 function scholarStripTags(s) {
   return (s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }

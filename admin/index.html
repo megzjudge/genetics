@@ -257,9 +257,13 @@
             <label>Gene — rsID</label>
             <input type="text" id="scholar-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="scholarSnpPicked()">
           </div>
+          <div class="field">
+            <label>Detected Page</label>
+            <input type="text" id="scholar-page-detect" readonly placeholder="—" style="color:var(--muted)">
+          </div>
         </div>
         <label>Pasted Page Source</label>
-        <textarea id="scholar-html-input" class="mono" style="min-height:160px" placeholder="Paste HTML source here…"></textarea>
+        <textarea id="scholar-html-input" class="mono" style="min-height:160px" placeholder="Paste HTML source here…" oninput="scholarDetectPageUpdate()"></textarea>
         <button class="btn-sm" id="scholar-parse-btn" onclick="scholarParse()" disabled>Parse</button>
       </div>
 

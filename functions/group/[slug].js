@@ -77,8 +77,8 @@ ${nav()}
       <h1 class="group-page-title">${esc(group.name)}</h1>
       ${group.description ? `<p class="group-page-desc">${esc(group.description)}</p>` : ""}
       <p class="group-stats">
-        ${genes.length} genes ·
-        ${totalStudies} ${totalStudies === 1 ? "study" : "studies"}
+        <span class="group-stats-num">${genes.length}</span> genes ·
+        <span class="group-stats-num">${totalStudies}</span> ${totalStudies === 1 ? "study" : "studies"}
         ${totalUnread > 0 ? ` · <span class="unread-tag">${totalUnread} new</span>` : ""}
       </p>
     </div>
