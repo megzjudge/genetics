@@ -520,6 +520,38 @@ function checkAuth(request, env) {
   return token === env.AUTH;
 }
 
+// IP-based brute-force throttle on top of checkAuth(), independent of any
+// Cloudflare dashboard config — travels with the codebase. Sliding window:
+// once an IP racks up AUTH_RATE_LIMIT_MAX failures within the window, further
+// attempts are rejected with 429 (no password check even performed) until
+// enough of those failures age out of the window.
+const AUTH_RATE_LIMIT_MAX = 10;
+const AUTH_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+
+async function checkAuthRateLimited(request, env) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const windowStart = Date.now() - AUTH_RATE_LIMIT_WINDOW_MS;
+
+  // Prune this IP's stale rows so the table doesn't grow unbounded.
+  await env.genetic.prepare(
+    `DELETE FROM auth_attempts WHERE ip = ? AND created_at < ?`
+  ).bind(ip, windowStart).run();
+
+  const row = await env.genetic.prepare(
+    `SELECT COUNT(*) AS n FROM auth_attempts WHERE ip = ? AND created_at >= ?`
+  ).bind(ip, windowStart).first();
+
+  if ((row?.n || 0) >= AUTH_RATE_LIMIT_MAX) return { ok: false, limited: true };
+
+  const ok = checkAuth(request, env);
+  if (!ok) {
+    await env.genetic.prepare(
+      `INSERT INTO auth_attempts (ip, created_at) VALUES (?, ?)`
+    ).bind(ip, Date.now()).run();
+  }
+  return { ok, limited: false };
+}
+
 function csvEscape(val) {
   if (val == null) return "";
   const s = String(val);
@@ -549,7 +581,9 @@ export async function onRequest({ request, env }) {
   // Auth-gated (unlike the other GETs below) — this is the one place the
   // public site fetches personal alleles/notes, on demand, client-side.
   if (method === "GET" && route === "personal") {
-    if (!checkAuth(request, env)) return err("Unauthorised", 401);
+    const auth = await checkAuthRateLimited(request, env);
+    if (auth.limited) return err("Too many failed attempts — try again later.", 429);
+    if (!auth.ok) return err("Unauthorised", 401);
     const gene = url.searchParams.get("gene");
     const rsid = url.searchParams.get("rsid");
     if (gene) {
@@ -682,7 +716,11 @@ export async function onRequest({ request, env }) {
   }
 
   // ── Auth-gated writes ────────────────────────────
-  if (!checkAuth(request, env)) return err("Unauthorised", 401);
+  {
+    const auth = await checkAuthRateLimited(request, env);
+    if (auth.limited) return err("Too many failed attempts — try again later.", 429);
+    if (!auth.ok) return err("Unauthorised", 401);
+  }
 
   // ── PATCH /api/gene/:name ─────────────────────────
   if (method === "PATCH" && route === "gene" && param) {
@@ -1196,17 +1234,32 @@ export async function onRequest({ request, env }) {
 
   // ── PATCH /api/study/:id ─────────────────────────
   // Toggles whether a study turned out to be useful for the gene it's filed
-  // under — the same paper can be "used" for one SNP and "unused" for another
-  // if it's filed twice under different rsids.
+  // under (same paper can be "used" for one SNP and "unused" for another if
+  // filed twice), and/or edits the study's own fields. Already covered by the
+  // blanket "Auth-gated writes" check above, since this route is textually
+  // below it in the same request handler.
   if (method === "PATCH" && route === "study" && param) {
     const id = parseInt(param);
     if (!id) return err("invalid id");
-    const { used } = await request.json();
-    // Tri-state: null -> New, 1 -> Curated, 0 -> Unused. (A plain `used ? 1 : 0`
-    // would wrongly coerce null to 0, making "revert to New" impossible.)
-    const usedVal = used === null || used === undefined ? null : (used ? 1 : 0);
-    await env.genetic.prepare(`UPDATE studies SET used = ? WHERE id = ?`)
-      .bind(usedVal, id).run();
+    const body = await request.json();
+    const sets = [];
+    const binds = [];
+    if ("used" in body) {
+      // Tri-state: null -> New, 1 -> Curated, 0 -> Unused. (A plain `used ? 1 : 0`
+      // would wrongly coerce null to 0, making "revert to New" impossible.)
+      const usedVal = body.used === null || body.used === undefined ? null : (body.used ? 1 : 0);
+      sets.push("used = ?"); binds.push(usedVal);
+    }
+    for (const field of ["title", "pid", "authors", "url", "snippet"]) {
+      if (field in body) {
+        sets.push(`${field} = ?`);
+        binds.push((body[field] || "").trim() || null);
+      }
+    }
+    if (!sets.length) return err("nothing to update");
+    binds.push(id);
+    await env.genetic.prepare(`UPDATE studies SET ${sets.join(", ")} WHERE id = ?`)
+      .bind(...binds).run();
     return json({ ok: true });
   }
 

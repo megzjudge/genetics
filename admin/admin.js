@@ -28,7 +28,9 @@ function tryAuth() {
         document.getElementById("auth-gate").style.display = "none";
         init();
       } else {
-        document.getElementById("auth-err").style.display = "block";
+        const errEl = document.getElementById("auth-err");
+        errEl.textContent = r.status === 429 ? "Sowee, my bad, pwease dont" : "Incorrect password.";
+        errEl.style.display = "block";
         TOKEN = "";
       }
     })
@@ -1293,12 +1295,15 @@ function scholarParseHtml(html) {
     if (!title || !url) continue;
 
     const authorsMatch = block.match(/<div[^>]*class="gs_a"[^>]*>([\s\S]*?)<\/div>/i);
-    const authors = authorsMatch ? scholarStripTags(authorsMatch[1]) : "";
+    const authorsFull = authorsMatch ? scholarDecodeEntities(scholarStripTags(authorsMatch[1])) : "";
+    // Format is "Authors - Venue, Year - Publisher"; only split on " - " (spaces
+    // required on both sides) so hyphenated surnames like "Jean-Pierre" survive.
+    const authors = authorsFull.split(" - ")[0].trim();
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
     const snippet = snippetMatch ? scholarStripTags(snippetMatch[1]) : "";
 
-    const yearMatch = authors.match(/\b(19|20)\d{2}\b/);
+    const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : null;
 
     results.push({ title, url, authors, snippet, year });
