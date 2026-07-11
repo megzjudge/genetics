@@ -1267,29 +1267,22 @@ function scholarSnpPicked() {
   document.getElementById("scholar-parse-btn").disabled = !match;
 }
 
-// Every "start=N" occurrence in the pasted source (pagination nav, per-result
-// cite/related-articles links reconstructing the current search) points back
-// at the page you're on — the current page's value is the one repeated most,
-// since neighboring page links in the nav bar only show up once each.
+// The pagination nav renders every neighboring page as a linked
+// <a class="gs_nma" href="...start=N...">, except the current page, which is
+// the one exception: <b class="gs_nma">47</b> — bold text, no link, no start=
+// at all. That's the reliable signal (confirmed against a real paste: page 47
+// with no link corresponded to start=460 in the URL, i.e. (page-1)*10).
 function scholarDetectStart(html) {
-  const matches = html.match(/start=(\d+)/g) || [];
-  if (!matches.length) return null;
-  const counts = {};
-  for (const m of matches) {
-    const n = m.slice(6);
-    counts[n] = (counts[n] || 0) + 1;
-  }
-  let best = null, bestCount = 0;
-  for (const n in counts) {
-    if (counts[n] > bestCount) { best = n; bestCount = counts[n]; }
-  }
-  return best;
+  const m = html.match(/<b class="gs_nma">(\d+)<\/b>/);
+  if (!m) return null;
+  const page = parseInt(m[1]);
+  return { page, start: (page - 1) * 10 };
 }
 
 function scholarDetectPageUpdate() {
   const html = document.getElementById("scholar-html-input").value;
-  const start = scholarDetectStart(html);
-  document.getElementById("scholar-page-detect").value = start != null ? "start=" + start : "—";
+  const det = scholarDetectStart(html);
+  document.getElementById("scholar-page-detect").value = det ? `Page ${det.page} (start=${det.start})` : "—";
 }
 
 function scholarStripTags(s) {
@@ -1333,7 +1326,9 @@ function scholarParseHtml(html) {
     const authorsFull = authorsMatch ? scholarDecodeEntities(scholarStripTags(authorsMatch[1])) : "";
     // Format is "Authors - Venue, Year - Publisher"; only split on " - " (spaces
     // required on both sides) so hyphenated surnames like "Jean-Pierre" survive.
-    const authors = authorsFull.split(" - ")[0].trim();
+    // Strip any digits that leak in (e.g. a year, if the split above ever
+    // misfires on an unusual line) — author names shouldn't contain numbers.
+    const authors = authorsFull.split(" - ")[0].replace(/\d+/g, "").replace(/\s+/g, " ").trim();
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
     const snippet = snippetMatch ? scholarStripLeadLabel(scholarStripTags(snippetMatch[1])) : "";
