@@ -364,7 +364,7 @@ ${foot()}
   }
   function pidUrlC(pid) {
     if (!pid) return null;
-    return /^10\.\d{4,9}\//.test(pid) ? "https://doi.org/" + pid : "https://hdl.handle.net/" + pid;
+    return /^10\\.\\d{4,9}\\//.test(pid) ? "https://doi.org/" + pid : "https://hdl.handle.net/" + pid;
   }
   function showBottomToast(msg) {
     let el = document.getElementById("study-edit-toast");

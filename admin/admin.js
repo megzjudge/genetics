@@ -1271,6 +1271,13 @@ function scholarStripTags(s) {
   return (s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }
 
+// Abstracts on Scholar often open with a structured header ("Background:",
+// "Aim:", "Purpose:", "Objective:") — strip it so the snippet reads as
+// plain prose instead of starting mid-label.
+function scholarStripLeadLabel(s) {
+  return (s || "").replace(/^\s*(background|aims?|purpose|objectives?)\s*:?\s*[-—]?\s*/i, "");
+}
+
 function scholarDecodeEntities(s) {
   return (s || "")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
@@ -1301,7 +1308,7 @@ function scholarParseHtml(html) {
     const authors = authorsFull.split(" - ")[0].trim();
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
-    const snippet = snippetMatch ? scholarStripTags(snippetMatch[1]) : "";
+    const snippet = snippetMatch ? scholarStripLeadLabel(scholarStripTags(snippetMatch[1])) : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : null;
@@ -1388,7 +1395,7 @@ function renderScholarResults() {
               <button class="btn-sm" onclick="scholarSubmitAdd(${i})">Save Study</button>
               <button class="btn-sm" style="background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="scholarToggleAdd(${i})">Cancel</button>
             </div>
-            <button class="btn-sm" style="background:#f87171;color:#2a1418" onclick="scholarExcludeStudy(${i})">Exclude</button>
+            <button class="btn-sm" style="background:#e84580;color:#2a1220" onclick="scholarExcludeStudy(${i})">Exclude</button>
           </div>
         </div>
       ` : `
