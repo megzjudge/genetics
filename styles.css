@@ -481,7 +481,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .study-title a { color: var(--ink); text-decoration: none; }
 .study-title a:hover { color: var(--accent); text-decoration: underline; }
 .study-meta {
-  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  font-family: var(--mono); font-size: 12px; color: #4c6078;
   margin: 0 0 10px;
 }
 .study-meta a { color: var(--accent); text-decoration: none; }
