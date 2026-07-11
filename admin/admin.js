@@ -1385,7 +1385,12 @@ function scholarStripLeadLabel(s) {
 function scholarDecodeEntities(s) {
   return (s || "")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ");
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    // Generic fallback for any other numeric entity (e.g. &#8217; curly
+    // apostrophe, &#8211;/&#8212; en/em dash) rather than enumerating each one.
+    .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
 }
 
 // Ported from worker.js's email-intake path — only kicks in when a whole
@@ -1479,7 +1484,7 @@ function scholarParseHtml(html) {
     const linkMatch = h3Match[1].match(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
     if (!linkMatch) continue; // e.g. [CITATION] entries with no linked source
     const url = scholarDecodeEntities(linkMatch[1]);
-    const title = scholarNormalizeAllCaps(scholarStripTags(linkMatch[2]));
+    const title = scholarNormalizeAllCaps(scholarDecodeEntities(scholarStripTags(linkMatch[2])));
     if (!title || !url) continue;
 
     const authorsMatch = block.match(/<div[^>]*class="gs_a"[^>]*>([\s\S]*?)<\/div>/i);
@@ -1494,7 +1499,7 @@ function scholarParseHtml(html) {
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
     const snippet = snippetMatch
-      ? scholarNormalizeAllCaps(scholarStripLeadLabel(scholarStripTags(snippetMatch[1])))
+      ? scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1]))))
       : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
