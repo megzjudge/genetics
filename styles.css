@@ -438,11 +438,38 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   padding-bottom: 18px; border-bottom: 1px solid var(--line);
 }
 .study-card {
+  position: relative;
   border-left: 2px solid var(--line-strong);
-  padding: 18px 0 18px 22px;
+  padding: 18px 34px 18px 22px;
   margin-bottom: 24px;
 }
 .study-card:last-child { margin-bottom: 0; }
+.study-edit-btn {
+  position: absolute; top: 14px; right: 10px;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--line); border-radius: 4px;
+  color: var(--faint); font-size: 12px; cursor: pointer; padding: 0;
+}
+.study-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+.study-edit-form label {
+  display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--faint); margin: 12px 0 5px;
+}
+.study-edit-form label:first-child { margin-top: 0; }
+.study-edit-form input, .study-edit-form textarea {
+  width: 100%; box-sizing: border-box; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px;
+  font-family: var(--mono); font-size: 13px;
+}
+.study-edit-form textarea { min-height: 70px; resize: vertical; }
+.study-edit-form input:focus, .study-edit-form textarea:focus { outline: none; border-color: var(--accent); }
+.study-edit-row { display: flex; gap: 12px; }
+.study-edit-row > div { flex: 1; min-width: 0; }
+.study-edit-actions { display: flex; gap: 10px; margin-top: 14px; }
+.study-edit-cancel {
+  font-family: var(--mono); font-size: 12px; padding: 5px 14px; background: transparent;
+  border: 1px solid var(--line); color: var(--muted); border-radius: 3px; cursor: pointer;
+}
 .study-snippet {
   font-style: italic; color: var(--muted);
   font-size: 15.5px; line-height: 1.68; margin: 0;

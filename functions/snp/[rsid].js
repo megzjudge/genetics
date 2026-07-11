@@ -69,6 +69,8 @@ function consequenceSpan(consequence) {
 
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
+          <button class="study-edit-btn" data-study-edit style="display:none" title="Edit" onclick="window.toggleStudyEdit(${s.id})">✎</button>
+          <div class="study-view" data-study-view="${s.id}">
           ${s.title ? `<p class="study-title">${s.url
               ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
               : esc(s.title)}</p>` : ""}
@@ -85,6 +87,29 @@ function studyCard(s, extraClass) {
               <option value="1" ${s.used === 1   ? "selected" : ""}>Curated</option>
               <option value="0" ${s.used === 0   ? "selected" : ""}>Unused</option>
             </select>
+          </div>
+          </div>
+          <div class="study-edit-form" id="study-edit-${s.id}" style="display:none">
+            <label>Title</label>
+            <input type="text" id="study-edit-title-${s.id}" value="${esc(s.title)}">
+            <label>URL</label>
+            <input type="text" id="study-edit-url-${s.id}" value="${esc(s.url)}">
+            <div class="study-edit-row">
+              <div>
+                <label>Authors</label>
+                <input type="text" id="study-edit-authors-${s.id}" value="${esc(s.authors)}">
+              </div>
+              <div>
+                <label>PID</label>
+                <input type="text" id="study-edit-pid-${s.id}" value="${esc(s.pid)}">
+              </div>
+            </div>
+            <label>Snippet</label>
+            <textarea id="study-edit-snippet-${s.id}">${esc(s.snippet)}</textarea>
+            <div class="study-edit-actions">
+              <button class="btn-sm" onclick="window.saveStudyEdit(${s.id})">Save</button>
+              <button class="study-edit-cancel" onclick="window.toggleStudyEdit(${s.id})">Cancel</button>
+            </div>
           </div>
         </div>`;
 }
@@ -338,8 +363,35 @@ ${foot()}
       n.firstChild.textContent = res.personal.notes;
     }
     document.querySelectorAll('[data-study-assign]').forEach(function (el) { el.style.display = "flex"; });
+    document.querySelectorAll('[data-study-edit]').forEach(function (el) { el.style.display = "flex"; });
     return true;
   }
+  window.toggleStudyEdit = function (id) {
+    const view = document.querySelector('[data-study-view="' + id + '"]');
+    const form = document.getElementById("study-edit-" + id);
+    if (!view || !form) return;
+    const opening = form.style.display === "none";
+    form.style.display = opening ? "block" : "none";
+    view.style.display = opening ? "none" : "block";
+  };
+  window.saveStudyEdit = async function (id) {
+    const token = PersonalAuth.getToken();
+    if (!token) return;
+    const body = {
+      title:   document.getElementById("study-edit-title-" + id).value,
+      url:     document.getElementById("study-edit-url-" + id).value,
+      authors: document.getElementById("study-edit-authors-" + id).value,
+      pid:     document.getElementById("study-edit-pid-" + id).value,
+      snippet: document.getElementById("study-edit-snippet-" + id).value,
+    };
+    const r = await fetch("/api/study/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) location.reload();
+    else alert("Failed to save — check you're still signed in.");
+  };
   window.assignStudy = async function (id, value) {
     const token = PersonalAuth.getToken();
     if (!token) return;
