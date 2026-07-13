@@ -474,7 +474,11 @@ async function lookupSnp() {
     document.getElementById("prev-rsid").textContent = d.rsid + (d.protein_change ? " · " + d.protein_change : "");
     document.getElementById("prev-chr").textContent = d.chromosome ? "Chr " + d.chromosome + (d.position ? ":" + d.position : "") : "";
 
-    document.getElementById("prev-gene").value = d.gene_name || "";
+    // No gene on the lookup means NCBI couldn't attribute this rsID to a
+    // single gene — genome-wide/intergenic association, not a lookup
+    // failure. Default to the placeholder "INTERGENIC" gene rather than
+    // leaving the field blank (which would block saving until typed).
+    document.getElementById("prev-gene").value = d.gene_name || "INTERGENIC";
     document.getElementById("prev-consequence").textContent = d.consequence || "";
     document.getElementById("prev-summary").textContent = d.summary || "";
     document.getElementById("prev-ncbi").href = "https://www.ncbi.nlm.nih.gov/snp/" + d.rsid;
