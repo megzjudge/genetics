@@ -789,7 +789,16 @@ async function handleApiRequest({ request, env }) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change, consequence,
             chromosome, position, summary, rr_url, frequencies, has_clinvar, has_snpedia,
-            scholar_scanned, disease_ids } = await request.json();
+            scholar_scanned, disease_ids, alleles } = await request.json();
+    // alleles is personal — which genotype was actually observed, not a
+    // fact about the SNP itself — so it lives in `personal`, not `snps`.
+    // Present-but-empty (alleles === "") still needs to run, so a typo can
+    // be cleared back to blank instead of only ever being overwritten.
+    if (alleles !== undefined) {
+      await env.genetic.prepare(
+        `UPDATE personal SET alleles = ? WHERE rsid = ?`
+      ).bind(alleles || null, rsid).run();
+    }
     if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
         INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)

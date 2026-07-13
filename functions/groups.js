@@ -93,7 +93,6 @@ ${nav()}
 
   ${diseases.length ? `<section class="groups-section" style="border-bottom:none">
     <div class="groups-inner">
-      <p class="basics-sources-label">Diseases</p>
       <div class="groups-grid">
       ${diseases.map(d => `<div class="group-card">
         <a class="group-card-text" href="/disease/${esc(slugify(d.name))}">

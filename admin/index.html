@@ -106,7 +106,11 @@
           <div style="flex-shrink:0">
             <label>Alleles <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
             <input type="text" id="snp-alleles" placeholder="CT" maxlength="4"
-                   oninput="this.value=this.value.toUpperCase()" style="margin-bottom:0;width:90px">
+                   oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')lookupSnp()" style="margin-bottom:0;width:90px">
+          </div>
+          <div style="flex-shrink:0">
+            <label>Diseases</label>
+            <div id="new-snp-diseases" style="margin-bottom:0"></div>
           </div>
         </div>
 

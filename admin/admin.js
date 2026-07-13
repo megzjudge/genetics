@@ -105,6 +105,7 @@ function init() {
     renderSnpTable();
     populateGeneSelects();
     renderNewGeneGroupDiseasePicker();
+    renderNewSnpDiseasePicker();
     populateBulkSnpList();
   });
 }
@@ -351,6 +352,37 @@ function diseaseCell(s) {
   </div>`;
 }
 
+// Reads whatever's currently checked in a bare disease-only picker panel —
+// used for the Add SNP form, where the SNP doesn't exist yet so there's
+// nothing to PATCH until Save SNP actually creates it.
+function readDiseasePanel(idPrefix) {
+  const panel = document.getElementById("disease-panel-" + idPrefix);
+  if (!panel) return [];
+  return Array.from(panel.querySelectorAll("input[type=checkbox]:checked")).map(el => parseInt(el.value));
+}
+
+// Same picker as diseaseCell() but for the Add SNP form's not-yet-saved SNP
+// — no inline Save button (nothing to PATCH yet), read via readDiseasePanel()
+// when Save SNP actually creates the row.
+function renderNewSnpDiseasePicker() {
+  const el = document.getElementById("new-snp-diseases");
+  if (!el) return;
+  const ids = readDiseasePanel("new-snp");
+  const checks = diseaseList.map(d => {
+    const checked = ids.includes(d.id) ? "checked" : "";
+    return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
+      <input type="checkbox" value="${d.id}" ${checked}> ${d.name}
+    </label>`;
+  }).join("");
+  el.innerHTML = `<div class="disease-picker" style="position:relative;display:inline-block">
+    <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
+      onclick="toggleDiseasePanel('new-snp')">${ids.length ? `Diseases (${ids.length})` : "Diseases"}</button>
+    <div id="disease-panel-new-snp" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
+      ${diseaseList.length ? checks : `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`}
+    </div>
+  </div>`;
+}
+
 function toggleDiseasePanel(rsid) {
   const panel = document.getElementById("disease-panel-" + rsid);
   const isOpen = panel.style.display === "block";
@@ -454,14 +486,43 @@ function renderSnpTable() {
     <tr>
       <td><span class="gene-sym">${s.gene_name}</span></td>
       <td style="font-family:var(--mono);font-size:12px"><a href="/snp/${s.rsid}" target="_blank" style="color:var(--accent);text-decoration:none">${s.rsid}</a></td>
-      <td style="font-family:var(--mono);font-size:12px">${s.alleles || ""}</td>
-      <td><button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button></td>
+      <td id="allele-cell-${s.rsid}" style="font-family:var(--mono);font-size:12px">${s.alleles || ""}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="editSnpAlleles('${s.rsid}')">Edit</button>
+        <button class="btn-danger" onclick="deleteSnp('${s.rsid}')">Delete</button>
+      </td>
       <td>${rrBadge(s)}</td>
       <td>${popBadge(s)}</td>
       <td>${schlrBadge(s)}</td>
       <td>${diseaseCell(s)}</td>
     </tr>`).join("");
   updateSnpSortArrows();
+}
+
+// Just the Alleles field is editable here — a forgotten-at-insert genotype
+// is the common case this is for, not a general SNP-fact editor (those live
+// on the `snps` table and get filled via Lookup/Scan instead).
+function editSnpAlleles(rsid) {
+  const cell = document.getElementById("allele-cell-" + rsid);
+  const snp = snpList.find(s => s.rsid === rsid);
+  cell.innerHTML = `
+    <input id="allele-edit-${rsid}" value="${snp?.alleles || ""}" maxlength="4"
+           oninput="this.value=this.value.toUpperCase()"
+           style="font-family:var(--mono);font-size:11px;width:60px;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:3px 6px;color:var(--ink)">
+    <button class="btn-sm" style="font-size:10px;padding:3px 6px;margin-left:4px" onclick="saveSnpAlleles('${rsid}')">Save</button>
+    <button class="btn-sm" style="font-size:10px;padding:3px 6px;margin-left:2px;background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="renderSnpTable()">✕</button>`;
+}
+
+function saveSnpAlleles(rsid) {
+  const val = document.getElementById("allele-edit-" + rsid).value.trim().toUpperCase();
+  apiFetch(`/api/snp/${rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ alleles: val }),
+  }).then(r => {
+    if (r.ok) { toast("Alleles updated."); init(); }
+    else toast("Failed to update.", true);
+  });
 }
 
 function deleteSnp(rsid) {
@@ -568,6 +629,7 @@ function saveSnp() {
     consequence:    snpLookupData.consequence    || null,
     summary:        snpLookupData.summary        || null,
   };
+  const pickedDiseaseIds = readDiseasePanel("new-snp");
   apiFetch("/api/snp", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -575,10 +637,19 @@ function saveSnp() {
   }).then(async r => {
     if (r.ok) {
       const d = await r.json().catch(() => ({}));
+      const linkDiseases = pickedDiseaseIds.length
+        ? apiFetch(`/api/snp/${snpLookupData.rsid}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ disease_ids: pickedDiseaseIds }),
+          })
+        : Promise.resolve();
+      await linkDiseases;
       toast("SNP saved." + (d.frequencies_fetched ? " " + d.frequencies_fetched + " freq rows." : "") + (d.studies_found ? " " + d.studies_found + " studies found." : ""));
       clearSnpPreview();
       document.getElementById("snp-rsid").value = "";
       document.getElementById("snp-alleles").value = "";
+      document.getElementById("new-snp-diseases").innerHTML = "";
       init();
     } else {
       const d = await r.json().catch(() => ({}));
