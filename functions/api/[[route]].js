@@ -1129,12 +1129,21 @@ export async function onRequest({ request, env }) {
     if (!gene_name || !consequence) {
       ncbiHtml = await fetchNcbiHtml(rsid);
       if (ncbiHtml) {
-        if (!gene_name) {
-          const gm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>([^:<\s][^:<]*?)\s*:/i);
+        // Bounded to the <dd> immediately after the "Gene : Consequence" <dt>
+        // — an intergenic SNP (confirmed for rs12568930) renders that <dd>
+        // as just `<div class="gray">None</div>`, no <span> at all. The old
+        // unbounded [\s\S]*? kept scanning past an empty/no-span <dd> into
+        // the REST of the page and latched onto the first unrelated
+        // "<span>...:" it found anywhere below (e.g. the page's "Added to
+        // this RefSNP Cluster:" merge notice), producing a garbage gene name.
+        const geneConsDd = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>\s*<dd>([\s\S]*?)<\/dd>/i);
+        const geneConsBlock = geneConsDd && !/\bNone\b/i.test(geneConsDd[1]) ? geneConsDd[1] : null;
+        if (!gene_name && geneConsBlock) {
+          const gm = geneConsBlock.match(/<span>([^:<\s][^:<]*?)\s*:/i);
           if (gm) gene_name = gm[1].trim();
         }
-        if (!consequence) {
-          const cm = ncbiHtml.match(/Gene\s*:\s*Consequence<\/dt>[\s\S]*?<span>[^:]+:\s*([^<\n]+)/i);
+        if (!consequence && geneConsBlock) {
+          const cm = geneConsBlock.match(/<span>[^:]+:\s*([^<\n]+)/i);
           if (cm) consequence = cm[1].trim();
         }
         // Same fallback also recovers chromosome/position/alleles when the
