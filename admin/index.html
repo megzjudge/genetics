@@ -44,6 +44,7 @@
       <button class="admin-tab" onclick="switchTab('discover')">Discover</button>
       <button class="admin-tab" onclick="switchTab('scholar')">Scholar</button>
       <button class="admin-tab" onclick="switchTab('group')">Add Group</button>
+      <button class="admin-tab" onclick="switchTab('disease')">Add Disease</button>
       <button class="admin-tab" onclick="switchTab('export')">Export</button>
       <button class="admin-tab" onclick="switchTab('fix')">Fix Data</button>
     </div>
@@ -140,6 +141,7 @@
           <th style="cursor:pointer;user-select:none" onclick="sortSnpTable('rr')">RR <span id="snp-sort-arrow-rr"></span></th>
           <th style="cursor:pointer;user-select:none" onclick="sortSnpTable('pop')">Pop <span id="snp-sort-arrow-pop"></span></th>
           <th style="cursor:pointer;user-select:none" onclick="sortSnpTable('schlr')">Schlr <span id="snp-sort-arrow-schlr"></span></th>
+          <th>Diseases</th>
         </tr></thead>
         <tbody id="snp-tbody"></tbody>
       </table>
@@ -303,6 +305,25 @@
           <th>Group</th><th>Description</th><th></th>
         </tr></thead>
         <tbody id="group-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- TAB: ADD DISEASE -->
+    <div id="panel-disease" class="admin-panel">
+      <p class="section-divider" style="margin-top:0">Add Disease</p>
+      <div class="admin-form">
+        <label>Disease Name</label>
+        <input type="text" id="disease-name" placeholder="Gilbert Syndrome">
+        <label>Description</label>
+        <textarea id="disease-description" placeholder="Brief description of this disease…"></textarea>
+        <button class="btn-sm" onclick="addDisease()">Save Disease</button>
+      </div>
+
+      <table class="admin-table" id="disease-table" style="margin-top:28px">
+        <thead><tr>
+          <th>Disease</th><th>Description</th><th></th>
+        </tr></thead>
+        <tbody id="disease-tbody"></tbody>
       </table>
     </div>
 

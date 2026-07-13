@@ -22,6 +22,17 @@ export async function onRequestGet({ env }) {
     ORDER BY tg.name ASC
   `).all();
   const groups = results || [];
+
+  const { results: diseaseResults } = await env.genetic.prepare(`
+    SELECT d.id, d.name, d.description,
+           COUNT(DISTINCT sd.rsid) AS snp_count
+    FROM diseases d
+    LEFT JOIN snp_diseases sd ON sd.disease_id = d.id
+    GROUP BY d.id
+    ORDER BY d.name ASC
+  `).all();
+  const diseases = diseaseResults || [];
+
   const descMeta = "Every research area on this site — pick one to browse its genes.";
 
   const html = `<!DOCTYPE html>
@@ -55,13 +66,13 @@ ${nav()}
       <h1 style="font-family:var(--serif);font-size:clamp(32px,5vw,54px);font-weight:400;letter-spacing:-0.03em;line-height:1.1;margin:0 0 18px">
         Research Areas
       </h1>
-      <p style="font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0 auto;line-height:1.6">
+      <p style="font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:560px;margin:0;line-height:1.6">
         ${groups.length} area${groups.length === 1 ? "" : "s"} of research, each grouping the genes relevant to it.
       </p>
     </div>
   </section>
 
-  <section class="groups-section" style="border-bottom:none">
+  <section class="groups-section" style="${diseases.length ? "" : "border-bottom:none"}">
     <div class="groups-inner">
       ${groups.length === 0
         ? `<p class="empty-state">No research areas yet.</p>`
@@ -79,6 +90,24 @@ ${nav()}
       </div>`}
     </div>
   </section>
+
+  ${diseases.length ? `<section class="groups-section" style="border-bottom:none">
+    <div class="groups-inner">
+      <p class="basics-sources-label">Diseases</p>
+      <div class="groups-grid">
+      ${diseases.map(d => `<div class="group-card">
+        <a class="group-card-text" href="/disease/${esc(slugify(d.name))}">
+          <div class="group-card-head">
+            <span class="group-name">${esc(d.name)}</span>
+            <span class="group-count">${d.snp_count} SNP${d.snp_count === 1 ? "" : "s"}</span>
+          </div>
+          ${d.description ? `<p class="group-desc">${esc(d.description)}</p>` : ""}
+          <span class="group-link">Explore →</span>
+        </a>
+      </div>`).join("")}
+      </div>
+    </div>
+  </section>` : ""}
 
 </main>
 ${foot()}

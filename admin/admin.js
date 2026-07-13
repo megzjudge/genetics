@@ -1,4 +1,5 @@
 let TOKEN = "";
+let diseaseList = [];
 let geneList = [];
 let groupList = [];
 let snpList = [];
@@ -83,12 +84,18 @@ function init() {
     safeFetchJson("/api/genes"),
     safeFetchJson("/api/groups"),
     safeFetchJson("/api/snps"),
-  ]).then(([genes, groups, snps]) => {
-    geneList  = (genes  && (genes.genes   || genes))  || [];
-    groupList = (groups && (groups.groups || groups)) || [];
-    snpList   = (snps   && (snps.snps     || snps))   || [];
+    safeFetchJson("/api/diseases"),
+  ]).then(([genes, groups, snps, diseases]) => {
+    geneList    = (genes    && (genes.genes       || genes))    || [];
+    groupList   = (groups   && (groups.groups     || groups))   || [];
+    diseaseList = (diseases && (diseases.diseases || diseases)) || [];
+    snpList     = (snps     && (snps.snps         || snps))     || [];
+    snpList.forEach(s => {
+      s.disease_ids = (s.disease_ids || "").toString().split(",").filter(Boolean).map(Number);
+    });
     renderGeneTable();
     renderGroupTable();
+    renderDiseaseTable();
     renderSnpTable();
     populateGeneSelects();
     populateGroupSelect();
@@ -272,6 +279,50 @@ function schlrBadge(s) {
             onclick="toggleScholarScanned('${s.rsid}', ${has ? 0 : 1})" title="${title}">Schlr: ${has ? "Yes" : "No"}</button>`;
 }
 
+function diseaseCell(s) {
+  const ids = s.disease_ids || [];
+  const label = ids.length ? `Diseases (${ids.length})` : "Diseases";
+  const checks = diseaseList.map(d => {
+    const checked = ids.includes(d.id) ? "checked" : "";
+    return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
+      <input type="checkbox" value="${d.id}" ${checked}> ${d.name}
+    </label>`;
+  }).join("");
+  return `<div class="disease-picker" style="position:relative;display:inline-block">
+    <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
+      onclick="toggleDiseasePanel('${s.rsid}')">${label}</button>
+    <div id="disease-panel-${s.rsid}" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
+      ${diseaseList.length ? checks : `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`}
+      ${diseaseList.length ? `<button class="btn-sm" style="font-size:10px;padding:3px 8px;margin-top:8px" onclick="saveSnpDiseases('${s.rsid}')">Save</button>` : ""}
+    </div>
+  </div>`;
+}
+
+function toggleDiseasePanel(rsid) {
+  const panel = document.getElementById("disease-panel-" + rsid);
+  const isOpen = panel.style.display === "block";
+  document.querySelectorAll("[id^='disease-panel-']").forEach(p => p.style.display = "none");
+  panel.style.display = isOpen ? "none" : "block";
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest(".disease-picker")) return;
+  document.querySelectorAll("[id^='disease-panel-']").forEach(p => p.style.display = "none");
+});
+
+function saveSnpDiseases(rsid) {
+  const panel = document.getElementById("disease-panel-" + rsid);
+  const ids = Array.from(panel.querySelectorAll("input[type=checkbox]:checked")).map(el => parseInt(el.value));
+  apiFetch(`/api/snp/${rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ disease_ids: ids }),
+  }).then(r => {
+    if (r.ok) { toast("Diseases updated."); init(); }
+    else toast("Failed to update.", true);
+  });
+}
+
 function toggleScholarScanned(rsid, value) {
   apiFetch(`/api/snp/${rsid}`, {
     method: "PATCH",
@@ -355,6 +406,7 @@ function renderSnpTable() {
       <td>${rrBadge(s)}</td>
       <td>${popBadge(s)}</td>
       <td>${schlrBadge(s)}</td>
+      <td>${diseaseCell(s)}</td>
     </tr>`).join("");
   updateSnpSortArrows();
 }
@@ -582,6 +634,80 @@ function deleteGroup(id, name) {
   apiFetch(`/api/group/${id}`, { method: "DELETE" }).then(r => {
     if (r.ok) { toast("Group deleted."); init(); }
     else toast("Delete failed.", true);
+  });
+}
+
+// ── Disease tab ───────────────────────────────────
+function renderDiseaseTable() {
+  const tbody = document.getElementById("disease-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = diseaseList.map(d => diseaseRow(d)).join("");
+}
+
+function diseaseRow(d) {
+  const name = d.name.replace(/'/g, "\\'");
+  const desc = (d.description || "").replace(/'/g, "\\'");
+  return `
+    <tr id="drow-${d.id}">
+      <td><span class="gene-sym">${d.name}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${d.description || ""}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="editDisease(${d.id}, '${name}', '${desc}')">Edit</button>
+        <button class="btn-danger" onclick="deleteDisease(${d.id}, '${name}')">Delete</button>
+      </td>
+    </tr>`;
+}
+
+function editDisease(id, name, desc) {
+  const row = document.getElementById("drow-" + id);
+  row.innerHTML = `
+    <td><input id="dedit-name-${id}" value="${name}" style="font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
+    <td><input id="dedit-desc-${id}" value="${desc}" style="font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
+    <td style="display:flex;gap:6px">
+      <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="saveDiseaseEdit(${id})">Save</button>
+      <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="renderDiseaseTable()">Cancel</button>
+    </td>`;
+}
+
+async function saveDiseaseEdit(id) {
+  const name = document.getElementById("dedit-name-" + id).value.trim();
+  const desc = document.getElementById("dedit-desc-" + id).value.trim();
+  if (!name) return toast("Name cannot be empty.", true);
+  const r = await apiFetch(`/api/disease/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description: desc || null }),
+  });
+  if (r.ok) { toast("Disease updated."); init(); }
+  else toast("Update failed.", true);
+}
+
+function deleteDisease(id, name) {
+  if (!confirm(`Delete disease "${name}"? SNPs assigned to it will lose that link.`)) return;
+  apiFetch(`/api/disease/${id}`, { method: "DELETE" }).then(r => {
+    if (r.ok) { toast("Disease deleted."); init(); }
+    else toast("Delete failed.", true);
+  });
+}
+
+function addDisease() {
+  const name = document.getElementById("disease-name").value.trim();
+  const description = document.getElementById("disease-description").value.trim();
+  if (!name) return toast("Disease name is required.", true);
+  apiFetch("/api/disease", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description: description || null }),
+  }).then(async r => {
+    if (r.ok) {
+      toast("Disease saved.");
+      document.getElementById("disease-name").value = "";
+      document.getElementById("disease-description").value = "";
+      init();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      toast("Error: " + (d.error || r.status), true);
+    }
   });
 }
 
@@ -1375,7 +1501,7 @@ function scholarStripTags(s) {
 // objective" (common in pharmacy-journal abstracts) — strip it so the
 // snippet reads as plain prose instead of starting mid-label.
 function scholarStripLeadLabel(s) {
-  const label = "(?:background|aims?|purpose|objectives?|introduction|methods?|full article|results?)";
+  const label = "(?:background|aims?|purpose|objectives?|introduction|introducción|introdução|resumen|abstract|methods?|full article|results?)";
   const combo = `(?:${label}(?:\\s*(?:and|&)\\s*${label})?(?:\\s+of\\s+the\\s+review)?)`;
   const phrase = "what is known and objective";
   const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*:?\\s*[-—]?\\s*`, "i");

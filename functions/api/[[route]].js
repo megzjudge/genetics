@@ -609,11 +609,22 @@ export async function onRequest({ request, env }) {
     return json({ groups: results });
   }
 
+  // ── GET /api/diseases ─────────────────────────────
+  if (method === "GET" && route === "diseases") {
+    const { results } = await env.genetic.prepare(`
+      SELECT d.*, COUNT(DISTINCT sd.rsid) AS snp_count
+      FROM diseases d LEFT JOIN snp_diseases sd ON sd.disease_id = d.id
+      GROUP BY d.id ORDER BY d.name ASC
+    `).all();
+    return json({ diseases: results });
+  }
+
   // ── GET /api/snps ────────────────────────────────
   if (method === "GET" && route === "snps") {
     const { results } = await env.genetic.prepare(`
       SELECT p.gene_name, p.rsid, p.alleles, s.rr_url, s.scholar_scanned_at,
-             (SELECT COUNT(*) FROM snp_pop WHERE snp_pop.rsid = p.rsid) AS pop_count
+             (SELECT COUNT(*) FROM snp_pop WHERE snp_pop.rsid = p.rsid) AS pop_count,
+             (SELECT GROUP_CONCAT(disease_id) FROM snp_diseases WHERE snp_diseases.rsid = p.rsid) AS disease_ids
       FROM personal p LEFT JOIN snps s ON s.rsid = p.rsid
       ORDER BY p.gene_name, p.rsid
     `).all();
@@ -747,7 +758,7 @@ export async function onRequest({ request, env }) {
     const rsid = /^rs/i.test(param) ? param : "rs" + param;
     const { ref_allele, alt_allele, protein_change, consequence,
             chromosome, position, summary, rr_url, frequencies, has_clinvar, has_snpedia,
-            scholar_scanned } = await request.json();
+            scholar_scanned, disease_ids } = await request.json();
     if (ref_allele || alt_allele || protein_change || consequence || chromosome || position != null || summary) {
       await env.genetic.prepare(`
         INSERT INTO snps (rsid, ref_allele, alt_allele, protein_change, consequence, chromosome, position, summary)
@@ -799,6 +810,18 @@ export async function onRequest({ request, env }) {
         INSERT INTO snps (rsid, scholar_scanned_at) VALUES (?, ?)
         ON CONFLICT(rsid) DO UPDATE SET scholar_scanned_at = excluded.scholar_scanned_at
       `).bind(rsid, stamp).run();
+    }
+    // Diseases — full replacement of this SNP's disease set (checkbox list
+    // in the admin panel, not an incremental add/remove), so clear and
+    // re-insert rather than trying to diff against what's already there.
+    if (disease_ids !== undefined) {
+      await env.genetic.prepare(`DELETE FROM snp_diseases WHERE rsid = ?`).bind(rsid).run();
+      const ids = (disease_ids || []).map(n => parseInt(n)).filter(Boolean);
+      if (ids.length) {
+        await Promise.all(ids.map(id =>
+          env.genetic.prepare(`INSERT INTO snp_diseases (rsid, disease_id) VALUES (?, ?)`).bind(rsid, id).run()
+        ));
+      }
     }
     // Population frequencies — if the caller already looked these up (the
     // admin backfill flow calls /api/snp/lookup first and forwards its
@@ -919,6 +942,39 @@ export async function onRequest({ request, env }) {
       ).bind(name, group_id).run();
     }
     return json({ ok: true, gene_name: name });
+  }
+
+  // ── POST /api/disease ─────────────────────────────
+  if (method === "POST" && route === "disease" && !param) {
+    const { name, description } = await request.json();
+    if (!name) return err("name required");
+    await env.genetic.prepare(
+      `INSERT INTO diseases (name, description) VALUES (?, ?)`
+    ).bind(name.trim(), description || null).run();
+    return json({ ok: true });
+  }
+
+  // ── PATCH /api/disease/:id ────────────────────────
+  if (method === "PATCH" && route === "disease" && param) {
+    const id = parseInt(param);
+    if (!id) return err("invalid id");
+    const { name, description } = await request.json();
+    if (!name) return err("name required");
+    await env.genetic.prepare(
+      `UPDATE diseases SET name = ?, description = ? WHERE id = ?`
+    ).bind(name.trim(), description || null, id).run();
+    return json({ ok: true });
+  }
+
+  // ── DELETE /api/disease/:id ───────────────────────
+  if (method === "DELETE" && route === "disease" && param) {
+    const id = parseInt(param);
+    if (!id) return err("invalid id");
+    await Promise.all([
+      env.genetic.prepare(`DELETE FROM diseases      WHERE id = ?`).bind(id).run(),
+      env.genetic.prepare(`DELETE FROM snp_diseases  WHERE disease_id = ?`).bind(id).run(),
+    ]);
+    return json({ ok: true });
   }
 
   // ── PATCH /api/group/:id ─────────────────────────
