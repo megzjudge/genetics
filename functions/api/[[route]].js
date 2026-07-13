@@ -559,7 +559,20 @@ function csvEscape(val) {
     ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export async function onRequest({ request, env }) {
+// A bare, uncaught exception anywhere below normally surfaces as a
+// contentless framework 500 — nothing for the frontend toast to show and
+// nothing in the response to diagnose from. This wrapper catches that and
+// returns the real error message instead.
+export async function onRequest(ctx) {
+  try {
+    return await handleApiRequest(ctx);
+  } catch (e) {
+    console.error("Unhandled API error:", e.stack || e.message);
+    return err(e.message || "Internal error", 500);
+  }
+}
+
+async function handleApiRequest({ request, env }) {
   const url      = new URL(request.url);
   const method   = request.method.toUpperCase();
   const segments = url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
