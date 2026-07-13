@@ -72,8 +72,8 @@
             <div style="font-size:13px;color:var(--muted);line-height:1.6" id="gprev-desc"></div>
           </div>
 
-          <label>Group</label>
-          <select id="new-gene-group" style="margin-bottom:18px"></select>
+          <label>Group / Disease</label>
+          <div id="new-gene-groupdisease" style="margin-bottom:18px"></div>
 
           <div style="display:flex;gap:10px">
             <button class="btn-sm" onclick="saveGene()">Save Gene</button>
@@ -84,7 +84,7 @@
 
       <table class="admin-table" id="gene-table">
         <thead><tr>
-          <th>Gene</th><th>Full Name</th><th>Group</th><th></th>
+          <th>Gene</th><th>Full Name</th><th>Group / Disease</th><th></th>
         </tr></thead>
         <tbody id="gene-tbody"></tbody>
       </table>

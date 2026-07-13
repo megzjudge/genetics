@@ -96,12 +96,15 @@ function init() {
     snpList.forEach(s => {
       s.disease_ids = (s.disease_ids || "").toString().split(",").filter(Boolean).map(Number);
     });
+    geneList.forEach(g => {
+      g.disease_ids = (g.disease_ids || "").toString().split(",").filter(Boolean).map(Number);
+    });
     renderGeneTable();
     renderGroupTable();
     renderDiseaseTable();
     renderSnpTable();
     populateGeneSelects();
-    populateGroupSelect();
+    renderNewGeneGroupDiseasePicker();
     populateBulkSnpList();
   });
 }
@@ -115,26 +118,75 @@ function switchTab(name) {
 }
 
 // ── Genes tab ─────────────────────────────────────
+// Merged Group/Disease popover — Group stays single-select (radios, one
+// active group per gene, same as the old <select> enforced) since that's
+// the existing convention elsewhere in the app; Diseases is a checkbox
+// multi-select, same pattern as the SNP table's disease picker.
+function groupDiseaseButton(idPrefix, selectedGroupId, selectedDiseaseIds) {
+  const ids = selectedDiseaseIds || [];
+  const count = (selectedGroupId ? 1 : 0) + ids.length;
+  const label = count ? `Group / Disease (${count})` : "Group / Disease";
+  const groupRadios = `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0">
+      <input type="radio" name="${idPrefix}-group" value="" ${!selectedGroupId ? "checked" : ""}> <span style="color:var(--faint)">None</span>
+    </label>` + groupList.map(g => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
+      <input type="radio" name="${idPrefix}-group" value="${g.id}" ${String(g.id) === String(selectedGroupId) ? "checked" : ""}> ${g.name}
+    </label>`).join("");
+  const diseaseChecks = diseaseList.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
+      <input type="checkbox" value="${d.id}" ${ids.includes(d.id) ? "checked" : ""}> ${d.name}
+    </label>`).join("");
+  return `<div class="gd-picker" style="position:relative;display:inline-block">
+    <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${count ? "#4ade80" : "var(--faint)"}"
+      onclick="toggleGdPanel('${idPrefix}')">${label}</button>
+    <div id="gd-panel-${idPrefix}" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:200px;max-height:260px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:0 0 4px">Group</div>
+      ${groupRadios}
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:10px 0 4px">Diseases</div>
+      ${diseaseChecks || `<div style="font-size:11px;color:var(--faint)">No diseases yet.</div>`}
+    </div>
+  </div>`;
+}
+
+function toggleGdPanel(idPrefix) {
+  const panel = document.getElementById("gd-panel-" + idPrefix);
+  const isOpen = panel.style.display === "block";
+  document.querySelectorAll("[id^='gd-panel-']").forEach(p => p.style.display = "none");
+  panel.style.display = isOpen ? "none" : "block";
+}
+
+// Reads whatever's currently checked in a gd-picker panel — used both to
+// collect a save payload and to preserve in-progress picks across a
+// re-render triggered by something unrelated (e.g. saving a SNP in another
+// tab calls init(), which would otherwise wipe an unsaved Add Gene form).
+function readGdPanel(idPrefix) {
+  const panel = document.getElementById("gd-panel-" + idPrefix);
+  if (!panel) return { groupId: null, diseaseIds: [] };
+  const g = panel.querySelector(`input[name="${idPrefix}-group"]:checked`);
+  const diseaseIds = Array.from(panel.querySelectorAll("input[type=checkbox]:checked")).map(el => parseInt(el.value));
+  return { groupId: g && g.value ? parseInt(g.value) : null, diseaseIds };
+}
+
+function renderNewGeneGroupDiseasePicker() {
+  const el = document.getElementById("new-gene-groupdisease");
+  if (!el) return;
+  const prev = readGdPanel("new-gene");
+  el.innerHTML = groupDiseaseButton("new-gene", prev.groupId, prev.diseaseIds);
+}
+
 function renderGeneTable() {
   document.getElementById("gene-count").textContent = geneList.length + " genes";
   const tbody = document.getElementById("gene-tbody");
-  tbody.innerHTML = geneList.map(g => {
-    const opts = groupList.map(gr =>
-      `<option value="${gr.id}"${gr.name === g.group_name ? " selected" : ""}>${gr.name}</option>`
-    ).join("");
-    return `
+  tbody.innerHTML = geneList.map(g => `
     <tr>
       <td><span class="gene-sym"><a href="/gene/${g.gene_name}" target="_blank" style="color:var(--accent);text-decoration:none">${g.gene_name}</a></span></td>
       <td style="font-size:12px">${g.full_name || ""}</td>
       <td>
         <div style="display:flex;gap:6px;align-items:center">
-          <select id="grp-${g.gene_name}" style="font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:3px 6px;color:var(--ink);margin:0">${opts}</select>
-          <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="updateGeneGroup('${g.gene_name}')">Set</button>
+          ${groupDiseaseButton(g.gene_name, g.group_id, g.disease_ids)}
+          <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="updateGeneGroupDisease('${g.gene_name}')">Set</button>
         </div>
       </td>
       <td><button class="btn-danger" onclick="deleteGene('${g.gene_name}')">Delete</button></td>
-    </tr>`;
-  }).join("");
+    </tr>`).join("");
 }
 
 function populateGeneSelects() {
@@ -143,11 +195,6 @@ function populateGeneSelects() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts;
   });
-}
-
-function populateGroupSelect() {
-  const el = document.getElementById("new-gene-group");
-  if (el) el.innerHTML = groupList.map(g => `<option value="${g.id}">${g.name}</option>`).join("");
 }
 
 function toggleAddGene() {
@@ -196,12 +243,14 @@ async function lookupGene() {
 
 function saveGene() {
   if (!geneLookupData) return toast("Look up a gene first.", true);
+  const picked = readGdPanel("new-gene");
   const body = {
     gene_name:   geneLookupData.gene_name,
     full_name:   geneLookupData.full_name,
     description: geneLookupData.description,
     maplocation: geneLookupData.maplocation || null,
-    group_id:    document.getElementById("new-gene-group").value,
+    group_id:    picked.groupId,
+    disease_ids: picked.diseaseIds,
   };
   apiFetch("/api/gene", {
     method: "POST",
@@ -213,6 +262,7 @@ function saveGene() {
       toggleAddGene();
       clearGenePreview();
       document.getElementById("new-gene-name").value = "";
+      document.getElementById("new-gene-groupdisease").innerHTML = "";
       init();
     } else {
       const d = await r.json().catch(() => ({}));
@@ -233,14 +283,14 @@ function deleteGene(name) {
   });
 }
 
-async function updateGeneGroup(geneName) {
-  const groupId = document.getElementById("grp-" + geneName).value;
+async function updateGeneGroupDisease(geneName) {
+  const picked = readGdPanel(geneName);
   const r = await apiFetch(`/api/gene/${geneName}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ group_id: groupId }),
+    body: JSON.stringify({ group_id: picked.groupId || "", disease_ids: picked.diseaseIds }),
   });
-  if (r.ok) toast("Group updated.");
+  if (r.ok) { toast("Group/Disease updated."); init(); }
   else toast("Update failed.", true);
 }
 
@@ -309,8 +359,8 @@ function toggleDiseasePanel(rsid) {
 }
 
 document.addEventListener("click", e => {
-  if (e.target.closest(".disease-picker")) return;
-  document.querySelectorAll("[id^='disease-panel-']").forEach(p => p.style.display = "none");
+  if (e.target.closest(".disease-picker") || e.target.closest(".gd-picker")) return;
+  document.querySelectorAll("[id^='disease-panel-'], [id^='gd-panel-']").forEach(p => p.style.display = "none");
 });
 
 function saveSnpDiseases(rsid) {

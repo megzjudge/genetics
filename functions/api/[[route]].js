@@ -672,7 +672,8 @@ async function handleApiRequest({ request, env }) {
   // ── GET /api/genes ───────────────────────────────
   if (method === "GET" && route === "genes") {
     const { results } = await env.genetic.prepare(`
-      SELECT gi.*, tg.name AS group_name
+      SELECT gi.*, tg.id AS group_id, tg.name AS group_name,
+             (SELECT GROUP_CONCAT(disease_id) FROM gene_diseases WHERE gene_diseases.gene_name = gi.gene_name) AS disease_ids
       FROM genes gi
       LEFT JOIN gene_topics gg ON gi.gene_name = gg.gene_name
       LEFT JOIN topics tg ON gg.group_id = tg.id
@@ -749,7 +750,7 @@ async function handleApiRequest({ request, env }) {
   // ── PATCH /api/gene/:name ─────────────────────────
   if (method === "PATCH" && route === "gene" && param) {
     const name = param.toUpperCase();
-    const { full_name, description, maplocation, group_id } = await request.json();
+    const { full_name, description, maplocation, group_id, disease_ids } = await request.json();
     if (full_name || description || maplocation) {
       await env.genetic.prepare(`
         UPDATE genes
@@ -759,9 +760,26 @@ async function handleApiRequest({ request, env }) {
         WHERE gene_name = ?
       `).bind(full_name || null, description || null, maplocation || null, name).run();
     }
-    if (group_id) {
+    // "" (explicit clear from the radio picker's "None" option) still needs
+    // to remove any existing group, so this checks for the key being present
+    // at all rather than truthiness — group_id === "" must still run the
+    // DELETE, just skip the re-insert.
+    if (group_id !== undefined) {
       await env.genetic.prepare(`DELETE FROM gene_topics WHERE gene_name = ?`).bind(name).run();
-      await env.genetic.prepare(`INSERT OR IGNORE INTO gene_topics (gene_name, group_id) VALUES (?, ?)`).bind(name, group_id).run();
+      if (group_id) {
+        await env.genetic.prepare(`INSERT OR IGNORE INTO gene_topics (gene_name, group_id) VALUES (?, ?)`).bind(name, group_id).run();
+      }
+    }
+    // Diseases — full replacement of this gene's disease set (checkbox list
+    // in the admin panel), same pattern as PATCH /api/snp/:rsid.
+    if (disease_ids !== undefined) {
+      await env.genetic.prepare(`DELETE FROM gene_diseases WHERE gene_name = ?`).bind(name).run();
+      const ids = (disease_ids || []).map(n => parseInt(n)).filter(Boolean);
+      if (ids.length) {
+        await Promise.all(ids.map(id =>
+          env.genetic.prepare(`INSERT INTO gene_diseases (gene_name, disease_id) VALUES (?, ?)`).bind(name, id).run()
+        ));
+      }
     }
     return json({ ok: true });
   }
@@ -943,7 +961,7 @@ async function handleApiRequest({ request, env }) {
 
   // ── POST /api/gene ───────────────────────────────
   if (method === "POST" && route === "gene" && !param) {
-    const { gene_name, full_name, description, group_id, maplocation } = await request.json();
+    const { gene_name, full_name, description, group_id, maplocation, disease_ids } = await request.json();
     if (!gene_name) return err("gene_name required");
     const name = gene_name.toUpperCase();
     await env.genetic.prepare(
@@ -954,6 +972,12 @@ async function handleApiRequest({ request, env }) {
         `INSERT OR IGNORE INTO gene_topics (gene_name, group_id) VALUES (?, ?)`
       ).bind(name, group_id).run();
     }
+    const ids = (disease_ids || []).map(n => parseInt(n)).filter(Boolean);
+    if (ids.length) {
+      await Promise.all(ids.map(id =>
+        env.genetic.prepare(`INSERT OR IGNORE INTO gene_diseases (gene_name, disease_id) VALUES (?, ?)`).bind(name, id).run()
+      ));
+    }
     return json({ ok: true, gene_name: name });
   }
 
@@ -961,9 +985,17 @@ async function handleApiRequest({ request, env }) {
   if (method === "POST" && route === "disease" && !param) {
     const { name, description } = await request.json();
     if (!name) return err("name required");
+    const trimmed = name.trim();
+    // Case-insensitive check ahead of the DB-level unique index, so a
+    // near-miss like "gilbert syndrome" vs "Gilbert Syndrome" gets a clear
+    // message instead of a raw SQLite constraint error.
+    const dupe = await env.genetic.prepare(
+      `SELECT id FROM diseases WHERE name = ? COLLATE NOCASE`
+    ).bind(trimmed).first();
+    if (dupe) return err(`Disease "${trimmed}" already exists.`);
     const result = await env.genetic.prepare(
       `INSERT INTO diseases (name, description) VALUES (?, ?)`
-    ).bind(name.trim(), description || null).run();
+    ).bind(trimmed, description || null).run();
     return json({ ok: true, id: result.meta.last_row_id });
   }
 
@@ -973,9 +1005,14 @@ async function handleApiRequest({ request, env }) {
     if (!id) return err("invalid id");
     const { name, description } = await request.json();
     if (!name) return err("name required");
+    const trimmed = name.trim();
+    const dupe = await env.genetic.prepare(
+      `SELECT id FROM diseases WHERE name = ? COLLATE NOCASE AND id != ?`
+    ).bind(trimmed, id).first();
+    if (dupe) return err(`Disease "${trimmed}" already exists.`);
     await env.genetic.prepare(
       `UPDATE diseases SET name = ?, description = ? WHERE id = ?`
-    ).bind(name.trim(), description || null, id).run();
+    ).bind(trimmed, description || null, id).run();
     return json({ ok: true });
   }
 
@@ -986,6 +1023,7 @@ async function handleApiRequest({ request, env }) {
     await Promise.all([
       env.genetic.prepare(`DELETE FROM diseases      WHERE id = ?`).bind(id).run(),
       env.genetic.prepare(`DELETE FROM snp_diseases  WHERE disease_id = ?`).bind(id).run(),
+      env.genetic.prepare(`DELETE FROM gene_diseases WHERE disease_id = ?`).bind(id).run(),
     ]);
     return json({ ok: true });
   }
@@ -1027,6 +1065,7 @@ async function handleApiRequest({ request, env }) {
     await Promise.all([
       env.genetic.prepare(`DELETE FROM genes         WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM gene_topics   WHERE gene_name = ?`).bind(name).run(),
+      env.genetic.prepare(`DELETE FROM gene_diseases WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM personal      WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM studies       WHERE gene_name = ?`).bind(name).run(),
       env.genetic.prepare(`DELETE FROM snps          WHERE gene_name = ?`).bind(name).run(),
