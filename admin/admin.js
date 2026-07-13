@@ -3,6 +3,9 @@ let diseaseList = [];
 let geneList = [];
 let groupList = [];
 let snpList = [];
+// Staged SNPs for a not-yet-saved disease — linked once the disease's real
+// id comes back from the save call, since snp_diseases needs that id.
+let pendingDiseaseSnps = [];
 
 // ── Bulk study import state ───────────────────────
 let bulkRawCsv = null;
@@ -522,6 +525,7 @@ function saveSnp() {
       clearSnpPreview();
       document.getElementById("snp-rsid").value = "";
       document.getElementById("snp-alleles").value = "";
+      init();
     } else {
       const d = await r.json().catch(() => ({}));
       toast("Error: " + (d.error || r.status), true);
@@ -673,29 +677,80 @@ function renderDiseaseTable() {
   tbody.innerHTML = diseaseList.map(d => diseaseRow(d)).join("");
 }
 
+// Parses the shared "GENE — rsID" picker format used by the Bulk/Discover
+// tabs' datalist (#bulk-snp-list), so the same typed value works here too.
+function parseSnpPickerValue(val) {
+  const m = (val || "").trim().match(/^(.+?)\s*—\s*(rs\d+)$/i);
+  if (!m) return null;
+  return snpList.find(s => s.gene_name === m[1].trim().toUpperCase() && s.rsid.toLowerCase() === m[2].toLowerCase()) || null;
+}
+
+function snpDiseaseChip(rsid, onRemove) {
+  return `<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:2px 6px;color:var(--ink)">
+    ${rsid}<span style="cursor:pointer;color:#f87171" onclick="${onRemove}" title="Remove">×</span>
+  </span>`;
+}
+
+// ── Add-Disease-form SNP staging (disease doesn't exist yet, so nothing is
+// saved to snp_diseases until addDisease() gets a real id back) ──────────
+function addPendingDiseaseSnp() {
+  const inputEl = document.getElementById("disease-new-snp-picker");
+  const snp = parseSnpPickerValue(inputEl.value);
+  if (!snp) return toast("Pick a valid SNP from the list.", true);
+  if (!pendingDiseaseSnps.includes(snp.rsid)) pendingDiseaseSnps.push(snp.rsid);
+  inputEl.value = "";
+  renderPendingDiseaseSnpChips();
+}
+
+function removePendingDiseaseSnp(rsid) {
+  pendingDiseaseSnps = pendingDiseaseSnps.filter(r => r !== rsid);
+  renderPendingDiseaseSnpChips();
+}
+
+function renderPendingDiseaseSnpChips() {
+  const el = document.getElementById("disease-new-snp-chips");
+  if (!el) return;
+  el.innerHTML = pendingDiseaseSnps.length
+    ? pendingDiseaseSnps.map(rsid => snpDiseaseChip(rsid, `removePendingDiseaseSnp('${rsid}')`)).join("")
+    : "";
+}
+
 function diseaseRow(d) {
   const name = d.name.replace(/'/g, "\\'");
   const desc = (d.description || "").replace(/'/g, "\\'");
+  const linked = snpList.filter(s => (s.disease_ids || []).includes(d.id));
   return `
     <tr id="drow-${d.id}">
-      <td><span class="gene-sym">${d.name}</span></td>
-      <td style="font-size:12px;color:var(--muted)">${d.description || ""}</td>
-      <td style="display:flex;gap:6px">
+      <td id="dcell-name-${d.id}"><span class="gene-sym">${d.name}</span></td>
+      <td id="dcell-desc-${d.id}" style="font-size:12px;color:var(--muted)">${d.description || ""}</td>
+      <td id="dcell-actions-${d.id}" style="display:flex;gap:6px">
         <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="editDisease(${d.id}, '${name}', '${desc}')">Edit</button>
         <button class="btn-danger" onclick="deleteDisease(${d.id}, '${name}')">Delete</button>
+      </td>
+      <td style="min-width:220px">
+        <div id="disease-snps-${d.id}" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          ${linked.length
+            ? linked.map(s => snpDiseaseChip(s.rsid, `removeSnpFromDisease(${d.id}, '${s.rsid}')`)).join("")
+            : `<span style="font-size:11px;color:var(--faint)">No SNPs yet</span>`}
+        </div>
+        <div style="display:flex;gap:6px">
+          <input list="bulk-snp-list" id="disease-snp-picker-${d.id}" placeholder="Type to search…"
+                 style="font-family:var(--mono);font-size:11px;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink);margin:0;flex:1"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();addSnpToDisease(${d.id});}">
+          <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="addSnpToDisease(${d.id})">Add</button>
+        </div>
       </td>
     </tr>`;
 }
 
 function editDisease(id, name, desc) {
-  const row = document.getElementById("drow-" + id);
-  row.innerHTML = `
-    <td><input id="dedit-name-${id}" value="${name}" style="font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
-    <td><input id="dedit-desc-${id}" value="${desc}" style="font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)"></td>
-    <td style="display:flex;gap:6px">
-      <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="saveDiseaseEdit(${id})">Save</button>
-      <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="renderDiseaseTable()">Cancel</button>
-    </td>`;
+  document.getElementById("dcell-name-" + id).innerHTML =
+    `<input id="dedit-name-${id}" value="${name}" style="font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)">`;
+  document.getElementById("dcell-desc-" + id).innerHTML =
+    `<input id="dedit-desc-${id}" value="${desc}" style="font-size:12px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink)">`;
+  document.getElementById("dcell-actions-" + id).innerHTML = `
+    <button class="btn-sm" style="font-size:10px;padding:3px 8px" onclick="saveDiseaseEdit(${id})">Save</button>
+    <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:var(--muted)" onclick="renderDiseaseTable()">Cancel</button>`;
 }
 
 async function saveDiseaseEdit(id) {
@@ -719,6 +774,39 @@ function deleteDisease(id, name) {
   });
 }
 
+// Adds/removes one disease id from a single SNP's existing disease set —
+// PATCH /api/snp/:rsid replaces the whole set, so read-modify-write against
+// the SNP's current disease_ids rather than sending just the one id.
+function addSnpToDisease(diseaseId) {
+  const inputEl = document.getElementById("disease-snp-picker-" + diseaseId);
+  const snp = parseSnpPickerValue(inputEl.value);
+  if (!snp) return toast("Pick a valid SNP from the list.", true);
+  if ((snp.disease_ids || []).includes(diseaseId)) { inputEl.value = ""; return toast("Already linked."); }
+  const ids = [...(snp.disease_ids || []), diseaseId];
+  apiFetch(`/api/snp/${snp.rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ disease_ids: ids }),
+  }).then(r => {
+    if (r.ok) { toast("SNP linked."); init(); }
+    else toast("Failed to link.", true);
+  });
+}
+
+function removeSnpFromDisease(diseaseId, rsid) {
+  const snp = snpList.find(s => s.rsid === rsid);
+  if (!snp) return;
+  const ids = (snp.disease_ids || []).filter(id => id !== diseaseId);
+  apiFetch(`/api/snp/${rsid}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ disease_ids: ids }),
+  }).then(r => {
+    if (r.ok) { toast("SNP unlinked."); init(); }
+    else toast("Failed to unlink.", true);
+  });
+}
+
 function addDisease() {
   const name = document.getElementById("disease-name").value.trim();
   const description = document.getElementById("disease-description").value.trim();
@@ -729,10 +817,26 @@ function addDisease() {
     body: JSON.stringify({ name, description: description || null }),
   }).then(async r => {
     if (r.ok) {
-      toast("Disease saved.");
-      document.getElementById("disease-name").value = "";
-      document.getElementById("disease-description").value = "";
-      init();
+      const d = await r.json().catch(() => ({}));
+      const linkAll = pendingDiseaseSnps.length && d.id
+        ? Promise.all(pendingDiseaseSnps.map(rsid => {
+            const snp = snpList.find(s => s.rsid === rsid);
+            const ids = [...new Set([...(snp?.disease_ids || []), d.id])];
+            return apiFetch(`/api/snp/${rsid}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ disease_ids: ids }),
+            });
+          }))
+        : Promise.resolve();
+      linkAll.then(() => {
+        toast("Disease saved.");
+        document.getElementById("disease-name").value = "";
+        document.getElementById("disease-description").value = "";
+        pendingDiseaseSnps = [];
+        renderPendingDiseaseSnpChips();
+        init();
+      });
     } else {
       const d = await r.json().catch(() => ({}));
       toast("Error: " + (d.error || r.status), true);

@@ -319,12 +319,18 @@
           <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="disease-gen-btn" onclick="generateDiseaseDescription()">Generate</button>
         </label>
         <textarea id="disease-description" placeholder="Brief description of this disease…"></textarea>
+        <label>SNPs</label>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <input list="bulk-snp-list" id="disease-new-snp-picker" placeholder="Type to search…" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addPendingDiseaseSnp();}">
+          <button class="btn-sm" style="margin-bottom:0" onclick="addPendingDiseaseSnp()">Add</button>
+        </div>
+        <div id="disease-new-snp-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px"></div>
         <button class="btn-sm" onclick="addDisease()">Save Disease</button>
       </div>
 
       <table class="admin-table" id="disease-table" style="margin-top:28px">
         <thead><tr>
-          <th>Disease</th><th>Description</th><th></th>
+          <th>Disease</th><th>Description</th><th></th><th>SNPs</th>
         </tr></thead>
         <tbody id="disease-tbody"></tbody>
       </table>

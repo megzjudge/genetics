@@ -948,10 +948,10 @@ export async function onRequest({ request, env }) {
   if (method === "POST" && route === "disease" && !param) {
     const { name, description } = await request.json();
     if (!name) return err("name required");
-    await env.genetic.prepare(
+    const result = await env.genetic.prepare(
       `INSERT INTO diseases (name, description) VALUES (?, ?)`
     ).bind(name.trim(), description || null).run();
-    return json({ ok: true });
+    return json({ ok: true, id: result.meta.last_row_id });
   }
 
   // ── PATCH /api/disease/:id ────────────────────────
