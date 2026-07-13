@@ -638,6 +638,35 @@ function deleteGroup(id, name) {
 }
 
 // ── Disease tab ───────────────────────────────────
+// Reuses the same generic name→description lookup as Groups (DuckDuckGo,
+// falling back to Wikipedia) — it's not gene/group-specific, just a lookup
+// by name, so no separate disease endpoint is needed.
+async function generateDiseaseDescription() {
+  const name = document.getElementById("disease-name").value.trim();
+  if (!name) return toast("Enter a disease name first.", true);
+  const btn = document.getElementById("disease-gen-btn");
+  btn.textContent = "...";
+  btn.disabled = true;
+  try {
+    const r = await apiFetch("/api/group/description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const d = await r.json();
+    if (d.description) {
+      document.getElementById("disease-description").value = d.description;
+    } else {
+      toast("No description found — try a more specific term.", true);
+    }
+  } catch (e) {
+    toast("Generate failed: " + e.message, true);
+  } finally {
+    btn.textContent = "Generate";
+    btn.disabled = false;
+  }
+}
+
 function renderDiseaseTable() {
   const tbody = document.getElementById("disease-tbody");
   if (!tbody) return;
@@ -1501,10 +1530,13 @@ function scholarStripTags(s) {
 // objective" (common in pharmacy-journal abstracts) — strip it so the
 // snippet reads as plain prose instead of starting mid-label.
 function scholarStripLeadLabel(s) {
-  const label = "(?:background|aims?|purpose|objectives?|introduction|introducción|introdução|resumen|abstract|methods?|full article|results?)";
-  const combo = `(?:${label}(?:\\s*(?:and|&)\\s*${label})?(?:\\s+of\\s+the\\s+review)?)`;
+  const label = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|contextes?|abstracts?|scopes?|methods?|full articles?|results?)";
+  const combo = `(?:${label}(?:\\s*(?:and|&|\\/)\\s*${label})?(?:\\s+of\\s+the\\s+review)?)`;
   const phrase = "what is known and objective";
-  const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*:?\\s*[-—]?\\s*`, "i");
+  // A lone "." right after the label is stray label punctuation and gets
+  // stripped, but "..." (ellipsis) is left alone — that's a deliberate
+  // truncation marker, not a delimiter, so the negative lookahead guards it.
+  const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*(?:[:/]|\\.(?!\\.\\.))?\\s*[-—]?\\s*`, "i");
   return (s || "").replace(re, "");
 }
 

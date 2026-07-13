@@ -1044,10 +1044,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 
 /* ── Admin ────────────────────────────────────────── */
-.admin-body { max-width: 860px; margin: 0 auto; padding: 40px 36px 80px; }
+.admin-body { max-width: 1400px; margin: 0 auto; padding: 40px 36px 80px; }
 @media (max-width: 600px) { .admin-body { padding: 28px 18px 60px; } }
 
-.admin-tabs { display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:32px; }
+.admin-tabs { display:flex; flex-wrap:wrap; gap:0; border-bottom:1px solid var(--line); margin-bottom:32px; }
 .admin-tab { font-family:var(--mono); font-size:13px; padding:10px 20px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; transition:color .12s,border-color .12s; }
 .admin-tab:hover { color:var(--ink); }
 .admin-tab.active { color:var(--accent); border-bottom-color:var(--accent); }

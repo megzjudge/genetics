@@ -314,7 +314,10 @@
       <div class="admin-form">
         <label>Disease Name</label>
         <input type="text" id="disease-name" placeholder="Gilbert Syndrome">
-        <label>Description</label>
+        <label style="display:flex;align-items:center;justify-content:space-between">
+          Description
+          <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="disease-gen-btn" onclick="generateDiseaseDescription()">Generate</button>
+        </label>
         <textarea id="disease-description" placeholder="Brief description of this disease…"></textarea>
         <button class="btn-sm" onclick="addDisease()">Save Disease</button>
       </div>
