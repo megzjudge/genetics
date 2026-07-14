@@ -126,10 +126,27 @@ function switchTab(name) {
 // Shared with diseaseCell()/renderNewSnpDiseasePicker() so every disease
 // checklist in the admin panel is generated from one place — same markup,
 // same styling, no risk of the three copies drifting apart.
-function diseaseChecklistHtml(ids) {
+// text-transform/letter-spacing are pinned inline (not just the layout
+// props) because these labels sometimes render inside .admin-form (Add Gene
+// / Add SNP forms), which applies a blanket uppercase+letter-spacing rule to
+// every nested <label> — including these dynamically-injected ones — while
+// the identical popover rendered inside a <td> (Genes/SNP tables) isn't
+// affected. Without this, the exact same markup looks shouty/cramped in one
+// place and fine in the other, purely from unrelated CSS bleeding through.
+const PICKER_OPTION_LABEL_STYLE = "display:flex;align-items:center;gap:6px;font-size:11px;font-weight:normal;text-transform:none;letter-spacing:normal;color:var(--ink);padding:3px 0;white-space:nowrap";
+// .admin-form input targets ANY <input> nested inside it (width:100%,
+// padding:9px 12px, a card-colored border) — meant for text fields, but
+// with no inline style to counteract it, a plain checkbox/radio would
+// inherit all of that and render as a giant bordered box instead of a
+// normal-sized control. Only actually happens when the picker renders
+// inside .admin-form (Add Gene / Add SNP forms); a <td> context is immune,
+// which is why the table version already looked fine.
+const PICKER_OPTION_INPUT_STYLE = "width:auto;flex-shrink:0;margin:0;padding:0;border:0;background:none;border-radius:0";
+
+function diseaseChecklistHtml(ids, idPrefix) {
   if (!diseaseList.length) return `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`;
-  return diseaseList.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
-      <input type="checkbox" value="${d.id}" ${ids.includes(d.id) ? "checked" : ""}> ${d.name}
+  return diseaseList.map(d => `<label for="${idPrefix}-disease-${d.id}" style="${PICKER_OPTION_LABEL_STYLE}">
+      <input type="checkbox" id="${idPrefix}-disease-${d.id}" value="${d.id}" style="${PICKER_OPTION_INPUT_STYLE}" ${ids.includes(d.id) ? "checked" : ""}> ${d.name}
     </label>`).join("");
 }
 
@@ -137,19 +154,19 @@ function groupDiseaseButton(idPrefix, selectedGroupId, selectedDiseaseIds) {
   const ids = selectedDiseaseIds || [];
   const count = (selectedGroupId ? 1 : 0) + ids.length;
   const label = count ? `Group / Disease (${count})` : "Group / Disease";
-  const groupRadios = `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0">
-      <input type="radio" name="${idPrefix}-group" value="" ${!selectedGroupId ? "checked" : ""}> <span style="color:var(--faint)">None</span>
-    </label>` + groupList.map(g => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
-      <input type="radio" name="${idPrefix}-group" value="${g.id}" ${String(g.id) === String(selectedGroupId) ? "checked" : ""}> ${g.name}
+  const groupRadios = `<label for="${idPrefix}-group-none" style="${PICKER_OPTION_LABEL_STYLE}">
+      <input type="radio" id="${idPrefix}-group-none" name="${idPrefix}-group" value="" style="${PICKER_OPTION_INPUT_STYLE}" ${!selectedGroupId ? "checked" : ""}> <span style="color:var(--faint)">None</span>
+    </label>` + groupList.map(g => `<label for="${idPrefix}-group-${g.id}" style="${PICKER_OPTION_LABEL_STYLE}">
+      <input type="radio" id="${idPrefix}-group-${g.id}" name="${idPrefix}-group" value="${g.id}" style="${PICKER_OPTION_INPUT_STYLE}" ${String(g.id) === String(selectedGroupId) ? "checked" : ""}> ${g.name}
     </label>`).join("");
   return `<div class="gd-picker" style="position:relative;display:inline-block">
-    <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${count ? "#4ade80" : "var(--faint)"}"
+    <button class="btn-sm" type="button" id="${idPrefix}-gd-btn" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${count ? "#4ade80" : "var(--faint)"}"
       onclick="toggleGdPanel('${idPrefix}')">${label}</button>
     <div id="gd-panel-${idPrefix}" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:200px;max-height:260px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:0 0 4px">Group</div>
       ${groupRadios}
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:10px 0 4px">Diseases</div>
-      ${diseaseChecklistHtml(ids)}
+      ${diseaseChecklistHtml(ids, idPrefix)}
     </div>
   </div>`;
 }
@@ -344,10 +361,10 @@ function diseaseCell(s) {
   const ids = s.disease_ids || [];
   const label = ids.length ? `Diseases (${ids.length})` : "Diseases";
   return `<div class="disease-picker" style="position:relative;display:inline-block">
-    <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
+    <button class="btn-sm" id="disease-btn-${s.rsid}" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
       onclick="toggleDiseasePanel('${s.rsid}')">${label}</button>
     <div id="disease-panel-${s.rsid}" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
-      ${diseaseChecklistHtml(ids)}
+      ${diseaseChecklistHtml(ids, s.rsid)}
       ${diseaseList.length ? `<button class="btn-sm" style="font-size:10px;padding:3px 8px;margin-top:8px" onclick="saveSnpDiseases('${s.rsid}')">Save</button>` : ""}
     </div>
   </div>`;
@@ -370,10 +387,10 @@ function renderNewSnpDiseasePicker() {
   if (!el) return;
   const ids = readDiseasePanel("new-snp");
   el.innerHTML = `<div class="disease-picker" style="position:relative;display:inline-block">
-    <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
+    <button class="btn-sm" type="button" id="new-snp-disease-btn" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
       onclick="toggleDiseasePanel('new-snp')">${ids.length ? `Diseases (${ids.length})` : "Diseases"}</button>
     <div id="disease-panel-new-snp" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
-      ${diseaseChecklistHtml(ids)}
+      ${diseaseChecklistHtml(ids, "new-snp")}
     </div>
   </div>`;
 }
@@ -1558,30 +1575,30 @@ function renderBulkTable() {
     <tr${row._open ? "" : ' style="display:none"'}>
       <td colspan="5" class="bulk-edit-row">
         ${dupNote}
-        <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Title</label>
-        <input type="text" value="${escAttr(row.title)}" style="${bulkFieldStyle(row, "title")}" oninput="bulkField(${i},'title',this.value)">
+        <label for="bulk-edit-title-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">Title</label>
+        <input id="bulk-edit-title-${i}" type="text" value="${escAttr(row.title)}" style="${bulkFieldStyle(row, "title")}" oninput="bulkField(${i},'title',this.value)">
         <div style="display:flex;gap:10px">
           <div style="flex:1">
-            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Authors</label>
-            <input type="text" value="${escAttr(row.authors)}" oninput="bulkField(${i},'authors',this.value)">
+            <label for="bulk-edit-authors-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">Authors</label>
+            <input id="bulk-edit-authors-${i}" type="text" value="${escAttr(row.authors)}" oninput="bulkField(${i},'authors',this.value)">
           </div>
           <div style="width:100px">
-            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Year</label>
-            <input type="number" value="${escAttr(row.year)}" oninput="bulkField(${i},'year',this.value)">
+            <label for="bulk-edit-year-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">Year</label>
+            <input id="bulk-edit-year-${i}" type="number" value="${escAttr(row.year)}" oninput="bulkField(${i},'year',this.value)">
           </div>
         </div>
         <div style="display:flex;gap:10px">
           <div style="flex:1">
-            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">URL</label>
-            <input type="text" value="${escAttr(row.url)}" style="${bulkFieldStyle(row, "url")}" oninput="bulkField(${i},'url',this.value)">
+            <label for="bulk-edit-url-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">URL</label>
+            <input id="bulk-edit-url-${i}" type="text" value="${escAttr(row.url)}" style="${bulkFieldStyle(row, "url")}" oninput="bulkField(${i},'url',this.value)">
           </div>
           <div style="flex:1">
-            <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">PID</label>
-            <input type="text" value="${escAttr(row.pid)}" style="${bulkFieldStyle(row, "pid")}" oninput="bulkField(${i},'pid',this.value)">
+            <label for="bulk-edit-pid-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">PID</label>
+            <input id="bulk-edit-pid-${i}" type="text" value="${escAttr(row.pid)}" style="${bulkFieldStyle(row, "pid")}" oninput="bulkField(${i},'pid',this.value)">
           </div>
         </div>
-        <label style="font-family:var(--mono);font-size:10px;color:var(--faint)">Abstract / Snippet</label>
-        <textarea oninput="bulkField(${i},'abstract',this.value)">${escHtml(row.abstract)}</textarea>
+        <label for="bulk-edit-abstract-${i}" style="font-family:var(--mono);font-size:10px;color:var(--faint)">Abstract / Snippet</label>
+        <textarea id="bulk-edit-abstract-${i}" oninput="bulkField(${i},'abstract',this.value)">${escHtml(row.abstract)}</textarea>
         ${scholarUrl ? `<a href="${escAttr(scholarUrl)}" target="_blank" rel="noopener" class="btn-sm" style="text-decoration:none;display:inline-block;font-size:10px;padding:3px 8px">Search Google Scholar ↗</a>` : ""}
       </td>
     </tr>`;
@@ -1687,21 +1704,21 @@ function renderDiscoverResults() {
       ${r.description ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.description)}</p>` : ""}
       ${r._open ? `
         <div class="admin-form" style="border-top:1px solid var(--line);margin-top:4px;padding-top:16px">
-          <label>Title</label>
+          <label for="discover-title-${i}">Title</label>
           <input type="text" id="discover-title-${i}" value="${escAttr(r.title || "")}">
           <div class="field-row">
             <div class="field">
-              <label>Authors</label>
+              <label for="discover-authors-${i}">Authors</label>
               <input type="text" id="discover-authors-${i}" placeholder="Smith J et al.">
             </div>
             <div class="field">
-              <label>Year</label>
+              <label for="discover-year-${i}">Year</label>
               <input type="number" id="discover-year-${i}" placeholder="2023" min="1950" max="2099">
             </div>
           </div>
-          <label>PID (DOI / Handle, optional)</label>
+          <label for="discover-pid-${i}">PID (DOI / Handle, optional)</label>
           <input type="text" id="discover-pid-${i}" placeholder="10.1234/example">
-          <label>Snippet</label>
+          <label for="discover-snippet-${i}">Snippet</label>
           <textarea id="discover-snippet-${i}" class="mono">${escHtml(r.description || r.title || "")}</textarea>
           <div style="display:flex;gap:10px">
             <button class="btn-sm" onclick="discoverSubmitAdd(${i})">Save Study</button>
@@ -2026,21 +2043,21 @@ function renderScholarResults() {
       ${r.snippet ? `<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${escHtml(r.snippet)}</p>` : ""}
       ${r._open ? `
         <div class="admin-form" style="border-top:1px solid var(--line);margin-top:4px;padding-top:16px">
-          <label>Title</label>
+          <label for="scholar-title-${i}">Title</label>
           <input type="text" id="scholar-title-${i}" value="${escAttr(r.title)}">
           <div class="field-row">
             <div class="field">
-              <label>Authors</label>
+              <label for="scholar-authors-${i}">Authors</label>
               <input type="text" id="scholar-authors-${i}" value="${escAttr(r.authors)}" placeholder="Smith J et al.">
             </div>
             <div class="field">
-              <label>Year</label>
+              <label for="scholar-year-${i}">Year</label>
               <input type="number" id="scholar-year-${i}" value="${escAttr(r.year)}" placeholder="2023" min="1950" max="2099">
             </div>
           </div>
-          <label>PID (DOI / Handle, optional)</label>
+          <label for="scholar-pid-${i}">PID (DOI / Handle, optional)</label>
           <input type="text" id="scholar-pid-${i}" placeholder="10.1234/example">
-          <label>Snippet</label>
+          <label for="scholar-snippet-${i}">Snippet</label>
           <textarea id="scholar-snippet-${i}" class="mono">${escHtml(r.snippet || r.title || "")}</textarea>
           <div style="display:flex;gap:10px;justify-content:space-between">
             <div style="display:flex;gap:10px">

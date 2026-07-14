@@ -1043,6 +1043,13 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   .db-card-btn { margin-left: 0; }
 }
 
+/* Visually hidden but still readable by screen readers — for form labels
+   where a visible label would be redundant with a placeholder/icon. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 /* ── Admin ────────────────────────────────────────── */
 .admin-body { max-width: 1400px; margin: 0 auto; padding: 40px 36px 80px; }
 @media (max-width: 600px) { .admin-body { padding: 28px 18px 60px; } }

@@ -81,8 +81,8 @@ function studyCard(s, extraClass) {
           ].filter(Boolean).join(" · ")}</p>
           ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
           <div class="study-assign" data-study-assign style="display:none">
-            <label>Move to</label>
-            <select onchange="window.assignStudy(${s.id},this.value)">
+            <label for="study-used-${s.id}">Move to</label>
+            <select id="study-used-${s.id}" onchange="window.assignStudy(${s.id},this.value)">
               <option value=""  ${s.used == null ? "selected" : ""}>New</option>
               <option value="1" ${s.used === 1   ? "selected" : ""}>Curated</option>
               <option value="0" ${s.used === 0   ? "selected" : ""}>Unused</option>
@@ -90,25 +90,25 @@ function studyCard(s, extraClass) {
           </div>
           </div>
           <div class="study-edit-form" id="study-edit-${s.id}" style="display:none">
-            <label>Title</label>
+            <label for="study-edit-title-${s.id}">Title</label>
             <input type="text" id="study-edit-title-${s.id}" value="${esc(s.title)}">
-            <label>URL</label>
+            <label for="study-edit-url-${s.id}">URL</label>
             <input type="text" id="study-edit-url-${s.id}" value="${esc(s.url)}">
             <div class="study-edit-row">
               <div>
-                <label>Authors</label>
+                <label for="study-edit-authors-${s.id}">Authors</label>
                 <input type="text" id="study-edit-authors-${s.id}" value="${esc(s.authors)}">
               </div>
               <div>
-                <label>Year</label>
+                <label for="study-edit-year-${s.id}">Year</label>
                 <input type="number" id="study-edit-year-${s.id}" value="${esc(s.year)}" min="1950" max="2099">
               </div>
               <div>
-                <label>PID</label>
+                <label for="study-edit-pid-${s.id}">PID</label>
                 <input type="text" id="study-edit-pid-${s.id}" value="${esc(s.pid)}">
               </div>
             </div>
-            <label>Snippet</label>
+            <label for="study-edit-snippet-${s.id}">Snippet</label>
             <textarea id="study-edit-snippet-${s.id}">${esc(s.snippet)}</textarea>
             <div class="study-edit-actions">
               <button class="btn-sm" onclick="window.saveStudyEdit(${s.id})">Save</button>

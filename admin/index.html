@@ -15,7 +15,8 @@
   <div class="auth-box">
     <h2>Admin</h2>
     <p>Enter your AUTH password to continue.</p>
-    <input type="password" id="auth-input" placeholder="Password" autocomplete="current-password">
+    <label for="auth-input" class="sr-only">Password</label>
+    <input type="password" id="auth-input" name="password" placeholder="Password" autocomplete="current-password">
     <button onclick="tryAuth()">Sign in →</button>
     <p class="auth-err" id="auth-err">Incorrect password.</p>
   </div>
@@ -59,7 +60,7 @@
       <div id="add-gene-form" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:28px">
         <p class="section-divider" style="margin-top:0">New Gene</p>
         <div class="admin-form">
-          <label>Gene</label>
+          <label for="new-gene-name">Gene</label>
           <div style="display:flex;gap:10px;margin-bottom:18px">
             <input type="text" id="new-gene-name" placeholder="MTHFD1" style="margin-bottom:0;flex:1"
                    oninput="this.value=this.value.toUpperCase();clearGenePreview()" onkeydown="if(event.key==='Enter')lookupGene()">
@@ -72,7 +73,7 @@
             <div style="font-size:13px;color:var(--muted);line-height:1.6" id="gprev-desc"></div>
           </div>
 
-          <label>Group / Disease</label>
+          <label for="new-gene-gd-btn">Group / Disease</label>
           <div id="new-gene-groupdisease" style="margin-bottom:18px"></div>
 
           <div style="display:flex;gap:10px">
@@ -97,19 +98,19 @@
         <!-- rsID + Lookup button + genotype — all always visible -->
         <div style="display:flex;gap:10px;margin-bottom:18px;align-items:flex-end">
           <div style="width:160px;flex-shrink:0">
-            <label>rsID</label>
+            <label for="snp-rsid">rsID</label>
             <input type="text" id="snp-rsid" placeholder="rs2236225" style="margin-bottom:0"
                    oninput="clearSnpPreview()" onkeydown="if(event.key==='Enter')lookupSnp()">
           </div>
           <button class="btn-sm" id="snp-lookup-btn" onclick="lookupSnp()" style="margin-bottom:1px;flex-shrink:0">Lookup</button>
           <button class="btn-sm" id="snp-scholar-btn" onclick="snpOpenScholar()" style="margin-bottom:1px;flex-shrink:0;background:transparent;border:1px solid var(--line);color:var(--muted)">Scholar ↗</button>
           <div style="flex-shrink:0">
-            <label>Alleles <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
+            <label for="snp-alleles">Alleles <span style="color:var(--faint);font-weight:normal;text-transform:none;letter-spacing:0;font-size:10px">(e.g. CT)</span></label>
             <input type="text" id="snp-alleles" placeholder="CT" maxlength="4"
                    oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')lookupSnp()" style="margin-bottom:0;width:90px">
           </div>
           <div style="flex-shrink:0">
-            <label>Diseases</label>
+            <label for="new-snp-disease-btn">Diseases</label>
             <div id="new-snp-diseases" style="margin-bottom:0"></div>
           </div>
         </div>
@@ -120,7 +121,7 @@
         <div id="snp-preview" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:18px">
           <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px">
             <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent)" id="prev-rsid"></span>
-            <input id="prev-gene" type="text" style="font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:2px 8px;width:120px" oninput="checkSnpGeneWarn()" title="Click to override gene">
+            <input id="prev-gene" name="prev-gene" type="text" aria-label="Gene" style="font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:2px 8px;width:120px" oninput="checkSnpGeneWarn()" title="Click to override gene">
             <span style="font-family:var(--mono);font-size:11px;color:var(--faint)" id="prev-chr"></span>
           </div>
           <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:10px" id="prev-consequence"></div>
@@ -157,36 +158,36 @@
       <div class="admin-form">
         <div class="field-row">
           <div class="field">
-            <label>Gene</label>
+            <label for="study-gene">Gene</label>
             <select id="study-gene"></select>
           </div>
           <div class="field">
-            <label>rsID (optional)</label>
+            <label for="study-rsid">rsID (optional)</label>
             <input type="text" id="study-rsid" placeholder="rs1801133">
           </div>
         </div>
-        <label>Study Snippet</label>
+        <label for="study-snippet">Study Snippet</label>
         <textarea id="study-snippet" placeholder="Paste the excerpt from the study here — this appears in italics on the gene page."></textarea>
         <div class="field-row" style="margin-bottom:0">
           <div class="field">
-            <label>Authors</label>
+            <label for="study-authors">Authors</label>
             <input type="text" id="study-authors" placeholder="Smith J et al.">
           </div>
           <div class="field">
-            <label>Year</label>
+            <label for="study-year">Year</label>
             <input type="number" id="study-year" placeholder="2023" min="1950" max="2099">
           </div>
         </div>
         <div style="height:18px"></div>
-        <label>Title</label>
+        <label for="study-title">Title</label>
         <input type="text" id="study-title" placeholder="Study title">
         <div class="field-row" style="margin-bottom:0">
           <div class="field">
-            <label>URL</label>
+            <label for="study-url">URL</label>
             <input type="url" id="study-url" placeholder="https://pubmed.ncbi.nlm.nih.gov/...">
           </div>
           <div class="field">
-            <label>PID</label>
+            <label for="study-pid">PID</label>
             <input type="text" id="study-pid" placeholder="10.1234/example or Handle">
           </div>
         </div>
@@ -201,11 +202,11 @@
       <div class="admin-form">
         <div class="field-row">
           <div class="field">
-            <label>CSV File</label>
+            <label for="bulk-file">CSV File</label>
             <input type="file" id="bulk-file" accept=".csv" onchange="bulkFileSelected()">
           </div>
           <div class="field">
-            <label>Gene — rsID</label>
+            <label for="bulk-snp-picker">Gene — rsID</label>
             <input type="text" id="bulk-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="bulkSnpPicked()">
             <datalist id="bulk-snp-list"></datalist>
           </div>
@@ -240,7 +241,7 @@
       <div class="admin-form">
         <div class="field-row">
           <div class="field">
-            <label>Gene — rsID</label>
+            <label for="discover-snp-picker">Gene — rsID</label>
             <input type="text" id="discover-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="discoverSnpPicked()">
           </div>
         </div>
@@ -264,22 +265,22 @@
       <div class="admin-form">
         <div class="field-row">
           <div class="field">
-            <label>Gene — rsID</label>
+            <label for="scholar-snp-picker">Gene — rsID</label>
             <input type="text" id="scholar-snp-picker" list="bulk-snp-list" placeholder="Type to search…" oninput="scholarSnpPicked()">
           </div>
           <div class="field">
-            <label>Detected Page</label>
+            <label for="scholar-page-detect">Detected Page</label>
             <input type="text" id="scholar-page-detect" readonly placeholder="—" style="color:var(--muted)">
           </div>
           <div class="field">
-            <label>Scholar Search</label>
+            <label for="scholar-open-url">Scholar Search</label>
             <div style="display:flex;gap:6px">
               <input type="text" id="scholar-open-url" readonly placeholder="—" style="color:var(--muted);flex:1;min-width:0">
               <button class="btn-sm" id="scholar-open-btn" onclick="scholarOpenUrl()" disabled style="flex-shrink:0">Go ↗</button>
             </div>
           </div>
         </div>
-        <label>Pasted Page Source</label>
+        <label for="scholar-html-input">Pasted Page Source</label>
         <textarea id="scholar-html-input" class="mono" style="min-height:160px" placeholder="Paste HTML source here…" oninput="scholarDetectPageUpdate()"></textarea>
         <button class="btn-sm" id="scholar-parse-btn" onclick="scholarParse()" disabled>Parse</button>
       </div>
@@ -294,9 +295,9 @@
     <div id="panel-group" class="admin-panel">
       <p class="section-divider" style="margin-top:0">Add Topic Group</p>
       <div class="admin-form">
-        <label>Group Name</label>
+        <label for="group-name">Group Name</label>
         <input type="text" id="group-name" placeholder="Folate Metabolism">
-        <label style="display:flex;align-items:center;justify-content:space-between">
+        <label for="group-description" style="display:flex;align-items:center;justify-content:space-between">
           Description
           <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="group-gen-btn" onclick="generateGroupDescription()">Generate</button>
         </label>
@@ -317,15 +318,15 @@
     <div id="panel-disease" class="admin-panel">
       <p class="section-divider" style="margin-top:0">Add Disease</p>
       <div class="admin-form">
-        <label>Disease Name</label>
+        <label for="disease-name">Disease Name</label>
         <input type="text" id="disease-name" placeholder="Gilbert Syndrome">
-        <label style="display:flex;align-items:center;justify-content:space-between">
+        <label for="disease-description" style="display:flex;align-items:center;justify-content:space-between">
           Description
           <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="disease-gen-btn" onclick="generateDiseaseDescription()">Generate</button>
         </label>
         <textarea id="disease-description" placeholder="Brief description of this disease…"></textarea>
         <div id="disease-gen-log" style="display:none;font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.8;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:-8px 0 18px"></div>
-        <label>SNPs</label>
+        <label for="disease-new-snp-picker">SNPs</label>
         <div style="display:flex;gap:6px;margin-bottom:10px">
           <input list="bulk-snp-list" id="disease-new-snp-picker" placeholder="Type to search…" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addPendingDiseaseSnp();}">
           <button class="btn-sm" style="margin-bottom:0" onclick="addPendingDiseaseSnp()">Add</button>
@@ -346,7 +347,7 @@
     <div id="panel-export" class="admin-panel">
       <p class="section-divider" style="margin-top:0">Export Gene Data as CSV</p>
       <div class="admin-form">
-        <label>Gene</label>
+        <label for="export-gene">Gene</label>
         <select id="export-gene"></select>
         <button class="btn-sm" onclick="exportCsv()">Download CSV</button>
       </div>
