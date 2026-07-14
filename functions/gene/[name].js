@@ -120,14 +120,17 @@ ${nav()}
       <p style="font-size:13px;color:var(--muted);margin:-8px 0 20px">These are a select few set of SNPs chosen to research within ${esc(geneName)}${primaryGroup ? ` to do with the area ${esc(primaryGroup.name)}` : ""}.</p>
       ${snps.length === 0
         ? `<p class="empty-state">No variant data entered yet.</p>`
-        : snps.map(s => {
+        : `<div class="gene-list">${snps.map(s => {
             const snpStudies = studies.filter(st => st.rsid === s.rsid);
-            return `<a class="snp-row snp-row--link" href="/snp/${esc(s.rsid)}">
-              <span class="rsid-link">${esc(s.rsid)}</span>
-              <span class="snp-genotype" data-personal-alleles="${esc(s.rsid)}"></span>
-              ${snpStudies.length ? `<span class="snp-meta-item">${snpStudies.length} ${snpStudies.length === 1 ? "study" : "studies"}</span>` : ""}
+            const countLabel = snpStudies.length
+              ? `<span class="count-num">${snpStudies.length}</span> ${snpStudies.length === 1 ? "study" : "studies"}`
+              : "—";
+            return `<a class="gene-row" href="/snp/${esc(s.rsid)}">
+              <span class="gene-row-name">${esc(s.rsid)}</span>
+              <span class="gene-row-full" data-personal-alleles="${esc(s.rsid)}"></span>
+              <span class="gene-row-count">${countLabel}</span>
             </a>`;
-          }).join("")}
+          }).join("")}</div>`}
     </div>
 
   </div>
