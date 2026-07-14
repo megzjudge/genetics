@@ -1900,6 +1900,12 @@ function scholarStripTags(s) {
   return (s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }
 
+// Shared between scholarStripLeadLabel() (start-of-snippet only) and
+// scholarStripMidEllipsisLabel() (anywhere after a "…") so both pull from
+// the exact same word list rather than risking two copies drifting apart.
+const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|contextes?|abstracts?|scopes?|methods?|full articles?|results?)";
+const SCHOLAR_STRICT_COLON_WORDS = "(?:goals?|contexts?|contextos?)";
+
 // Abstracts on Scholar often open with a structured header ("Background:",
 // "Aim:", "Purpose:", "Objective:", "Introduction:", "Methods:",
 // "Full Article:", "Results:"), a pair joined by "and"/"&" (e.g. "Purpose
@@ -1908,14 +1914,32 @@ function scholarStripTags(s) {
 // objective" (common in pharmacy-journal abstracts) — strip it so the
 // snippet reads as plain prose instead of starting mid-label.
 function scholarStripLeadLabel(s) {
-  const label = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|contextes?|abstracts?|scopes?|methods?|full articles?|results?)";
-  const combo = `(?:${label}(?:\\s*(?:and|&|\\/)\\s*${label})?(?:\\s+of\\s+the\\s+review)?)`;
+  const combo = `(?:${SCHOLAR_LABEL_WORDS}(?:\\s*(?:and|&|\\/)\\s*${SCHOLAR_LABEL_WORDS})?(?:\\s+of(?:\\s+the)?\\s+review)?)`;
   const phrase = "what is known and objective";
   // A lone "." right after the label is stray label punctuation and gets
   // stripped, but "..." (ellipsis) is left alone — that's a deliberate
   // truncation marker, not a delimiter, so the negative lookahead guards it.
   const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*(?:[:/]|\\.(?!\\.\\.))?\\s*[-—]?\\s*`, "i");
-  return (s || "").replace(re, "");
+  // These don't join the label list above because they're common as
+  // ordinary prose ("Goals of treatment include…", "Context matters
+  // here…") — the other words' optional-punctuation rule would wrongly
+  // strip them even with nothing after. Only strips when actually acting
+  // as a header, i.e. immediately followed by a colon. contexts?/contextos?
+  // cover English "Context(s):" and Spanish/Portuguese "Contexto(s):" —
+  // French "contexte(s):" is already handled up in the main label list.
+  return (s || "").replace(re, "").replace(new RegExp(`^\\s*${SCHOLAR_STRICT_COLON_WORDS}\\s*:\\s*`, "i"), "");
+}
+
+// A truncated snippet sometimes reads "...previous findings were mixed.
+// Methods: We conducted..." — Scholar's "…" cut the sentence short, and a
+// NEW section header immediately follows it. Unlike scholarStripLeadLabel
+// (only the very start of the string), this runs anywhere in the snippet,
+// but only strips the "Label:" part — the "…" itself stays, since that's
+// the genuine truncation marker, not the thing being removed.
+function scholarStripMidEllipsisLabel(s) {
+  const anyLabel = `(?:${SCHOLAR_LABEL_WORDS}|${SCHOLAR_STRICT_COLON_WORDS})`;
+  const re = new RegExp(`(\\.\\.\\.\\s*)${anyLabel}\\s*:\\s*`, "gi");
+  return (s || "").replace(re, "$1");
 }
 
 function scholarDecodeEntities(s) {
@@ -2034,8 +2058,18 @@ function scholarParseHtml(html) {
     );
 
     const snippetMatch = block.match(/<div[^>]*class="gs_rs"[^>]*>([\s\S]*?)<\/div>/i);
+    // Catch-all safety net after label-stripping — a leading ":" left over
+    // for any reason (an unrecognized label, a source formatting quirk)
+    // still shouldn't survive into the snippet, even if it wasn't one of
+    // the specific words scholarStripLeadLabel knows about.
+    // A bracketed language tag some sources prefix ("[eng]", "[ES]", …) is
+    // stripped before the label check runs, not after — otherwise
+    // "[eng] Background:" would still fail to match scholarStripLeadLabel's
+    // ^-anchored regex since "Background" wouldn't be at the true start
+    // yet. Generic 2-4 letter code match rather than an enumerated list, so
+    // a new language tag doesn't need its own one-off fix each time.
     const snippet = snippetMatch
-      ? scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1]))))
+      ? scholarStripMidEllipsisLabel(scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1])).replace(/^\s*\[[a-z]{2,4}\]\s*/i, ""))).replace(/^\s*:\s*/, ""))
       : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
