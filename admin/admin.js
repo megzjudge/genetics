@@ -123,6 +123,16 @@ function switchTab(name) {
 // active group per gene, same as the old <select> enforced) since that's
 // the existing convention elsewhere in the app; Diseases is a checkbox
 // multi-select, same pattern as the SNP table's disease picker.
+// Shared with diseaseCell()/renderNewSnpDiseasePicker() so every disease
+// checklist in the admin panel is generated from one place — same markup,
+// same styling, no risk of the three copies drifting apart.
+function diseaseChecklistHtml(ids) {
+  if (!diseaseList.length) return `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`;
+  return diseaseList.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
+      <input type="checkbox" value="${d.id}" ${ids.includes(d.id) ? "checked" : ""}> ${d.name}
+    </label>`).join("");
+}
+
 function groupDiseaseButton(idPrefix, selectedGroupId, selectedDiseaseIds) {
   const ids = selectedDiseaseIds || [];
   const count = (selectedGroupId ? 1 : 0) + ids.length;
@@ -132,9 +142,6 @@ function groupDiseaseButton(idPrefix, selectedGroupId, selectedDiseaseIds) {
     </label>` + groupList.map(g => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
       <input type="radio" name="${idPrefix}-group" value="${g.id}" ${String(g.id) === String(selectedGroupId) ? "checked" : ""}> ${g.name}
     </label>`).join("");
-  const diseaseChecks = diseaseList.map(d => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
-      <input type="checkbox" value="${d.id}" ${ids.includes(d.id) ? "checked" : ""}> ${d.name}
-    </label>`).join("");
   return `<div class="gd-picker" style="position:relative;display:inline-block">
     <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${count ? "#4ade80" : "var(--faint)"}"
       onclick="toggleGdPanel('${idPrefix}')">${label}</button>
@@ -142,7 +149,7 @@ function groupDiseaseButton(idPrefix, selectedGroupId, selectedDiseaseIds) {
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:0 0 4px">Group</div>
       ${groupRadios}
       <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:10px 0 4px">Diseases</div>
-      ${diseaseChecks || `<div style="font-size:11px;color:var(--faint)">No diseases yet.</div>`}
+      ${diseaseChecklistHtml(ids)}
     </div>
   </div>`;
 }
@@ -336,17 +343,11 @@ function schlrBadge(s) {
 function diseaseCell(s) {
   const ids = s.disease_ids || [];
   const label = ids.length ? `Diseases (${ids.length})` : "Diseases";
-  const checks = diseaseList.map(d => {
-    const checked = ids.includes(d.id) ? "checked" : "";
-    return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
-      <input type="checkbox" value="${d.id}" ${checked}> ${d.name}
-    </label>`;
-  }).join("");
   return `<div class="disease-picker" style="position:relative;display:inline-block">
     <button class="btn-sm" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
       onclick="toggleDiseasePanel('${s.rsid}')">${label}</button>
     <div id="disease-panel-${s.rsid}" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
-      ${diseaseList.length ? checks : `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`}
+      ${diseaseChecklistHtml(ids)}
       ${diseaseList.length ? `<button class="btn-sm" style="font-size:10px;padding:3px 8px;margin-top:8px" onclick="saveSnpDiseases('${s.rsid}')">Save</button>` : ""}
     </div>
   </div>`;
@@ -368,17 +369,11 @@ function renderNewSnpDiseasePicker() {
   const el = document.getElementById("new-snp-diseases");
   if (!el) return;
   const ids = readDiseasePanel("new-snp");
-  const checks = diseaseList.map(d => {
-    const checked = ids.includes(d.id) ? "checked" : "";
-    return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink);padding:3px 0;white-space:nowrap">
-      <input type="checkbox" value="${d.id}" ${checked}> ${d.name}
-    </label>`;
-  }).join("");
   el.innerHTML = `<div class="disease-picker" style="position:relative;display:inline-block">
     <button class="btn-sm" type="button" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--line);color:${ids.length ? "#4ade80" : "var(--faint)"}"
       onclick="toggleDiseasePanel('new-snp')">${ids.length ? `Diseases (${ids.length})` : "Diseases"}</button>
     <div id="disease-panel-new-snp" style="display:none;position:absolute;top:100%;left:0;z-index:10;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px;min-width:180px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.3)">
-      ${diseaseList.length ? checks : `<div style="font-size:11px;color:var(--faint)">No diseases yet — add one in the Add Disease tab.</div>`}
+      ${diseaseChecklistHtml(ids)}
     </div>
   </div>`;
 }
