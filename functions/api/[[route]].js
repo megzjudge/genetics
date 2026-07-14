@@ -912,6 +912,19 @@ async function handleApiRequest({ request, env }) {
       return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim() + "…";
     };
 
+    // Brave's Answers model writes in markdown (**bold**, headers, bullet
+    // lists, links) — this is a plain-text description field, not a
+    // renderer, so strip the formatting rather than showing the markup.
+    const stripMarkdown = s => s
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/__(.*?)__/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/_(.*?)_/g, "$1")
+      .replace(/`([^`]*)`/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/^\s*[-*+]\s+/gm, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
     // Diagnostic trail — every step reports what it actually saw instead of
     // silently swallowing errors, so a "no description found" result can be
     // debugged from the response itself rather than guessed at blind.
@@ -944,7 +957,7 @@ async function handleApiRequest({ request, env }) {
         debug.braveStatus = chatRes.status;
         const chat = chatRes.ok ? await chatRes.json() : null;
         const raw = chat?.choices?.[0]?.message?.content || "";
-        const text = raw.replace(/<(citation|enum_item|usage)>[\s\S]*?<\/\1>/g, "").replace(/\s+/g, " ").trim();
+        const text = stripMarkdown(raw.replace(/<(citation|enum_item|usage)>[\s\S]*?<\/\1>/g, "")).replace(/\s+/g, " ").trim();
         debug.braveTextLength = text.length;
         if (text) return json({ description: trimDesc(text), source: "brave", debug });
       } catch (e) { debug.braveError = e.message; }
