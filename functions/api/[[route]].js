@@ -915,19 +915,20 @@ async function handleApiRequest({ request, env }) {
     // Diagnostic trail — every step reports what it actually saw instead of
     // silently swallowing errors, so a "no description found" result can be
     // debugged from the response itself rather than guessed at blind.
-    const debug = { bravePresent: !!env.BRAVE_API_KEY };
+    const debug = { bravePresent: !!env.BRAVE_API_AI_KEY };
 
-    // 1. Brave Summarizer — same BRAVE_API_KEY already used for Discover.
-    // Two-step: a web search with summary=1 hands back a summarizer key,
-    // which a second call resolves into actual generated text. Summarizer
-    // access depends on the account's Brave plan — if the key isn't
-    // entitled, or the summary isn't ready yet, this just falls through to
-    // DuckDuckGo/Wikipedia below rather than erroring.
-    if (env.BRAVE_API_KEY) {
+    // 1. Brave Summarizer — separate key (BRAVE_API_AI_KEY) from the plain
+    // BRAVE_API_KEY used for Discover, since Summarizer access is gated to
+    // a different Brave plan tier and the user provisioned a dedicated key
+    // for it. Two-step: a web search with summary=1 hands back a summarizer
+    // key, which a second call resolves into actual generated text. If the
+    // key isn't entitled, or the summary isn't ready yet, this just falls
+    // through to DuckDuckGo/Wikipedia below rather than erroring.
+    if (env.BRAVE_API_AI_KEY) {
       try {
         const searchRes = await fetch(
           `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(name)}&summary=1`,
-          { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+          { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_AI_KEY } }
         );
         debug.braveSearchStatus = searchRes.status;
         const search = searchRes.ok ? await searchRes.json() : null;
@@ -936,7 +937,7 @@ async function handleApiRequest({ request, env }) {
         if (summarizerKey) {
           const summaryRes = await fetch(
             `https://api.search.brave.com/res/v1/summarizer/search?key=${encodeURIComponent(summarizerKey)}&entity_info=0`,
-            { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+            { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_AI_KEY } }
           );
           debug.braveSummaryStatus = summaryRes.status;
           const summary = summaryRes.ok ? await summaryRes.json() : null;

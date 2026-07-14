@@ -689,15 +689,24 @@ function addStudy() {
 // a plain-English breakdown — not a true live stream (the whole chain has
 // already finished by the time the response lands), but revealed one line
 // at a time so it reads as the step-by-step account it actually is.
+// Matches fetch()'s own .ok semantics (any 2xx counts, not just exactly
+// 200) — DuckDuckGo in particular routinely answers with 202 while still
+// returning a perfectly good body, which the backend already treats as
+// success via .ok. Checking `=== 200` here would call that a failure even
+// though the backend used it, which is exactly the bug that happened.
+function isHttpOk(status) {
+  return status >= 200 && status < 300;
+}
+
 function genSourceLogLines(d) {
   const dbg = d.debug || {};
   const lines = [];
 
   if (!dbg.bravePresent) {
-    lines.push("Brave: skipped — no BRAVE_API_KEY configured.");
+    lines.push("Brave: skipped — no BRAVE_API_AI_KEY configured.");
   } else if (dbg.braveError) {
     lines.push(`Brave: error — ${dbg.braveError}`);
-  } else if (dbg.braveSearchStatus !== 200) {
+  } else if (!isHttpOk(dbg.braveSearchStatus)) {
     lines.push(`Brave: search request failed (HTTP ${dbg.braveSearchStatus}).`);
   } else if (!dbg.braveSummarizerKeyFound) {
     lines.push("Brave: no summarizer available for this query (plan may not include Summarizer).");
@@ -712,7 +721,7 @@ function genSourceLogLines(d) {
     lines.push(`DuckDuckGo: error — ${dbg.ddgError}`);
   } else if (dbg.ddgStatus === undefined) {
     lines.push("DuckDuckGo: not reached.");
-  } else if (dbg.ddgStatus !== 200) {
+  } else if (!isHttpOk(dbg.ddgStatus)) {
     lines.push(`DuckDuckGo: request failed (HTTP ${dbg.ddgStatus}).`);
   } else if (!dbg.ddgTextLength) {
     lines.push("DuckDuckGo: no instant-answer abstract for this term.");
@@ -725,7 +734,7 @@ function genSourceLogLines(d) {
     lines.push(`Wikipedia: error — ${dbg.wikiError}`);
   } else if (dbg.wikiStatus === undefined) {
     lines.push("Wikipedia: not reached.");
-  } else if (dbg.wikiStatus !== 200) {
+  } else if (!isHttpOk(dbg.wikiStatus)) {
     lines.push(`Wikipedia: no matching article (HTTP ${dbg.wikiStatus}).`);
   } else if (!dbg.wikiTextLength) {
     lines.push("Wikipedia: article found but had no summary text.");
