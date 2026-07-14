@@ -917,37 +917,36 @@ async function handleApiRequest({ request, env }) {
     // debugged from the response itself rather than guessed at blind.
     const debug = { bravePresent: !!env.BRAVE_API_AI_KEY };
 
-    // 1. Brave Summarizer — separate key (BRAVE_API_AI_KEY) from the plain
-    // BRAVE_API_KEY used for Discover, since Summarizer access is gated to
-    // a different Brave plan tier and the user provisioned a dedicated key
-    // for it. Two-step: a web search with summary=1 hands back a summarizer
-    // key, which a second call resolves into actual generated text. If the
-    // key isn't entitled, or the summary isn't ready yet, this just falls
-    // through to DuckDuckGo/Wikipedia below rather than erroring.
+    // 1. Brave Answers — the old Summarizer flow (2-step: search then
+    // resolve a summarizer key) is on Brave's discontinued Pro AI plan.
+    // Answers is the current product: a single chat-completions-style call,
+    // gated to its own "Answers" plan, using a separate key (BRAVE_API_AI_KEY)
+    // from the plain BRAVE_API_KEY used for Discover. The response embeds
+    // <citation>/<enum_item>/<usage> tags with JSON inside the message
+    // content, which get stripped out to leave plain prose.
     if (env.BRAVE_API_AI_KEY) {
       try {
-        const searchRes = await fetch(
-          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(name)}&summary=1`,
-          { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_AI_KEY } }
-        );
-        debug.braveSearchStatus = searchRes.status;
-        const search = searchRes.ok ? await searchRes.json() : null;
-        const summarizerKey = search?.summarizer?.key;
-        debug.braveSummarizerKeyFound = !!summarizerKey;
-        if (summarizerKey) {
-          const summaryRes = await fetch(
-            `https://api.search.brave.com/res/v1/summarizer/search?key=${encodeURIComponent(summarizerKey)}&entity_info=0`,
-            { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_AI_KEY } }
-          );
-          debug.braveSummaryStatus = summaryRes.status;
-          const summary = summaryRes.ok ? await summaryRes.json() : null;
-          debug.braveSummaryResultStatus = summary?.status || null;
-          if (summary?.status === "complete" && Array.isArray(summary.summary)) {
-            const text = summary.summary.filter(s => s.type === "token").map(s => s.data).join("").trim();
-            debug.braveTextLength = text.length;
-            if (text) return json({ description: trimDesc(text), source: "brave", debug });
+        const chatRes = await fetch(
+          "https://api.search.brave.com/res/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-subscription-token": env.BRAVE_API_AI_KEY,
+            },
+            body: JSON.stringify({
+              model: "brave",
+              stream: false,
+              messages: [{ role: "user", content: `Summarise the following topic in 30 words or less: "${name}"` }],
+            }),
           }
-        }
+        );
+        debug.braveStatus = chatRes.status;
+        const chat = chatRes.ok ? await chatRes.json() : null;
+        const raw = chat?.choices?.[0]?.message?.content || "";
+        const text = raw.replace(/<(citation|enum_item|usage)>[\s\S]*?<\/\1>/g, "").replace(/\s+/g, " ").trim();
+        debug.braveTextLength = text.length;
+        if (text) return json({ description: trimDesc(text), source: "brave", debug });
       } catch (e) { debug.braveError = e.message; }
     }
 

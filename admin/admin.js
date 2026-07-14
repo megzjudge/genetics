@@ -706,12 +706,10 @@ function genSourceLogLines(d) {
     lines.push("Brave: skipped — no BRAVE_API_AI_KEY configured.");
   } else if (dbg.braveError) {
     lines.push(`Brave: error — ${dbg.braveError}`);
-  } else if (!isHttpOk(dbg.braveSearchStatus)) {
-    lines.push(`Brave: search request failed (HTTP ${dbg.braveSearchStatus}).`);
-  } else if (!dbg.braveSummarizerKeyFound) {
-    lines.push("Brave: no summarizer available for this query (plan may not include Summarizer).");
+  } else if (!isHttpOk(dbg.braveStatus)) {
+    lines.push(`Brave: request failed (HTTP ${dbg.braveStatus}) — key may not be on the Answers plan.`);
   } else if (!dbg.braveTextLength) {
-    lines.push("Brave: summarizer returned no usable text.");
+    lines.push("Brave: returned no usable text.");
   } else if (d.source === "brave") {
     lines.push(`Brave: success — used this result (${dbg.braveTextLength} chars).`);
     return lines;
