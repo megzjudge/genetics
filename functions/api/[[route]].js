@@ -912,28 +912,72 @@ async function handleApiRequest({ request, env }) {
       return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim() + "…";
     };
 
-    // 1. DuckDuckGo Instant Answer
+    // Diagnostic trail — every step reports what it actually saw instead of
+    // silently swallowing errors, so a "no description found" result can be
+    // debugged from the response itself rather than guessed at blind.
+    const debug = { bravePresent: !!env.BRAVE_API_KEY };
+
+    // 1. Brave Summarizer — same BRAVE_API_KEY already used for Discover.
+    // Two-step: a web search with summary=1 hands back a summarizer key,
+    // which a second call resolves into actual generated text. Summarizer
+    // access depends on the account's Brave plan — if the key isn't
+    // entitled, or the summary isn't ready yet, this just falls through to
+    // DuckDuckGo/Wikipedia below rather than erroring.
+    if (env.BRAVE_API_KEY) {
+      try {
+        const searchRes = await fetch(
+          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(name)}&summary=1`,
+          { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+        );
+        debug.braveSearchStatus = searchRes.status;
+        const search = searchRes.ok ? await searchRes.json() : null;
+        const summarizerKey = search?.summarizer?.key;
+        debug.braveSummarizerKeyFound = !!summarizerKey;
+        if (summarizerKey) {
+          const summaryRes = await fetch(
+            `https://api.search.brave.com/res/v1/summarizer/search?key=${encodeURIComponent(summarizerKey)}&entity_info=0`,
+            { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
+          );
+          debug.braveSummaryStatus = summaryRes.status;
+          const summary = summaryRes.ok ? await summaryRes.json() : null;
+          debug.braveSummaryResultStatus = summary?.status || null;
+          if (summary?.status === "complete" && Array.isArray(summary.summary)) {
+            const text = summary.summary.filter(s => s.type === "token").map(s => s.data).join("").trim();
+            debug.braveTextLength = text.length;
+            if (text) return json({ description: trimDesc(text), source: "brave", debug });
+          }
+        }
+      } catch (e) { debug.braveError = e.message; }
+    }
+
+    // 2. DuckDuckGo Instant Answer
     try {
-      const ddg = await fetch(
+      const ddgRes = await fetch(
         `https://api.duckduckgo.com/?q=${encodeURIComponent(name)}&format=json&no_html=1&skip_disambig=1`,
         { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
-      ).then(r => r.ok ? r.json() : null).catch(() => null);
+      );
+      debug.ddgStatus = ddgRes.status;
+      const ddg = ddgRes.ok ? await ddgRes.json() : null;
       const text = ddg?.AbstractText?.trim();
-      if (text) return json({ description: trimDesc(text) });
-    } catch (_) {}
+      debug.ddgTextLength = text ? text.length : 0;
+      if (text) return json({ description: trimDesc(text), source: "duckduckgo", debug });
+    } catch (e) { debug.ddgError = e.message; }
 
-    // 2. Wikipedia REST API fallback
+    // 3. Wikipedia REST API fallback
     try {
       const title = name.replace(/\s+/g, "_");
-      const wiki = await fetch(
+      const wikiRes = await fetch(
         `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
         { headers: { "User-Agent": "genetics.jdge.cc/bot" } }
-      ).then(r => r.ok ? r.json() : null).catch(() => null);
+      );
+      debug.wikiStatus = wikiRes.status;
+      const wiki = wikiRes.ok ? await wikiRes.json() : null;
       const text = wiki?.extract?.trim();
-      if (text) return json({ description: trimDesc(text) });
-    } catch (_) {}
+      debug.wikiTextLength = text ? text.length : 0;
+      if (text) return json({ description: trimDesc(text), source: "wikipedia", debug });
+    } catch (e) { debug.wikiError = e.message; }
 
-    return json({ description: null });
+    return json({ description: null, debug });
   }
 
   // ── POST /api/gene/lookup ────────────────────────

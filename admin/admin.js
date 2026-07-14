@@ -683,6 +683,75 @@ function addStudy() {
 }
 
 // ── Group tab ─────────────────────────────────────
+// Backend runs Brave → DuckDuckGo → Wikipedia as one sequential fallback
+// chain within a single request (see POST /api/group/description) and
+// reports what happened at each step in `debug`. This turns that trail into
+// a plain-English breakdown — not a true live stream (the whole chain has
+// already finished by the time the response lands), but revealed one line
+// at a time so it reads as the step-by-step account it actually is.
+function genSourceLogLines(d) {
+  const dbg = d.debug || {};
+  const lines = [];
+
+  if (!dbg.bravePresent) {
+    lines.push("Brave: skipped — no BRAVE_API_KEY configured.");
+  } else if (dbg.braveError) {
+    lines.push(`Brave: error — ${dbg.braveError}`);
+  } else if (dbg.braveSearchStatus !== 200) {
+    lines.push(`Brave: search request failed (HTTP ${dbg.braveSearchStatus}).`);
+  } else if (!dbg.braveSummarizerKeyFound) {
+    lines.push("Brave: no summarizer available for this query (plan may not include Summarizer).");
+  } else if (!dbg.braveTextLength) {
+    lines.push("Brave: summarizer returned no usable text.");
+  } else if (d.source === "brave") {
+    lines.push(`Brave: success — used this result (${dbg.braveTextLength} chars).`);
+    return lines;
+  }
+
+  if (dbg.ddgError) {
+    lines.push(`DuckDuckGo: error — ${dbg.ddgError}`);
+  } else if (dbg.ddgStatus === undefined) {
+    lines.push("DuckDuckGo: not reached.");
+  } else if (dbg.ddgStatus !== 200) {
+    lines.push(`DuckDuckGo: request failed (HTTP ${dbg.ddgStatus}).`);
+  } else if (!dbg.ddgTextLength) {
+    lines.push("DuckDuckGo: no instant-answer abstract for this term.");
+  } else if (d.source === "duckduckgo") {
+    lines.push(`DuckDuckGo: success — used this result (${dbg.ddgTextLength} chars).`);
+    return lines;
+  }
+
+  if (dbg.wikiError) {
+    lines.push(`Wikipedia: error — ${dbg.wikiError}`);
+  } else if (dbg.wikiStatus === undefined) {
+    lines.push("Wikipedia: not reached.");
+  } else if (dbg.wikiStatus !== 200) {
+    lines.push(`Wikipedia: no matching article (HTTP ${dbg.wikiStatus}).`);
+  } else if (!dbg.wikiTextLength) {
+    lines.push("Wikipedia: article found but had no summary text.");
+  } else if (d.source === "wikipedia") {
+    lines.push(`Wikipedia: success — used this result (${dbg.wikiTextLength} chars).`);
+    return lines;
+  }
+
+  lines.push("No source returned a usable description.");
+  return lines;
+}
+
+function renderGenLog(elId, d) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = "block";
+  el.innerHTML = "";
+  genSourceLogLines(d).forEach((line, i) => {
+    setTimeout(() => {
+      const row = document.createElement("div");
+      row.textContent = line;
+      el.appendChild(row);
+    }, i * 350);
+  });
+}
+
 async function generateGroupDescription() {
   const name = document.getElementById("group-name").value.trim();
   if (!name) return toast("Enter a group name first.", true);
@@ -696,6 +765,7 @@ async function generateGroupDescription() {
       body: JSON.stringify({ name }),
     });
     const d = await r.json();
+    renderGenLog("group-gen-log", d);
     if (d.description) {
       document.getElementById("group-description").value = d.description;
     } else {
@@ -778,6 +848,7 @@ async function generateDiseaseDescription() {
       body: JSON.stringify({ name }),
     });
     const d = await r.json();
+    renderGenLog("disease-gen-log", d);
     if (d.description) {
       document.getElementById("disease-description").value = d.description;
     } else {

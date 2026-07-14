@@ -301,6 +301,7 @@
           <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="group-gen-btn" onclick="generateGroupDescription()">Generate</button>
         </label>
         <textarea id="group-description" placeholder="Brief description of this gene group…"></textarea>
+        <div id="group-gen-log" style="display:none;font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.8;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:-8px 0 18px"></div>
         <button class="btn-sm" onclick="addGroup()">Save Group</button>
       </div>
 
@@ -323,6 +324,7 @@
           <button class="btn-sm" style="font-size:10px;padding:3px 10px;font-weight:normal;text-transform:none;letter-spacing:0" id="disease-gen-btn" onclick="generateDiseaseDescription()">Generate</button>
         </label>
         <textarea id="disease-description" placeholder="Brief description of this disease…"></textarea>
+        <div id="disease-gen-log" style="display:none;font-family:var(--mono);font-size:11px;color:var(--faint);line-height:1.8;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin:-8px 0 18px"></div>
         <label>SNPs</label>
         <div style="display:flex;gap:6px;margin-bottom:10px">
           <input list="bulk-snp-list" id="disease-new-snp-picker" placeholder="Type to search…" style="margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addPendingDiseaseSnp();}">
