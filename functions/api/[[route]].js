@@ -465,8 +465,30 @@ function isExcludedDiscoverResult(resUrl) {
 // Semantic Scholar auto-search above) — used by the admin Discover tab for
 // manual, per-SNP "find me things I don't already have" scans. Requires a
 // Brave Search API subscription token set as the BRAVE_API_KEY secret.
+// One row per (server, year_month) in the existing api_usage table, count
+// incremented per call — not a constraint-based upsert (api_usage has no
+// declared UNIQUE(server, year_month) to target), so this reads first and
+// decides insert vs update itself.
+async function logApiUsage(env, server) {
+  const now = new Date();
+  const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const existing = await env.genetic.prepare(
+    `SELECT count FROM api_usage WHERE server = ? AND year_month = ?`
+  ).bind(server, yearMonth).first();
+  if (existing) {
+    await env.genetic.prepare(
+      `UPDATE api_usage SET count = count + 1 WHERE server = ? AND year_month = ?`
+    ).bind(server, yearMonth).run();
+  } else {
+    await env.genetic.prepare(
+      `INSERT INTO api_usage (server, year_month, count) VALUES (?, ?, 1)`
+    ).bind(server, yearMonth).run();
+  }
+}
+
 async function fetchBraveResults(query, env) {
   if (!env.BRAVE_API_KEY) throw new Error("BRAVE_API_KEY not configured");
+  await logApiUsage(env, "brave");
   const r = await fetch(
     `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=15`,
     { headers: { "Accept": "application/json", "X-Subscription-Token": env.BRAVE_API_KEY } }
@@ -947,6 +969,7 @@ async function handleApiRequest({ request, env }) {
     // content, which get stripped out to leave plain prose.
     if (env.BRAVE_API_AI_KEY) {
       try {
+        await logApiUsage(env, "brave_ai");
         const chatRes = await fetch(
           "https://api.search.brave.com/res/v1/chat/completions",
           {
@@ -1053,6 +1076,21 @@ async function handleApiRequest({ request, env }) {
       ));
     }
     return json({ ok: true, gene_name: name });
+  }
+
+  // ── GET /api/brave-usage ──────────────────────────
+  // Reads this calendar month's rows from api_usage, to track against
+  // Brave's own monthly quota reset. Auth-gated (below the blanket check
+  // above) since it's usage/billing-adjacent info, not public.
+  if (method === "GET" && route === "brave-usage") {
+    const now = new Date();
+    const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    const { results } = await env.genetic.prepare(
+      `SELECT server, count FROM api_usage WHERE year_month = ? AND server IN ('brave', 'brave_ai')`
+    ).bind(yearMonth).all();
+    const usage = { brave: 0, brave_ai: 0 };
+    for (const row of results || []) usage[row.server] = row.count;
+    return json({ usage, year_month: yearMonth });
   }
 
   // ── POST /api/disease ─────────────────────────────

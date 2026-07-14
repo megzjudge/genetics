@@ -139,6 +139,22 @@ function init() {
     renderNewSnpDiseasePicker();
     populateBulkSnpList();
   });
+  loadBraveUsage();
+}
+
+// Calls-this-month per Brave key (Discover's "brave" row vs Generate's
+// "brave_ai" row in the existing api_usage table), so usage against Brave's
+// monthly quota is visible without leaving the admin panel. Runs
+// independently of the main Promise.all above — a failure here shouldn't
+// block the rest of the panel loading.
+function loadBraveUsage() {
+  const el = document.getElementById("brave-usage-bar");
+  if (!el) return;
+  safeFetchJson("/api/brave-usage").then(d => {
+    if (!d || !d.usage) return;
+    el.textContent = `Brave usage this month — Search: ${d.usage.brave} · Answers: ${d.usage.brave_ai}`;
+    el.style.display = "block";
+  });
 }
 
 // ── Tabs ──────────────────────────────────────────
