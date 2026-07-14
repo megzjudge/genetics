@@ -22,26 +22,39 @@ let scholarGene = null, scholarRsid = null;
 let scholarResults = [];
 
 // ── Auth ──────────────────────────────────────────
-function tryAuth() {
+// apiFetch() itself now retries transient failures (see below), so this
+// just needs to make one call and interpret the result — no separate retry
+// loop needed here anymore.
+async function tryAuth() {
   const pw = document.getElementById("auth-input").value.trim();
   if (!pw) return;
   TOKEN = pw;
-  apiFetch("/api/genes")
-    .then(r => {
-      if (r.ok) {
-        document.getElementById("auth-gate").style.display = "none";
-        init();
-      } else {
-        const errEl = document.getElementById("auth-err");
-        errEl.textContent = r.status === 429 ? "Sowee, my bad, pwease dont" : "Incorrect password.";
-        errEl.style.display = "block";
-        TOKEN = "";
-      }
-    })
-    .catch(() => {
-      document.getElementById("auth-err").style.display = "block";
-      TOKEN = "";
-    });
+  const errEl = document.getElementById("auth-err");
+  const btn = document.getElementById("auth-signin-btn");
+  errEl.style.display = "none";
+  if (btn) { btn.disabled = true; btn.textContent = "Signing in…"; }
+
+  let r = null;
+  try {
+    r = await apiFetch("/api/genes");
+  } catch (e) {
+    r = null;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = "Sign in →"; }
+
+  if (r && r.ok) {
+    document.getElementById("auth-gate").style.display = "none";
+    init();
+  } else {
+    TOKEN = "";
+    errEl.textContent = !r
+      ? "Connection problem — check your network and try again."
+      : r.status === 429
+        ? "Sowee, my bad, pwease dont"
+        : "Incorrect password.";
+    errEl.style.display = "block";
+  }
 }
 
 document.getElementById("auth-input").addEventListener("keydown", e => {
@@ -54,10 +67,28 @@ function signOut() {
 }
 
 // ── API helpers ───────────────────────────────────
-function apiFetch(path, opts = {}) {
+// Retries a genuine transient failure (network blip, a cold Cloudflare
+// Function, a brief 5xx) up to 3 attempts before giving up — every admin
+// write goes through this one helper, so this is the fix for "some actions
+// silently fail as if I'm not logged in even though the token is fine" (a
+// real auth answer — 401 wrong password, 429 rate-limited, any other 4xx —
+// is never retried, since that's a real result, not a blip).
+async function apiFetch(path, opts = {}) {
   opts.headers = opts.headers || {};
   if (TOKEN) opts.headers["Authorization"] = "Bearer " + TOKEN;
-  return fetch(path, opts);
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(res => setTimeout(res, 500));
+    try {
+      const r = await fetch(path, opts);
+      if (r.status < 500) return r;
+      lastErr = new Error("HTTP " + r.status);
+      if (attempt === 2) return r;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
 }
 
 function toast(msg, err = false) {
@@ -507,8 +538,20 @@ function renderSnpTable() {
       <td>${popBadge(s)}</td>
       <td>${schlrBadge(s)}</td>
       <td>${diseaseCell(s)}</td>
+      <td>${snpGroupBadge(s)}</td>
     </tr>`).join("");
   updateSnpSortArrows();
+}
+
+// Group is a gene-level property (set via the Genes tab's Group/Disease
+// picker, one group per gene) — this is a read-only reflection of that, not
+// a separate SNP-level editor, so you can see at a glance whether a given
+// SNP is covered by either a Disease tag (editable here) or its gene's
+// Group (editable on the Genes tab), without duplicating that state.
+function snpGroupBadge(s) {
+  const gene = geneList.find(g => g.gene_name === s.gene_name);
+  const groupName = gene?.group_name;
+  return `<span style="font-size:10px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;display:inline-block;color:${groupName ? "#4ade80" : "var(--faint)"}">${groupName || "None"}</span>`;
 }
 
 // Just the Alleles field is editable here — a forgotten-at-insert genotype

@@ -149,7 +149,8 @@ export async function onRequestGet({ params, env }) {
     env.genetic.prepare(
       `SELECT g.rsid, g.alleles, g.notes, g.gene_name, gi.full_name, gi.maplocation,
               si.chromosome, si.position, si.ref_allele, si.alt_allele,
-              si.protein_change, si.consequence, si.summary, si.rr_url, si.has_clinvar, si.has_snpedia
+              si.protein_change, si.consequence, si.summary, si.rr_url, si.has_clinvar, si.has_snpedia,
+              si.pop_scanned_at
        FROM personal g
        LEFT JOIN genes gi ON gi.gene_name = g.gene_name
        LEFT JOIN snps si ON si.rsid = g.rsid
@@ -338,8 +339,9 @@ ${nav()}
     <div class="gene-section">
       <h2 class="studies-heading">Population Frequencies<span class="section-count">${freqs.length}</span></h2>
       ${freqs.length === 0
-        ? `<p class="empty-state">No frequency data stored yet.</p>`
+        ? `<p class="empty-state">${snp.pop_scanned_at ? "No population data has been recorded for this SNP." : "No frequency data stored yet."}</p>`
         : `<div class="freq-section">${freqSortBar}<div class="freq-table">${freqRows}</div></div>`}
+      <button data-pop-scan id="pop-scan-btn" style="display:none;margin-top:14px" class="btn-sm" onclick="window.scanPopData()">Scan for population data</button>
     </div>
 
     <div class="gene-section">
@@ -392,6 +394,7 @@ ${foot()}
     }
     document.querySelectorAll('[data-study-assign]').forEach(function (el) { el.style.display = "flex"; });
     document.querySelectorAll('[data-study-edit]').forEach(function (el) { el.style.display = "flex"; });
+    document.querySelectorAll('[data-pop-scan]').forEach(function (el) { el.style.display = "inline-block"; });
     return true;
   }
   window.toggleStudyEdit = function (id) {
@@ -435,6 +438,23 @@ ${foot()}
 
     window.toggleStudyEdit(id);
     showBottomToast("Submitted");
+  };
+  window.scanPopData = async function () {
+    const token = PersonalAuth.getToken();
+    if (!token) return;
+    const btn = document.getElementById("pop-scan-btn");
+    if (btn) { btn.disabled = true; btn.textContent = "Scanning…"; }
+    const r = await fetch("/api/snp/" + rsid, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({}),
+    });
+    if (r.ok) {
+      location.reload();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "Scan for population data"; }
+      alert("Scan failed — check you're still signed in.");
+    }
   };
   window.assignStudy = async function (id, value) {
     const token = PersonalAuth.getToken();

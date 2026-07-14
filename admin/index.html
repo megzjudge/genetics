@@ -17,7 +17,7 @@
     <p>Enter your AUTH password to continue.</p>
     <label for="auth-input" class="sr-only">Password</label>
     <input type="password" id="auth-input" name="password" placeholder="Password" autocomplete="current-password">
-    <button onclick="tryAuth()">Sign in →</button>
+    <button id="auth-signin-btn" onclick="tryAuth()">Sign in →</button>
     <p class="auth-err" id="auth-err">Incorrect password.</p>
   </div>
 </div>
@@ -147,6 +147,7 @@
           <th style="cursor:pointer;user-select:none" onclick="sortSnpTable('pop')">Pop <span id="snp-sort-arrow-pop"></span></th>
           <th style="cursor:pointer;user-select:none" onclick="sortSnpTable('schlr')">Schlr <span id="snp-sort-arrow-schlr"></span></th>
           <th>Diseases</th>
+          <th>Group</th>
         </tr></thead>
         <tbody id="snp-tbody"></tbody>
       </table>

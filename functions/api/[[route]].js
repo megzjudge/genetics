@@ -872,6 +872,14 @@ async function handleApiRequest({ request, env }) {
     // nothing", not "please go fetch".
     const freqRows = frequencies !== undefined ? frequencies : await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
+    // Every PATCH already re-checks population frequencies above (that's
+    // pre-existing, not new) — stamping the timestamp here just records that
+    // fact, so a genuine "checked, found nothing" can be told apart from
+    // "never checked" (see pop_scanned_at usage on the public SNP page).
+    await env.genetic.prepare(`
+      INSERT INTO snps (rsid, pop_scanned_at) VALUES (?, ?)
+      ON CONFLICT(rsid) DO UPDATE SET pop_scanned_at = excluded.pop_scanned_at
+    `).bind(rsid, Date.now()).run();
     return json({ ok: true, frequencies_fetched: freqRows.length, frequencies: freqRows });
   }
 
@@ -1393,6 +1401,10 @@ async function handleApiRequest({ request, env }) {
     // Fetch NCBI ALFA population frequencies automatically
     const freqRows = await fetchNcbiFreqs(rsid, env);
     if (freqRows.length > 0) await storeFreqs(rsid, freqRows, env);
+    await env.genetic.prepare(`
+      INSERT INTO snps (rsid, pop_scanned_at) VALUES (?, ?)
+      ON CONFLICT(rsid) DO UPDATE SET pop_scanned_at = excluded.pop_scanned_at
+    `).bind(rsid, Date.now()).run();
     // Auto-search PubMed + Semantic Scholar for studies mentioning this rsID
     const studiesInserted = await insertAutoStudies(name, rsid, env);
     return json({ ok: true, frequencies_fetched: freqRows.length, studies_found: studiesInserted });
