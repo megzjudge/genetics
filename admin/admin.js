@@ -150,10 +150,18 @@ function init() {
 function loadBraveUsage() {
   const el = document.getElementById("brave-usage-bar");
   if (!el) return;
-  safeFetchJson("/api/brave-usage").then(d => {
-    if (!d || !d.usage) return;
+  apiFetch("/api/brave-usage").then(async r => {
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      console.error("brave-usage failed:", r.status, d.error);
+      toast(`Brave usage failed: ${d.error || r.status}`, true);
+      return;
+    }
     el.textContent = `Brave usage this month — Search: ${d.usage.brave} · Answers: ${d.usage.brave_ai}`;
     el.style.display = "block";
+  }).catch(e => {
+    console.error("brave-usage failed:", e);
+    toast("Brave usage failed: " + e.message, true);
   });
 }
 
