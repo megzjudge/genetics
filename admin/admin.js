@@ -1911,13 +1911,13 @@ function scholarStripTags(s) {
 // Shared between scholarStripLeadLabel() (start-of-snippet only) and
 // scholarStripMidEllipsisLabel() (anywhere after a "…") so both pull from
 // the exact same word list rather than risking two copies drifting apart.
-const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|abstracts?|scopes?|methods?|full articles?|results?)";
+const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|abstracts?|scopes?|methods?|full articles?|results?|conclusions?)";
 // These require a literal trailing colon to strip, unlike the words above —
 // "Context matters here…", "Goals of treatment include…", or a genuine
 // letter title mentioning "the editor" are all common as ordinary prose, so
 // the flexible optional-punctuation rule used for the other labels would
 // wrongly strip them even with nothing (or the wrong thing) after.
-const SCHOLAR_STRICT_COLON_WORDS = "(?:goals?|contexts?|contextos?|contextes?|to the editor)";
+const SCHOLAR_STRICT_COLON_WORDS = "(?:goals?|contexts?|contextos?|contextes?|(?:letter\\s+)?to the editor)";
 
 // Abstracts on Scholar often open with a structured header ("Background:",
 // "Aim:", "Purpose:", "Objective:", "Introduction:", "Methods:",
@@ -1947,7 +1947,10 @@ function scholarStripLeadLabel(s) {
 // the genuine truncation marker, not the thing being removed.
 function scholarStripMidEllipsisLabel(s) {
   const anyLabel = `(?:${SCHOLAR_LABEL_WORDS}|${SCHOLAR_STRICT_COLON_WORDS})`;
-  const re = new RegExp(`(\\.\\.\\.\\s*)${anyLabel}\\s*:\\s*`, "gi");
+  // Matches both the three-ASCII-period ellipsis ("...") and the single
+  // Unicode ellipsis character ("…") — real-world text uses either, and
+  // only matching the ASCII form was silently missing the other.
+  const re = new RegExp(`((?:\\.\\.\\.|…)\\s*)${anyLabel}\\s*:\\s*`, "gi");
   return (s || "").replace(re, "$1");
 }
 
