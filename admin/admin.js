@@ -1911,7 +1911,7 @@ function scholarStripTags(s) {
 // Shared between scholarStripLeadLabel() (start-of-snippet only) and
 // scholarStripMidEllipsisLabel() (anywhere after a "…") so both pull from
 // the exact same word list rather than risking two copies drifting apart.
-const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|abstracts?|scopes?|methods?|full articles?|results?|conclusions?)";
+const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|abstracts?|scopes?|methods?|full articles?|results?|conclusions?|hypothes(?:is|es))";
 // These require a literal trailing colon to strip, unlike the words above —
 // "Context matters here…", "Goals of treatment include…", or a genuine
 // letter title mentioning "the editor" are all common as ordinary prose, so
@@ -2100,14 +2100,15 @@ function scholarParseHtml(html) {
     // for any reason (an unrecognized label, a source formatting quirk)
     // still shouldn't survive into the snippet, even if it wasn't one of
     // the specific words scholarStripLeadLabel knows about.
-    // A bracketed language tag some sources prefix ("[eng]", "[ES]", …) is
-    // stripped before the label check runs, not after — otherwise
-    // "[eng] Background:" would still fail to match scholarStripLeadLabel's
-    // ^-anchored regex since "Background" wouldn't be at the true start
-    // yet. Generic 2-4 letter code match rather than an enumerated list, so
-    // a new language tag doesn't need its own one-off fix each time.
+    // A bracketed or parenthesized language tag some sources prefix
+    // ("[eng]", "[ES]", "(DE)", …) is stripped before the label check runs,
+    // not after — otherwise "[eng] Background:" would still fail to match
+    // scholarStripLeadLabel's ^-anchored regex since "Background" wouldn't
+    // be at the true start yet. Generic 2-4 letter code match (either
+    // bracket style) rather than an enumerated list, so a new language tag
+    // doesn't need its own one-off fix each time.
     const snippet = snippetMatch
-      ? scholarStripMidEllipsisLabel(scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1])).replace(/^\s*\[[a-z]{2,4}\]\s*/i, ""))).replace(/^\s*:\s*/, "")).replace(/\(pdf\)/gi, "").replace(/\s+/g, " ").trim()
+      ? scholarStripMidEllipsisLabel(scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1])).replace(/^\s*[[(][a-z]{2,4}[\])]\s*/i, ""))).replace(/^\s*:\s*/, "")).replace(/\(pdf\)/gi, "").replace(/\s+/g, " ").trim()
       : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);

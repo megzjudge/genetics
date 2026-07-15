@@ -465,25 +465,17 @@ function isExcludedDiscoverResult(resUrl) {
 // Semantic Scholar auto-search above) — used by the admin Discover tab for
 // manual, per-SNP "find me things I don't already have" scans. Requires a
 // Brave Search API subscription token set as the BRAVE_API_KEY secret.
-// One row per (server, year_month) in the existing api_usage table, count
-// incremented per call — not a constraint-based upsert (api_usage has no
-// declared UNIQUE(server, year_month) to target), so this reads first and
-// decides insert vs update itself.
-async function logApiUsage(env, server) {
+// One row per (service, year_month) in the existing api_usage table —
+// (service, year_month) is a real composite primary key there (confirmed
+// via PRAGMA table_info), so this can be a proper atomic upsert rather than
+// a read-then-write.
+async function logApiUsage(env, service) {
   const now = new Date();
   const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const existing = await env.genetic.prepare(
-    `SELECT count FROM api_usage WHERE server = ? AND year_month = ?`
-  ).bind(server, yearMonth).first();
-  if (existing) {
-    await env.genetic.prepare(
-      `UPDATE api_usage SET count = count + 1 WHERE server = ? AND year_month = ?`
-    ).bind(server, yearMonth).run();
-  } else {
-    await env.genetic.prepare(
-      `INSERT INTO api_usage (server, year_month, count) VALUES (?, ?, 1)`
-    ).bind(server, yearMonth).run();
-  }
+  await env.genetic.prepare(`
+    INSERT INTO api_usage (service, year_month, count) VALUES (?, ?, 1)
+    ON CONFLICT(service, year_month) DO UPDATE SET count = count + 1
+  `).bind(service, yearMonth).run();
 }
 
 async function fetchBraveResults(query, env) {
@@ -1086,10 +1078,10 @@ async function handleApiRequest({ request, env }) {
     const now = new Date();
     const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const { results } = await env.genetic.prepare(
-      `SELECT server, count FROM api_usage WHERE year_month = ? AND server IN ('brave', 'brave_ai')`
+      `SELECT service, count FROM api_usage WHERE year_month = ? AND service IN ('brave', 'brave_ai')`
     ).bind(yearMonth).all();
     const usage = { brave: 0, brave_ai: 0 };
-    for (const row of results || []) usage[row.server] = row.count;
+    for (const row of results || []) usage[row.service] = row.count;
     return json({ usage, year_month: yearMonth });
   }
 
