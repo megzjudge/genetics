@@ -1911,8 +1911,13 @@ function scholarStripTags(s) {
 // Shared between scholarStripLeadLabel() (start-of-snippet only) and
 // scholarStripMidEllipsisLabel() (anywhere after a "…") so both pull from
 // the exact same word list rather than risking two copies drifting apart.
-const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|contextes?|abstracts?|scopes?|methods?|full articles?|results?)";
-const SCHOLAR_STRICT_COLON_WORDS = "(?:goals?|contexts?|contextos?)";
+const SCHOLAR_LABEL_WORDS = "(?:backgrounds?|aims?|purposes?|objectives?|introductions?|introducci(?:ón|ones)|introdu(?:ção|ções)|resumen|resúmenes|résumés?|abstracts?|scopes?|methods?|full articles?|results?)";
+// These require a literal trailing colon to strip, unlike the words above —
+// "Context matters here…", "Goals of treatment include…", or a genuine
+// letter title mentioning "the editor" are all common as ordinary prose, so
+// the flexible optional-punctuation rule used for the other labels would
+// wrongly strip them even with nothing (or the wrong thing) after.
+const SCHOLAR_STRICT_COLON_WORDS = "(?:goals?|contexts?|contextos?|contextes?|to the editor)";
 
 // Abstracts on Scholar often open with a structured header ("Background:",
 // "Aim:", "Purpose:", "Objective:", "Introduction:", "Methods:",
@@ -1928,13 +1933,9 @@ function scholarStripLeadLabel(s) {
   // stripped, but "..." (ellipsis) is left alone — that's a deliberate
   // truncation marker, not a delimiter, so the negative lookahead guards it.
   const re = new RegExp(`^\\s*(?:${combo}|${phrase})\\s*(?:[:/]|\\.(?!\\.\\.))?\\s*[-—]?\\s*`, "i");
-  // These don't join the label list above because they're common as
-  // ordinary prose ("Goals of treatment include…", "Context matters
-  // here…") — the other words' optional-punctuation rule would wrongly
-  // strip them even with nothing after. Only strips when actually acting
-  // as a header, i.e. immediately followed by a colon. contexts?/contextos?
-  // cover English "Context(s):" and Spanish/Portuguese "Contexto(s):" —
-  // French "contexte(s):" is already handled up in the main label list.
+  // SCHOLAR_STRICT_COLON_WORDS (goals, context in EN/ES/PT/FR, "to the
+  // editor") only strips when a colon actually follows — see its own
+  // comment above for why.
   return (s || "").replace(re, "").replace(new RegExp(`^\\s*${SCHOLAR_STRICT_COLON_WORDS}\\s*:\\s*`, "i"), "");
 }
 
@@ -2043,8 +2044,30 @@ function scholarNormalizeAuthorsAllCaps(text) {
 // a div.gs_a (authors/venue/year line), and a div.gs_rs (snippet). Class
 // names could drift over time — if parsing comes back empty on a real
 // paste, that's the first thing to check against the actual pasted HTML.
+// Google's search has no word-boundary/anchor operator, so a short rsID
+// like "rs6265" can surface results that are actually about a longer,
+// unrelated one sharing the same digit prefix (e.g. "rs626511") — most
+// often a large multi-SNP panel study that happens to mention both. Since
+// there's no way to prevent this in the search query itself, this filters
+// it out after parsing instead: only flags a result as a false positive
+// when the LONGER id is found in the visible text and the exact target
+// rsID never appears at all. If neither shows up (the snippet just doesn't
+// happen to repeat any rsID), that's not positive evidence of anything, so
+// it's left alone rather than guessed at.
+function scholarIsFalsePositiveRsid(text, targetRsid) {
+  if (!targetRsid) return false;
+  const escaped = targetRsid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const targetRe = new RegExp("\\b" + escaped + "(?!\\d)", "i");
+  if (targetRe.test(text)) return false;
+  const longerRe = new RegExp(escaped + "\\d+", "i");
+  return longerRe.test(text);
+}
+
+let scholarFilteredFalsePositives = 0;
+
 function scholarParseHtml(html) {
   const results = [];
+  scholarFilteredFalsePositives = 0;
   const blocks = html.split(/<div class="gs_ri">/).slice(1);
   for (const block of blocks) {
     const h3Match = block.match(/<h3[^>]*class="gs_rt"[^>]*>([\s\S]*?)<\/h3>/i);
@@ -2052,7 +2075,11 @@ function scholarParseHtml(html) {
     const linkMatch = h3Match[1].match(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
     if (!linkMatch) continue; // e.g. [CITATION] entries with no linked source
     const url = scholarDecodeEntities(linkMatch[1]);
-    const title = scholarNormalizeAllCaps(scholarDecodeEntities(scholarStripTags(linkMatch[2])));
+    // "(PDF)" is a direct-PDF-available marker Scholar sometimes attaches
+    // right next to the title link — not real title text, so it gets
+    // stripped wherever it lands rather than just at the start.
+    const title = scholarNormalizeAllCaps(scholarDecodeEntities(scholarStripTags(linkMatch[2])))
+      .replace(/\(pdf\)/gi, "").replace(/\s+/g, " ").trim();
     if (!title || !url) continue;
 
     const authorsMatch = block.match(/<div[^>]*class="gs_a"[^>]*>([\s\S]*?)<\/div>/i);
@@ -2077,11 +2104,16 @@ function scholarParseHtml(html) {
     // yet. Generic 2-4 letter code match rather than an enumerated list, so
     // a new language tag doesn't need its own one-off fix each time.
     const snippet = snippetMatch
-      ? scholarStripMidEllipsisLabel(scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1])).replace(/^\s*\[[a-z]{2,4}\]\s*/i, ""))).replace(/^\s*:\s*/, ""))
+      ? scholarStripMidEllipsisLabel(scholarNormalizeAllCaps(scholarStripLeadLabel(scholarDecodeEntities(scholarStripTags(snippetMatch[1])).replace(/^\s*\[[a-z]{2,4}\]\s*/i, ""))).replace(/^\s*:\s*/, "")).replace(/\(pdf\)/gi, "").replace(/\s+/g, " ").trim()
       : "";
 
     const yearMatch = authorsFull.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
+    if (scholarIsFalsePositiveRsid(`${title} ${snippet} ${url}`, scholarRsid)) {
+      scholarFilteredFalsePositives++;
+      continue;
+    }
 
     results.push({ title, url, authors, snippet, year });
   }
@@ -2094,7 +2126,10 @@ async function scholarParse() {
   if (!html.trim()) return toast("Paste the page source first.", true);
 
   const parsed = scholarParseHtml(html);
-  if (!parsed.length) return toast("Nothing parsed — check you pasted View Page Source, not the visible page.", true);
+  if (!parsed.length && !scholarFilteredFalsePositives) return toast("Nothing parsed — check you pasted View Page Source, not the visible page.", true);
+  if (scholarFilteredFalsePositives) {
+    toast(`Filtered ${scholarFilteredFalsePositives} likely false positive${scholarFilteredFalsePositives === 1 ? "" : "s"} (longer rsID sharing the same prefix).`);
+  }
 
   const [studies, exclusions] = await Promise.all([
     safeFetchJson("/api/studies"),

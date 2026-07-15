@@ -76,6 +76,7 @@ function studyCard(s, extraClass) {
               : esc(s.title)}</p>` : ""}
           <p class="study-meta">${[
             s.pid     ? `<a href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
+            s.title   ? `<a href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : null,
             s.authors ? esc(s.authors) : null,
             s.year    ? esc(String(s.year)) : null,
           ].filter(Boolean).join(" · ")}</p>
@@ -430,6 +431,7 @@ ${foot()}
       : escC(body.title)) + '</p>' : "";
     const metaParts = [];
     if (body.pid)     metaParts.push('<a href="' + escC(pidUrlC(body.pid)) + '" target="_blank" rel="noopener">PID</a>');
+    if (body.title)   metaParts.push('<a href="https://search.brave.com/search?q=' + encodeURIComponent('"' + body.title + '" filetype:pdf') + '" target="_blank" rel="noopener">PDF ↗</a>');
     if (body.authors) metaParts.push(escC(body.authors));
     if (body.year)    metaParts.push(escC(String(body.year)));
     const metaHtml = '<p class="study-meta">' + metaParts.join(" · ") + '</p>';
