@@ -299,6 +299,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border-color: var(--accent);
   transform: translateY(-2px);
 }
+/* Light theme: cards read better sunken (darker than the page) rather than
+   raised (lighter), unlike dark theme where a lighter card pops off the bg. */
+:root[data-theme="light"] .group-card { background: var(--surface); }
 .group-card.soon { opacity: 0.38; pointer-events: none; }
 
 /* Card thumbnail image */
@@ -577,6 +580,15 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border: 1px solid rgba(52, 211, 153, 0.3);
   background: var(--card);
   transition: background 0.12s, border-color 0.12s;
+}
+/* Light theme: solid dark chip with white text reads better than a pale
+   tinted chip against the light page — used for gene names (group pages)
+   and SNP rsids (gene pages), both rendered through this same class. */
+:root[data-theme="light"] .gene-row-name {
+  color: #fff; background: var(--accent); border-color: var(--accent);
+}
+:root[data-theme="light"] .gene-row:hover .gene-row-name {
+  background: #0b7d57; border-color: #0b7d57;
 }
 .gene-row-full { font-size: 14.5px; color: var(--muted); font-style: italic; }
 .gene-row-count {
