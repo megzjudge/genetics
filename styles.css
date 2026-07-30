@@ -585,10 +585,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
    tinted chip against the light page — used for gene names (group pages)
    and SNP rsids (gene pages), both rendered through this same class. */
 :root[data-theme="light"] .gene-row-name {
-  color: #fff; background: var(--accent); border-color: var(--accent);
+  color: #fff; background: #34d399; border-color: #34d399;
 }
 :root[data-theme="light"] .gene-row:hover .gene-row-name {
-  background: #0b7d57; border-color: #0b7d57;
+  background: #0d9668; border-color: #0d9668;
 }
 .gene-row-full { font-size: 14.5px; color: var(--muted); font-style: italic; }
 .gene-row-count {
