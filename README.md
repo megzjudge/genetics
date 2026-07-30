@@ -30,23 +30,29 @@ the first time, it's explained in plain English. There's also a
 
 ## What this project actually is
 
-At its heart, the specific things this website does:
+At its heart, this is a **website with a database behind it**, the specific things this website does is:
 
-- Presents 44+ genes, organised into topic groups (folate metabolism, ADHD,
-  neurotransmitters, and more), each with the SNPs (specific DNA
-  positions — see the [glossary](#glossary-of-terms)) that have been
-  researched, the studies that discuss them, and (behind a password) what
-  Megan's own genome shows at that position.
-- Cross-links genes to diseases/conditions they're associated with.
 - Pulls in live population-frequency data and variant details from NCBI
   (the US National Center for Biotechnology Information) so each SNP page
   shows real statistics, not just hand-typed notes.
+
 - Automatically watches for new Google Scholar research alerts by e-mail,
   reads them, and files new papers under the right gene — so the site's
   research library grows on its own over time (details
   [below](#the-email-pipeline-how-new-research-finds-its-way-in-automatically)).
-- Has a private "admin" area (password-protected) where Megan can add her
-  own notes and personal results, which are hidden from the public.
+  
+- Presents genes, organised into topic groups (folate metabolism, ADHD,
+  neurotransmitters, and more), each with the SNPs (specific DNA
+  positions — see the [glossary](#glossary-of-terms)) that have been
+  researched, their allele possibilities, the studies that discuss them,
+  and (behind a password) what Megan's genome shows at that position 
+  (accessed via the login button at the bottom of the screen).
+  
+- Cross-links genes to diseases/conditions they're associated with.
+
+- Has a private "admin" area (password-protected) where notes, new genes/snps/alleles 
+  and research papers can be manually added.
+
 - Backs its database up automatically every week.
 
 ---
@@ -68,23 +74,27 @@ Every website has (up to) two halves:
   internet, not on your computer. It does things a browser alone can't do
   safely, like talking to a database, checking a password, or reading an
   incoming email. In this project, the back end is the code inside the
-  `functions/` folder plus `worker.js`.
+  `functions/` folder plus `worker.js` which works through a free
+  Cloudflare Worker to host the backend online and connect the
+  Database (like a multi-table spreadsheet) to the static website front-end.
 
 When you type `genetics.jdge.cc/gene/MTHFR` into a browser, here's what
 actually happens, step by step:
 
-1. Your browser sends a request to Cloudflare (the hosting company — see
-   below) asking for that page.
+1. Your browser sends a request to Cloudflare (the hosting company) asking for that page.
 2. Cloudflare runs the back-end code in `functions/gene/[name].js`.
 3. That code asks the database "give me everything you know about MTHFR."
 4. The database answers with rows of data (gene info, related studies, SNPs).
 5. The code stitches that data into an HTML page — literally builds a
    string of HTML text with the right values plugged in — and sends it back.
-6. Your browser receives that finished HTML, along with `styles.css` (for
-   the look) and `script.js` (for the interactive bits), and renders the
+   Even the main svg gene images on that page is entirely crafted via HTML,
+   it is not a downloadable image, it is made via code custom based on what
+   chromosome position, allele combination and snp location is recorded in the database.
+7. Your browser receives that finished HTML, along with `styles.css` (for
+   the page's look style) and `script.js` (for the interactive bits, such as click interactions), and renders the
    page you see.
 
-This whole round-trip usually takes well under a second.
+This whole round-trip usually takes well under a second - and with cloudflare it takes under a second in most countries around the world due to their CDN (content delivery network) in difference to a traditional non-CDN host.
 
 ### Where it's hosted: Cloudflare Pages & Workers
 
