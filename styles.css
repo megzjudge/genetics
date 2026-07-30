@@ -60,19 +60,19 @@
    in this file reads these same custom properties, so nothing else needs a
    light-mode variant. */
 :root[data-theme="light"] {
-  --bg:          #f3ecdd;
-  --surface:     #ece2ce;
-  --card:        #fffcf5;
-  --ink:         #2a2318;
-  --muted:       #8a7c62;
-  --body-text:   #4a4030;
-  --faint:       #b3a488;
-  --line:        #e0d3b8;
-  --line-strong: #cbba95;
+  --bg:          #eafaf1;
+  --surface:     #defbec;
+  --card:        #f9fefb;
+  --ink:         #17281f;
+  --muted:       #6f9484;
+  --body-text:   #2f4a3c;
+  --faint:       #a9cdbb;
+  --line:        #cdeadb;
+  --line-strong: #aedcc4;
   --accent:      #0d9668;
-  --accent-soft: #e4f2e6;
+  --accent-soft: #d3f3e2;
   --accent-dim:  rgba(13, 150, 104, 0.1);
-  --nav-bg:      rgba(243, 236, 221, 0.92);
+  --nav-bg:      rgba(234, 250, 241, 0.92);
   color-scheme: light;
 }
 
