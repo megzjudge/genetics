@@ -38,7 +38,7 @@ At its heart, this is a **website with a database behind it**, the specific thin
 
 - Automatically intakes in new Google Scholar research alerts by e-mail.
 
-  This is called email-routing which means:
+    - This is called email-routing which means:
         - Say you send an email to my email address at xxxxxxx@jdge.cc, I then select that one specific email address to direct its results to the database, the program intaking the emails (a worker) is told to only accept emails from google scholar's main email address and blocks anything else, and sends the information in the email to the database), and then it files new papers under correct section in a database — so the site's   research library grows on its own over time with every new paper published and pulled by google into its search engine rather than manual researches (details [below](#the-email-pipeline-how-new-research-finds-its-way-in-automatically)). Any prior papers were scrapped manually by page-inspect and entered one page at a time (10 studies at once in raw HTML rather than normal human 1 study at a time) into the backend via page-inspect of each scholar page due to google blocking automatically scraping. This was the best procedure, tried a bunch of things, like researchrabbit, etc, google scholar has the biggest database available alongside researchrabbit, whereas things like semanticscholar which do allow scraping have much much smaller databases - so manual scholar scraping was required. New studies are all intaken automatically, was just for the past - some SNPs have 1 page in google (most have between 1-5) but some have 100 pages, so it just depends for each SNP the length of time to scrape.
   
 - Presents genes, organised into topic groups (folate metabolism, ADHD,
