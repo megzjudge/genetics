@@ -1,7 +1,5 @@
 # Personal Genomics — Megan Judge
 
-**Live site:** [genetics.jdge.cc](https://genetics.jdge.cc)
-
 This is a personal website that turns one person's whole-genome sequencing
 results into something readable: a set of pages, organised by gene and by
 topic (like "Folate Metabolism" or "ADHD"), that explain what the science
