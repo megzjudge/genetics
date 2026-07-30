@@ -38,6 +38,7 @@
   --accent-soft: #071e12;
   --accent-dim:  rgba(52, 211, 153, 0.12);
   --nav-bg:      rgba(14, 17, 23, 0.94);
+  --nav-line:    #1f2d3d;
   /* Three-colour accent system: green (--accent) = primary/default,
      pink (--pink) = secondary emphasis (used in the SVG allele markers and
      "Used/Unused"-style labels), grey (--muted/--faint) = de-emphasised text. */
@@ -73,6 +74,7 @@
   --accent-soft: #e2f5ea;
   --accent-dim:  rgba(13, 150, 104, 0.1);
   --nav-bg:      rgba(207, 225, 216, 0.95);
+  --nav-line:    #e2ede7;
   color-scheme: light;
 }
 
@@ -89,7 +91,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   padding: 0 36px; height: 56px;
   background: var(--nav-bg);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--nav-line);
 }
 .nav-brand {
   display: flex; align-items: center; gap: 9px;
