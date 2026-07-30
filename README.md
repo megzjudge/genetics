@@ -30,30 +30,7 @@ the first time, it's explained in plain English. There's also a
 
 ## What this project actually is
 
-At its heart, this is a **website with a database behind it**. That sounds
-technical, but the idea is simple:
-
-- A **website** is just a collection of pages that a web browser (Chrome,
-  Safari, Firefox, etc.) can display. Each page is built from a file written
-  in **HTML** (the page's structure and text), styled with **CSS** (the
-  colours, fonts, spacing — basically "how it looks"), and made interactive
-  with **JavaScript** (a programming language that lets a page respond to
-  clicks, load new data, etc.).
-- A **database** is a structured, searchable filing cabinet for information.
-  Instead of writing "MTHFR" into a Word document by hand every time new
-  research comes out, this project stores facts about genes, genetic
-  variants, and research papers in a database, and the website *generates*
-  the pages from that data automatically, every time someone visits.
-
-So instead of one HTML file per gene (which would mean manually editing 44+
-files every time something new is learned), there is really only **one gene
-page template**. When you visit `/gene/MTHFR`, the site looks up "MTHFR" in
-the database, fills the template with whatever it finds, and hands you back
-a finished page. This is called generating a page **dynamically** — the
-opposite of a "static" page that never changes until someone manually edits
-its file.
-
-The specific things this website does:
+At its heart, the specific things this website does:
 
 - Presents 44+ genes, organised into topic groups (folate metabolism, ADHD,
   neurotransmitters, and more), each with the SNPs (specific DNA
