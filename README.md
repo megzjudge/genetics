@@ -36,9 +36,9 @@ At its heart, this is a **website with a database behind it**, the specific thin
   (the US National Center for Biotechnology Information) so each SNP page
   shows real statistics, not just hand-typed notes.
 
-- Automatically watches for new Google Scholar research alerts by e-mail,
-  reads them, and files new papers under the right gene — so the site's
-  research library grows on its own over time (details
+- Automatically intakes in new Google Scholar research alerts by e-mail via email-routing,
+  reads them, and files new papers under the right gene in a database — so the site's
+  research library grows on its own over time with every new paper published and pulled by google into its search engine (details
   [below](#the-email-pipeline-how-new-research-finds-its-way-in-automatically)).
   
 - Presents genes, organised into topic groups (folate metabolism, ADHD,
