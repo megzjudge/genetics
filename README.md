@@ -1,10 +1,9 @@
-# Personal Genomics — Megan Judge
+# Personal Genomics
 
 This is a personal website that turns one person's whole-genome sequencing
 results into something readable: a set of pages, organised by gene and by
 topic (like "Folate Metabolism" or "ADHD"), that explain what the science
-currently says about specific spots in her DNA — backed by primary research
-papers, not a generic "23andMe-style" report.
+currently says about specific spots in one's DNA — backed by research papers.
 
 This README explains what the project is, how it's put together, and what
 every folder and file does — written for someone who has never built a
