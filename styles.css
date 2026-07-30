@@ -581,11 +581,11 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   background: var(--card);
   transition: background 0.12s, border-color 0.12s;
 }
-/* Light theme: solid dark chip with white text reads better than a pale
-   tinted chip against the light page — used for gene names (group pages)
-   and SNP rsids (gene pages), both rendered through this same class. */
+/* Light theme: chip matches the header's tone, with dark text for contrast —
+   used for gene names (group pages) and SNP rsids (gene pages), both
+   rendered through this same class. */
 :root[data-theme="light"] .gene-row-name {
-  color: #fff; background: #cfe1d8; border-color: #cfe1d8;
+  color: var(--ink); background: #cfe1d8; border-color: #cfe1d8;
 }
 :root[data-theme="light"] .gene-row:hover .gene-row-name {
   background: #bcd7c8; border-color: #bcd7c8;
