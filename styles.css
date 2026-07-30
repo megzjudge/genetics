@@ -586,6 +586,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
    rendered through this same class. */
 :root[data-theme="light"] .gene-row-name {
   color: var(--ink); background: #cfe1d8; border-color: #cfe1d8;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
 }
 :root[data-theme="light"] .gene-row:hover .gene-row-name {
   background: #bcd7c8; border-color: #bcd7c8;
