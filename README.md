@@ -36,11 +36,23 @@ At its heart, this is a **website with a database behind it**, the specific thin
   (the US National Center for Biotechnology Information) so each SNP page
   shows real statistics, not just hand-typed notes.
 
+- Presents genes, organised into topic groups (folate metabolism, ADHD,
+  neurotransmitters, and more), each with the SNPs (specific DNA
+  positions) that have been manually chosen, their allele possibilities, the studies that discuss them,
+  and (behind a password) what the website author's genome shows at that position for easy viewing
+  (accessed via the login button at the bottom of the screen).
+  
+- Cross-linked genes to diseases/conditions they're associated with.
+
+- Has a private extensive "admin" area (password-protected with anti-hacking security in place - some manually coded and most cloudflare auto-embedded) where notes, new genes/snps/alleles and research papers can be manually added.
+
+- Backs its database up automatically every week.
+
 - Automatically intakes in new Google Scholar research alerts by e-mail.
 
   This is called email-routing which means:
     - Say you send an email to my email address at xxxxxxx@jdge.cc,
-    - I then select that one specific email address to direct its results to the database,
+    - I then select only that one specific email address to direct its results to the database,
     - The program intaking the emails (a worker) is told to only accept emails from google scholar's main email address and blocks anything else, and sends the google email's information in the email to the database,
     - It reads the email and scrapes the data and files new papers under correct section in a database,
     - So the site's research library grows on its own over time with every new paper published and pulled by google into its search engine rather than manual researches.
@@ -48,20 +60,6 @@ At its heart, this is a **website with a database behind it**, the specific thin
   Any prior papers were scrapped manually by page-inspect and entered one page at a time (10 studies at once in raw HTML rather than normal human 1 study at a time) into the backend via page-inspect of each scholar page due to google blocking automatically scraping. This was the best procedure, I tried a bunch of things, like researchrabbit, etc. Google scholar has the biggest database available alongside researchrabbit, whereas things like semanticscholar which do allow scraping have much much smaller databases - so manual Scholar scraping was required.
 
   New studies are all intaken automatically, so is just for the past - some SNPs have 1 page in google (most have between 0-5) but some have 100 pages, so it just depends for each SNP the length of time to scrape.
-  
-- Presents genes, organised into topic groups (folate metabolism, ADHD,
-  neurotransmitters, and more), each with the SNPs (specific DNA
-  positions — see the [glossary](#glossary-of-terms)) that have been
-  researched, their allele possibilities, the studies that discuss them,
-  and (behind a password) what Megan's genome shows at that position 
-  (accessed via the login button at the bottom of the screen).
-  
-- Cross-links genes to diseases/conditions they're associated with.
-
-- Has a private "admin" area (password-protected) where notes, new genes/snps/alleles 
-  and research papers can be manually added.
-
-- Backs its database up automatically every week.
 
 ---
 
