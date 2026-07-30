@@ -37,6 +37,7 @@
   --accent:      #34d399;
   --accent-soft: #071e12;
   --accent-dim:  rgba(52, 211, 153, 0.12);
+  --nav-bg:      rgba(14, 17, 23, 0.94);
   /* Three-colour accent system: green (--accent) = primary/default,
      pink (--pink) = secondary emphasis (used in the SVG allele markers and
      "Used/Unused"-style labels), grey (--muted/--faint) = de-emphasised text. */
@@ -51,6 +52,28 @@
      redefining it here changes all of them at once without touching each. */
   --mono: var(--sans);
   --max-w: 1120px;
+  color-scheme: dark;
+}
+
+/* Light theme — toggled by /theme.js setting data-theme="light" on <html>,
+   remembered in localStorage. Only the palette changes; every rule elsewhere
+   in this file reads these same custom properties, so nothing else needs a
+   light-mode variant. */
+:root[data-theme="light"] {
+  --bg:          #f6f8fb;
+  --surface:     #eef2f7;
+  --card:        #ffffff;
+  --ink:         #182233;
+  --muted:       #5c6b80;
+  --body-text:   #33455a;
+  --faint:       #8a99ab;
+  --line:        #dde3ea;
+  --line-strong: #c7d0db;
+  --accent:      #0d9668;
+  --accent-soft: #e1f7ee;
+  --accent-dim:  rgba(13, 150, 104, 0.1);
+  --nav-bg:      rgba(246, 248, 251, 0.92);
+  color-scheme: light;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -64,7 +87,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 36px; height: 56px;
-  background: rgba(14, 17, 23, 0.94);
+  background: var(--nav-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
@@ -88,6 +111,20 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .nav-links a:hover { color: var(--accent); }
 .nav-external { color: var(--faint) !important; }
+
+.theme-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  background: transparent; border: 1px solid var(--line); border-radius: 6px;
+  color: var(--muted); cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: 15px; height: 15px; display: block; }
+.theme-toggle .icon-moon { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
 @media (max-width: 600px) {
   .site-nav { padding: 0 18px; }
   .nav-links { gap: 18px; }

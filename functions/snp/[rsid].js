@@ -174,6 +174,7 @@ export async function onRequestGet({ params, env }) {
   <title>${esc(rsid)} not found | Megan Judge</title>
   <link rel="icon" type="image/png" href="/images/icon.png">
   <link rel="stylesheet" href="/styles.css">
+  <script src="/theme.js"></script>
 </head>
 <body>
 ${nav()}
@@ -286,6 +287,7 @@ ${foot()}
   <meta name="twitter:image" content="${BASE}/images/icon_full.png">
   <link rel="icon" type="image/png" href="/images/icon.png">
   <link rel="stylesheet" href="/styles.css">
+  <script src="/theme.js"></script>
 </head>
 <body>
 ${nav()}

@@ -1,9 +1,12 @@
-# Personal Genomics
+# Personal Genomics — Megan Judge
+
+**Live site:** [genetics.jdge.cc](https://genetics.jdge.cc)
 
 This is a personal website that turns one person's whole-genome sequencing
 results into something readable: a set of pages, organised by gene and by
 topic (like "Folate Metabolism" or "ADHD"), that explain what the science
-currently says about specific spots in one's DNA — backed by research papers.
+currently says about specific spots in her DNA — backed by primary research
+papers, not a generic "23andMe-style" report.
 
 This README explains what the project is, how it's put together, and what
 every folder and file does — written for someone who has never built a
@@ -30,36 +33,47 @@ the first time, it's explained in plain English. There's also a
 
 ## What this project actually is
 
-At its heart, this is a **website with a database behind it**, the specific things this website does is:
+At its heart, this is a **website with a database behind it**. That sounds
+technical, but the idea is simple:
 
+- A **website** is just a collection of pages that a web browser (Chrome,
+  Safari, Firefox, etc.) can display. Each page is built from a file written
+  in **HTML** (the page's structure and text), styled with **CSS** (the
+  colours, fonts, spacing — basically "how it looks"), and made interactive
+  with **JavaScript** (a programming language that lets a page respond to
+  clicks, load new data, etc.).
+- A **database** is a structured, searchable filing cabinet for information.
+  Instead of writing "MTHFR" into a Word document by hand every time new
+  research comes out, this project stores facts about genes, genetic
+  variants, and research papers in a database, and the website *generates*
+  the pages from that data automatically, every time someone visits.
+
+So instead of one HTML file per gene (which would mean manually editing 44+
+files every time something new is learned), there is really only **one gene
+page template**. When you visit `/gene/MTHFR`, the site looks up "MTHFR" in
+the database, fills the template with whatever it finds, and hands you back
+a finished page. This is called generating a page **dynamically** — the
+opposite of a "static" page that never changes until someone manually edits
+its file.
+
+The specific things this website does:
+
+- Presents 44+ genes, organised into topic groups (folate metabolism, ADHD,
+  neurotransmitters, and more), each with the SNPs (specific DNA
+  positions — see the [glossary](#glossary-of-terms)) that have been
+  researched, the studies that discuss them, and (behind a password) what
+  Megan's own genome shows at that position.
+- Cross-links genes to diseases/conditions they're associated with.
 - Pulls in live population-frequency data and variant details from NCBI
   (the US National Center for Biotechnology Information) so each SNP page
   shows real statistics, not just hand-typed notes.
-
-- Presents genes, organised into topic groups (folate metabolism, ADHD,
-  neurotransmitters, and more), each with the SNPs (specific DNA
-  positions) that have been manually chosen, their allele possibilities, the studies that discuss them,
-  and (behind a password) what the website author's genome shows at that position for easy viewing
-  (accessed via the login button at the bottom of the screen).
-  
-- Cross-linked genes to diseases/conditions they're associated with.
-
-- Has a private extensive "admin" area (password-protected with anti-hacking security in place - some manually coded and most cloudflare auto-embedded) where notes, new genes/snps/alleles and research papers can be manually added.
-
+- Automatically watches for new Google Scholar research alerts by e-mail,
+  reads them, and files new papers under the right gene — so the site's
+  research library grows on its own over time (details
+  [below](#the-email-pipeline-how-new-research-finds-its-way-in-automatically)).
+- Has a private "admin" area (password-protected) where Megan can add her
+  own notes and personal results, which are hidden from the public.
 - Backs its database up automatically every week.
-
-- Automatically intakes in new Google Scholar research alerts by e-mail.
-
-  This is called email-routing which means:
-    - Say you send an email to my email address at xxxxxxx@jdge.cc,
-    - I then select only that one specific email address to direct its results to the database,
-    - The program intaking the emails (a worker) is told to only accept emails from google scholar's main email address and blocks anything else, and sends the google email's information in the email to the database,
-    - It reads the email and scrapes the data and files new papers under correct section in a database,
-    - So the site's research library grows on its own over time with every new paper published and pulled by google into its search engine rather than manual researches.
-  
-  Any prior papers were scrapped manually by page-inspect and entered one page at a time (10 studies at once in raw HTML rather than normal human 1 study at a time) into the backend via page-inspect of each scholar page due to google blocking automatically scraping. This was the best procedure, I tried a bunch of things, like researchrabbit, etc. Google scholar has the biggest database available alongside researchrabbit, whereas things like semanticscholar which do allow scraping have much much smaller databases - so manual Scholar scraping was required.
-
-  New studies are all intaken automatically, so is just for the past - some SNPs have 1 page in google (most have between 0-5) but some have 100 pages, so it just depends for each SNP the length of time to scrape.
 
 ---
 
@@ -80,27 +94,23 @@ Every website has (up to) two halves:
   internet, not on your computer. It does things a browser alone can't do
   safely, like talking to a database, checking a password, or reading an
   incoming email. In this project, the back end is the code inside the
-  `functions/` folder plus `worker.js` which works through a free
-  Cloudflare Worker to host the backend online and connect the
-  Database (like a multi-table spreadsheet) to the static website front-end.
+  `functions/` folder plus `worker.js`.
 
 When you type `genetics.jdge.cc/gene/MTHFR` into a browser, here's what
 actually happens, step by step:
 
-1. Your browser sends a request to Cloudflare (the hosting company) asking for that page.
+1. Your browser sends a request to Cloudflare (the hosting company — see
+   below) asking for that page.
 2. Cloudflare runs the back-end code in `functions/gene/[name].js`.
 3. That code asks the database "give me everything you know about MTHFR."
 4. The database answers with rows of data (gene info, related studies, SNPs).
 5. The code stitches that data into an HTML page — literally builds a
    string of HTML text with the right values plugged in — and sends it back.
-   Even the main svg gene images on that page is entirely crafted via HTML,
-   it is not a downloadable image, it is made via code custom based on what
-   chromosome position, allele combination and snp location is recorded in the database.
-7. Your browser receives that finished HTML, along with `styles.css` (for
-   the page's look style) and `script.js` (for the interactive bits, such as click interactions), and renders the
+6. Your browser receives that finished HTML, along with `styles.css` (for
+   the look) and `script.js` (for the interactive bits), and renders the
    page you see.
 
-This whole round-trip usually takes well under a second - and with cloudflare it takes under a second in most countries around the world due to their CDN (content delivery network) in difference to a traditional non-CDN host.
+This whole round-trip usually takes well under a second.
 
 ### Where it's hosted: Cloudflare Pages & Workers
 
