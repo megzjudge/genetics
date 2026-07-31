@@ -74,12 +74,16 @@ function studyCard(s, extraClass) {
           ${s.title ? `<p class="study-title">${s.url
               ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
               : esc(s.title)}</p>` : ""}
-          <p class="study-meta">${[
-            s.pid     ? `<a href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
-            s.title   ? `<a href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : null,
-            s.authors ? esc(s.authors) : null,
-            s.year    ? esc(String(s.year)) : null,
-          ].filter(Boolean).join(" · ")}</p>
+          <div class="study-meta">
+            <span class="study-meta-links">${[
+              s.pid   ? `<a class="study-meta-chip" href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
+              s.title ? `<a class="study-meta-chip" href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : null,
+            ].filter(Boolean).join("")}</span>
+            <span class="study-meta-text">${[
+              s.authors ? esc(s.authors) : null,
+              s.year    ? esc(String(s.year)) : null,
+            ].filter(Boolean).join(" · ")}</span>
+          </div>
           ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
           <div class="study-assign" data-study-assign style="display:none">
             <label for="study-used-${s.id}">Move to</label>
@@ -129,8 +133,8 @@ function studyRow(s, i) {
 // A collapsible sub-section — e.g. "New Unread Studies". Always renders
 // (even with zero studies) so it can show emptyText as a placeholder
 // rather than disappearing entirely.
-function studiesSubAccordion(pinkWord, restOfLabel, desc, studiesArr, emptyText) {
-  return `<details class="snp-substudies">
+function studiesSubAccordion(pinkWord, restOfLabel, desc, studiesArr, emptyText, open) {
+  return `<details class="snp-substudies"${open ? " open" : ""}>
     <summary>
       <span class="snp-studies-subhead"><span class="text-pink">${esc(pinkWord)}</span> ${esc(restOfLabel)}<span class="section-count">${studiesArr.length}</span></span>
       <span class="snp-chevron snp-chevron--sm">▼</span>
@@ -349,10 +353,10 @@ ${nav()}
 
     <div class="gene-section">
       <h2 class="studies-heading">Studies<span class="section-count">${studies.length}</span></h2>
+      ${studiesSubAccordion("Unread", "Studies", null, newStudies, "No new studies.")}
       ${studiesSubAccordion("Curated", "Studies",
         `These studies were determined to be useful for this variant — check "Unused Studies" further down if curious what didn't make the cut.`,
-        curatedStudies, "No curated studies yet.")}
-      ${studiesSubAccordion("Unread", "Studies", null, newStudies, "No new studies.")}
+        curatedStudies, "No curated studies yet.", true)}
       ${studiesSubAccordion("Unused", "Studies", null, unusedStudies, "No unused studies.")}
     </div>
   </div>
