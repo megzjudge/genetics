@@ -514,7 +514,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .study-snippet {
   position: relative;
-  font-family: var(--serif); font-style: italic; color: var(--muted);
+  font-family: var(--sans); font-style: italic; color: var(--muted);
   font-size: 15.5px; line-height: 1.68; margin: 14px 0 0;
   padding-left: 20px;
 }
