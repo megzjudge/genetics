@@ -69,15 +69,16 @@ function consequenceSpan(consequence) {
 
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
-          <button class="study-edit-btn" data-study-edit style="display:none" title="Edit" onclick="window.toggleStudyEdit(${s.id})">✎</button>
+          <div class="study-card-actions">
+            ${s.url ? `<a class="study-link-btn" href="${esc(s.url)}" target="_blank" rel="noopener">Study ↗</a>` : ""}
+            ${s.title ? `<a class="study-pdf-btn" href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : ""}
+            <button class="study-edit-btn" data-study-edit style="display:none" title="Edit" onclick="window.toggleStudyEdit(${s.id})">✎</button>
+          </div>
           <div class="study-view" data-study-view="${s.id}">
-          ${s.title ? `<p class="study-title">${s.url
-              ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
-              : esc(s.title)}</p>` : ""}
+          ${s.title ? `<p class="study-title">${esc(s.title)}</p>` : ""}
           <div class="study-meta">
             <span class="study-meta-links">${[
               s.pid   ? `<a class="study-meta-chip" href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
-              s.title ? `<a class="study-meta-chip" href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : null,
             ].filter(Boolean).join("")}</span>
             <span class="study-meta-text">${[
               s.authors ? esc(s.authors) : null,

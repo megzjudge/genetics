@@ -486,11 +486,22 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   margin-bottom: 24px;
 }
 .study-card:last-child { margin-bottom: 0; }
-.study-edit-btn {
+.study-card-actions {
   position: absolute; top: 16px; right: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.study-link-btn, .study-pdf-btn {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--accent); text-decoration: none;
+  border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 20px;
+  padding: 3px 10px; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+.study-link-btn:hover, .study-pdf-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+.study-edit-btn {
   width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
   background: transparent; border: 1px solid var(--line); border-radius: 4px;
-  color: var(--faint); font-size: 12px; cursor: pointer; padding: 0;
+  color: var(--faint); font-size: 12px; cursor: pointer; padding: 0; flex-shrink: 0;
 }
 .study-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
 .study-edit-form label {
