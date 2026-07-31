@@ -486,9 +486,14 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   margin-bottom: 24px;
 }
 .study-card:last-child { margin-bottom: 0; }
+.study-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px;
+}
+.study-card-head .study-title { flex: 1 1 auto; min-width: 140px; margin: 0; }
 .study-card-actions {
-  position: absolute; top: 16px; right: 12px;
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  margin-left: auto;
 }
 .study-link-btn, .study-pdf-btn {
   font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
@@ -553,8 +558,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   padding: 3px 10px; transition: background 0.12s, border-color 0.12s;
 }
 .study-meta-chip:hover { background: var(--accent-dim); border-color: var(--accent); }
-.study-meta-text {
-  font-family: var(--mono); font-size: 12px; color: var(--muted);
+.study-byline {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
+  color: var(--pink); text-align: right; margin: 14px 0 0;
 }
 .study-assign {
   align-items: center; gap: 8px; margin-top: 12px;

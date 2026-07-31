@@ -69,23 +69,27 @@ function consequenceSpan(consequence) {
 
 function studyCard(s, extraClass) {
   return `<div class="study-card${extraClass ? " " + extraClass : ""}">
-          <div class="study-card-actions">
-            ${s.url ? `<a class="study-link-btn" href="${esc(s.url)}" target="_blank" rel="noopener">Study ↗</a>` : ""}
-            ${s.title ? `<a class="study-pdf-btn" href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : ""}
-            <button class="study-edit-btn" data-study-edit style="display:none" title="Edit" onclick="window.toggleStudyEdit(${s.id})">✎</button>
-          </div>
           <div class="study-view" data-study-view="${s.id}">
-          ${s.title ? `<p class="study-title">${esc(s.title)}</p>` : ""}
+          <div class="study-card-head">
+            ${s.title ? `<p class="study-title">${s.url
+                ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
+                : esc(s.title)}</p>` : ""}
+            <div class="study-card-actions">
+              ${s.url   ? `<a class="study-link-btn" href="${esc(s.url)}" target="_blank" rel="noopener">Study ↗</a>` : ""}
+              ${s.title ? `<a class="study-pdf-btn" href="https://search.brave.com/search?q=${encodeURIComponent(`"${s.title}" filetype:pdf`)}" target="_blank" rel="noopener">PDF ↗</a>` : ""}
+              <button class="study-edit-btn" data-study-edit style="display:none" title="Edit" onclick="window.toggleStudyEdit(${s.id})">✎</button>
+            </div>
+          </div>
           <div class="study-meta">
             <span class="study-meta-links">${[
               s.pid   ? `<a class="study-meta-chip" href="${esc(pidUrl(s.pid))}" target="_blank" rel="noopener">PID</a>` : null,
             ].filter(Boolean).join("")}</span>
-            <span class="study-meta-text">${[
-              s.authors ? esc(s.authors) : null,
-              s.year    ? esc(String(s.year)) : null,
-            ].filter(Boolean).join(" · ")}</span>
           </div>
           ${s.snippet ? `<blockquote class="study-snippet">${esc(s.snippet)}</blockquote>` : ""}
+          ${(s.year || s.authors) ? `<p class="study-byline">${[
+            s.year    ? esc(String(s.year)) : null,
+            s.authors ? esc(s.authors) : null,
+          ].filter(Boolean).join(" · ")}</p>` : ""}
           <div class="study-assign" data-study-assign style="display:none">
             <label for="study-used-${s.id}">Move to</label>
             <select id="study-used-${s.id}" onchange="window.assignStudy(${s.id},this.value)">
