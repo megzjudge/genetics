@@ -24,8 +24,9 @@ export async function onRequestGet({ env }) {
   const groups = groupsRes.results || [];
 
   const urls = [
-    url(`${BASE}/`,       "1.0", "weekly"),
-    url(`${BASE}/basics`, "0.7", "monthly"),
+    url(`${BASE}/`,          "1.0", "weekly"),
+    url(`${BASE}/basics`,    "0.7", "monthly"),
+    url(`${BASE}/databases`, "0.7", "monthly"),
     ...groups.map(g => url(`${BASE}/group/${slugify(g.name)}`, "0.8", "weekly")),
     ...genes.map(g  => url(`${BASE}/gene/${g.gene_name}`,      "0.9", "weekly")),
   ];
