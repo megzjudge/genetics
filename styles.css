@@ -276,7 +276,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   padding: 72px 36px;
   border-bottom: 1px solid var(--line);
 }
-.groups-inner, .how-inner { max-width: var(--max-w); margin: 0 auto; }
+.groups-inner { max-width: var(--max-w); margin: 0 auto; }
+.how-inner { max-width: 1280px; margin: 0 auto; }
 
 .section-label {
   font-family: var(--mono); font-size: 11.5px;
@@ -365,7 +366,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 
 .how-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 48px 40px;
   margin-bottom: 44px;
 }
