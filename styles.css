@@ -107,8 +107,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .nav-links { display: flex; gap: 28px; align-items: center; }
 .nav-links a {
-  font-family: var(--mono); font-size: 13px;
-  color: var(--muted); text-decoration: none; letter-spacing: 0.02em;
+  font-family: var(--mono); font-size: 15px;
+  color: var(--accent); text-decoration: none; letter-spacing: 0.02em;
   transition: color 0.12s;
 }
 .nav-links a:hover { color: var(--accent); }
@@ -175,6 +175,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   transition: opacity 0.13s;
 }
 .btn-primary:hover { opacity: 0.86; }
+:root[data-theme="light"] .btn-primary { color: #fff; }
 .btn-ghost {
   display: inline-block; font-family: var(--mono); font-size: 14px;
   padding: 12px 22px; border: 1px solid var(--line-strong);
@@ -185,7 +186,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 
 .hero-stats {
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  font-family: var(--mono); font-size: clamp(16px, 1.8vw, 18px); color: var(--faint);
 }
 .hero-stats strong { color: var(--muted); font-weight: 600; }
 .stat-sep { color: var(--line-strong); }
@@ -288,6 +289,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
 }
+
+.groups-cta { display: flex; justify-content: center; margin-top: 36px; }
 
 .group-card {
   background: var(--card); border: 1px solid var(--line);

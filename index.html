@@ -61,7 +61,7 @@
           actually means — built from primary literature, not a report.
         </p>
         <div class="hero-acts">
-          <a class="btn-primary" href="/group/folate-metabolism">Explore Folate Metabolism</a>
+          <a class="btn-primary" id="random-section-btn" href="/group/folate-metabolism">Explore a Random Section</a>
           <a class="btn-ghost" href="/basics">What is an SNP?</a>
         </div>
         <div class="hero-stats">
@@ -152,6 +152,27 @@
           </a>
         </div>
 
+        <div class="group-card">
+          <a class="group-card-img-wrap" href="#credits" aria-label="View image source">
+            <figure class="group-card-img">
+              <img src="/images/doctor_genes_thumbnail.png" alt="Kinetosis" loading="lazy">
+            </figure>
+          </a>
+          <a class="group-card-text" href="/group/kinetosis">
+            <div class="group-card-head">
+              <span class="group-name">Kinetosis</span>
+              <span class="group-count" data-group-count="Kinetosis">…</span>
+            </div>
+            <p class="group-desc">
+              Kinetosis, or car/motion sickness, is a condition caused by sensory
+              mismatch between visual and vestibular systems. It triggers symptoms
+              like dizziness, nausea, and vomiting during travel or virtual reality
+              exposure.
+            </p>
+            <span class="group-link">Explore →</span>
+          </a>
+        </div>
+
         <div class="group-card soon">
           <figure class="group-card-img">
             <img src="/images/neanderthal_genes_thumbnail.png" alt="Dark Triad" loading="lazy">
@@ -168,22 +189,10 @@
           </div>
         </div>
 
-        <div class="group-card soon">
-          <figure class="group-card-img">
-            <img src="/images/skeleton_and_brain_genes_thumbnail.png" alt="Pharmacogenomics" loading="lazy">
-          </figure>
-          <div class="group-card-text">
-            <div class="group-card-head">
-              <span class="group-name">Pharmacogenomics</span>
-              <span class="group-badge">coming</span>
-            </div>
-            <p class="group-desc">
-              Drug metabolism — CYP2D6, CYP2C19, CYP1A2, DPYD, and related
-              enzymes affecting how medications behave in my body.
-            </p>
-          </div>
-        </div>
+      </div>
 
+      <div class="groups-cta">
+        <a class="btn-primary" href="/groups">View All Groups</a>
       </div>
     </div>
   </section>
@@ -199,7 +208,9 @@
           <h3>Whole genome sequenced</h3>
           <p>
             30× whole genome sequencing — every base pair, not just an SNP array.
-            Millions of variants across all chromosomes.
+            Millions of variants across all chromosomes. Then a group is chosen
+            to research — Dopamine genes, Folate metabolism, a specific disease,
+            and so on.
           </p>
         </div>
 
@@ -294,6 +305,14 @@
       if (n != null) el.textContent = n;
     });
   }).catch(function () { /* leave placeholders as-is on failure */ });
+
+  fetch("/api/groups").then(function (r) { return r.json(); }).then(function (d) {
+    var groups = d.groups || [];
+    if (!groups.length) return;
+    var pick = groups[Math.floor(Math.random() * groups.length)];
+    var slug = pick.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    document.getElementById("random-section-btn").href = "/group/" + slug;
+  }).catch(function () { /* leave default href as-is on failure */ });
 </script>
 
 </body>
