@@ -280,7 +280,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 .how-inner { max-width: 1280px; margin: 0 auto; }
 
 .section-label {
-  font-family: var(--mono); font-size: 11.5px;
+  font-family: var(--mono); font-size: 13px;
   letter-spacing: 0.13em; text-transform: uppercase;
   color: var(--faint); margin: 0 0 32px;
 }
@@ -384,7 +384,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   line-height: 1.6; margin: 0;
 }
 .how-footer {
-  font-family: var(--mono); font-size: 14px;
+  font-family: var(--mono); font-size: 16px;
   color: var(--muted); margin: 0;
   padding-top: 28px; border-top: 1px solid var(--line);
 }
@@ -402,12 +402,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .credits-inner { max-width: var(--max-w); margin: 0 auto; }
 .credits-heading {
-  font-family: var(--mono); font-size: 11px;
+  font-family: var(--mono); font-size: 13px;
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--faint); margin: 0 0 8px;
 }
 .credits-line {
-  font-family: var(--mono); font-size: 12px;
+  font-family: var(--mono); font-size: 14px;
   color: var(--faint); line-height: 1.8; margin: 0;
 }
 .credits-line a { color: var(--faint); text-decoration: underline; }
@@ -423,7 +423,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   max-width: var(--max-w); margin: 0 auto;
   display: flex; align-items: center;
   justify-content: space-between; gap: 16px;
-  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  font-family: var(--mono); font-size: 14px; color: var(--faint);
 }
 .footer-inner a { color: var(--faint); text-decoration: none; transition: color 0.12s; }
 .footer-inner a:hover { color: var(--accent); }
