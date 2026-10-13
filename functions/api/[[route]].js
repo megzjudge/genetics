@@ -696,6 +696,25 @@ async function handleApiRequest({ request, env }) {
     return json({ genes: results });
   }
 
+  // ── GET /api/stats ───────────────────────────────
+  // Public, aggregate-only counts for the homepage hero — no auth, since
+  // nothing here is more sensitive than the gene/SNP names /api/genes and
+  // /api/snps already expose.
+  if (method === "GET" && route === "stats") {
+    const [genes, variants, studies, scholar] = await Promise.all([
+      env.genetic.prepare(`SELECT COUNT(*) AS n FROM genes`).first(),
+      env.genetic.prepare(`SELECT COUNT(*) AS n FROM personal`).first(),
+      env.genetic.prepare(`SELECT COUNT(*) AS n FROM studies WHERE used IS NOT NULL`).first(),
+      env.genetic.prepare(`SELECT COUNT(*) AS n FROM snps WHERE scholar_scanned_at IS NOT NULL`).first(),
+    ]);
+    return json({
+      genes: genes?.n || 0,
+      variants: variants?.n || 0,
+      studies: studies?.n || 0,
+      scholar: scholar?.n || 0,
+    });
+  }
+
   // ── GET /api/gene/:name ──────────────────────────
   if (method === "GET" && route === "gene" && param) {
     const name = param.toUpperCase();

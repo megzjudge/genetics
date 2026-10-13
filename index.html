@@ -54,9 +54,9 @@
     <div class="hero-inner">
       <div class="hero-text">
         <p class="hero-eyebrow">Genetics Research</p>
-        <h1 class="hero-title">My genome,<br>researched.</h1>
+        <h1 class="hero-title">Human Genome,<br>Researched.</h1>
         <p class="hero-sub">
-          44 genes studied. Hundreds of studies read.
+          Genes studied. Studies read.
           Scholar alerts running continuously. This is what my DNA
           actually means — built from primary literature, not a report.
         </p>
@@ -65,13 +65,13 @@
           <a class="btn-ghost" href="/basics">What is an SNP?</a>
         </div>
         <div class="hero-stats">
-          <span class="stat"><strong>—</strong> genes studied</span>
+          <span class="stat"><strong data-stat="genes">—</strong> genes studied</span>
           <span class="stat-sep">·</span>
-          <span class="stat"><strong>—</strong> studies read</span>
+          <span class="stat"><strong data-stat="studies">—</strong> studies read</span>
           <span class="stat-sep">·</span>
-          <span class="stat"><strong>—</strong> Scholar alerts</span>
+          <span class="stat"><strong data-stat="scholar">—</strong> Scholar alerts</span>
           <span class="stat-sep">·</span>
-          <span class="stat"><strong>—</strong> variants tracked</span>
+          <span class="stat"><strong data-stat="variants">—</strong> variants tracked</span>
         </div>
       </div>
       <div class="hero-visual">
@@ -285,6 +285,13 @@
       var key = el.getAttribute("data-group-count").trim().toLowerCase();
       var n = counts[key] || 0;
       el.textContent = n + (n === 1 ? " gene" : " genes");
+    });
+  }).catch(function () { /* leave placeholders as-is on failure */ });
+
+  fetch("/api/stats").then(function (r) { return r.json(); }).then(function (d) {
+    document.querySelectorAll("[data-stat]").forEach(function (el) {
+      var n = d[el.getAttribute("data-stat")];
+      if (n != null) el.textContent = n;
     });
   }).catch(function () { /* leave placeholders as-is on failure */ });
 </script>
