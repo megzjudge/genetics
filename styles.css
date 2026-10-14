@@ -680,19 +680,6 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   background: linear-gradient(var(--accent), var(--pink));
   opacity: 0.4;
 }
-.process-timeline::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 50%;
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 6px solid var(--pink);
-  opacity: 0.85;
-  transform: translateY(-50%);
-}
 .process-step { position: relative; margin-bottom: 34px; }
 .process-step:last-of-type { margin-bottom: 0; }
 .process-dot {
@@ -704,6 +691,19 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--line-strong);
+}
+.process-dot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 24px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--pink);
+  opacity: 0.85;
+  transform: translateX(-50%);
 }
 .process-step h4 {
   font-family: var(--mono);
@@ -724,6 +724,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 6px 20px;
+}
+.process-codon-grid .process-line {
+  font-size: 12px;
+  white-space: nowrap;
 }
 .variant-stack {
   margin: 28px 0;
