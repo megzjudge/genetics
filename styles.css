@@ -664,6 +664,18 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   margin: 12px 0;
   font-family: var(--mono);
 }
+
+.basics-rowblock { margin: 28px 0; }
+.basics-rowblock p {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 10px 0;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--body-text);
+}
 .variant-stack {
   margin: 28px 0;
   display: flex;
