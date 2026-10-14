@@ -713,7 +713,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   color: var(--ink);
   margin: 0 0 10px;
 }
-.process-line {
+.basics-body .process-line {
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.7;
@@ -1155,7 +1155,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 @media (max-width: 600px) {
   .callout ul { padding-left: 20px; }
   .basics-hero-inner .hero-acts { margin-top: 36px; }
-  .basics-img-mobile-wide { width: 75% !important; }
+  .basics-img-mobile-wide { width: 95% !important; }
+  .codon-cluster { font-size: inherit; }
 }
 
 .callout .basics-figure { margin: 52px 0; }
