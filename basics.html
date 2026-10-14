@@ -182,16 +182,40 @@
     </p>
 
     <div class="variant-stack">
-      <div class="variant-stack-track">
-        <div class="variant-stack-segment" style="flex:1.5" title="Universal Pool (>40–50%): ~1–2 million variants">Universal</div>
-        <div class="variant-stack-segment" style="flex:3.5" title="Major Pool (>20%): ~3–4 million variants">Major</div>
-        <div class="variant-stack-segment" style="flex:5.5" title="Widespread Pool (>10%): ~5–6 million variants">Widespread</div>
-        <div class="variant-stack-segment" style="flex:7.5" title="Frequent Pool (>5%): ~7–8 million variants">Frequent</div>
-        <div class="variant-stack-segment" style="flex:11" title="Common Pool (>1%): ~10–12 million variants">Common</div>
+      <div class="variant-stack-row">
+        <div class="variant-stack-bar">
+          <div class="variant-stack-fill variant-stack-fill--teal" data-fill="14"></div>
+          <span class="variant-stack-bar-label">Universal</span>
+        </div>
+        <span class="variant-stack-value">~1–2 million</span>
       </div>
-      <div class="variant-stack-labels">
-        <span>0</span>
-        <span>~10 million variants</span>
+      <div class="variant-stack-row">
+        <div class="variant-stack-bar">
+          <div class="variant-stack-fill variant-stack-fill--gold" data-fill="32"></div>
+          <span class="variant-stack-bar-label">Major</span>
+        </div>
+        <span class="variant-stack-value">~3–4 million</span>
+      </div>
+      <div class="variant-stack-row">
+        <div class="variant-stack-bar">
+          <div class="variant-stack-fill variant-stack-fill--red" data-fill="50"></div>
+          <span class="variant-stack-bar-label">Widespread</span>
+        </div>
+        <span class="variant-stack-value">~5–6 million</span>
+      </div>
+      <div class="variant-stack-row">
+        <div class="variant-stack-bar">
+          <div class="variant-stack-fill variant-stack-fill--olive" data-fill="68"></div>
+          <span class="variant-stack-bar-label">Frequent</span>
+        </div>
+        <span class="variant-stack-value">~7–8 million</span>
+      </div>
+      <div class="variant-stack-row">
+        <div class="variant-stack-bar">
+          <div class="variant-stack-fill variant-stack-fill--magenta" data-fill="100"></div>
+          <span class="variant-stack-bar-label">Common</span>
+        </div>
+        <span class="variant-stack-value">~10–12 million</span>
       </div>
     </div>
 
@@ -629,6 +653,18 @@
     </div>
   </div>
 </footer>
+
+<script>
+  var fillBars = document.querySelectorAll(".variant-stack-fill");
+  var fillObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.style.width = entry.target.dataset.fill + "%";
+      fillObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.3 });
+  fillBars.forEach(function (bar) { fillObserver.observe(bar); });
+</script>
 
 </body>
 </html>

@@ -664,36 +664,44 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   margin: 12px 0;
   font-family: var(--mono);
 }
-.variant-stack { margin: 28px 0; font-family: var(--mono); }
-.variant-stack-track {
-  display: flex;
-  height: 44px;
-  border-radius: 8px;
+.variant-stack { margin: 28px 0; display: flex; flex-direction: column; gap: 10px; font-family: var(--mono); }
+.variant-stack-row { display: flex; align-items: center; gap: 14px; }
+.variant-stack-bar {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
-.variant-stack-segment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.variant-stack-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 12px;
+  transition: width 1.1s ease-in-out;
+}
+.variant-stack-fill--teal    { background: linear-gradient(90deg, #03282D, #0A7E8C); }
+.variant-stack-fill--gold    { background: linear-gradient(90deg, #2D2403, #C9A227); }
+.variant-stack-fill--red     { background: linear-gradient(90deg, #2D0D03, #E85D4C); }
+.variant-stack-fill--olive   { background: linear-gradient(90deg, #1C2203, #7E8C0A); }
+.variant-stack-fill--magenta { background: linear-gradient(90deg, #28032D, #8C0A7E); }
+.variant-stack-bar-label {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 11px;
-  letter-spacing: 0.02em;
-  color: var(--body-text);
-  border-right: 1px solid var(--line);
+  font-weight: 600;
+  color: #fff;
+  z-index: 2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 6px;
 }
-.variant-stack-segment:last-child { border-right: none; }
-.variant-stack-segment:nth-child(odd)  { background: var(--card); }
-.variant-stack-segment:nth-child(even) { background: var(--accent-dim); }
-.variant-stack-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
+.variant-stack-value {
   font-size: 12px;
   color: var(--faint);
+  white-space: nowrap;
 }
 
 .snp-freq-row--highlight.snp-freq-row--standalone .snp-freq-label { color: var(--body-text); }
