@@ -1189,6 +1189,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 
 /* Inline text highlights */
 .highlight-pink { color: var(--pink); font-weight: 600; }
+.highlight-green { color: var(--accent); font-weight: 600; }
 .highlight-pink-soft { color: var(--pink-soft); font-weight: 600; }
 
 /* Footer nav links */
