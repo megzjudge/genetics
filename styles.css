@@ -729,7 +729,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   white-space: nowrap;
 }
 .codon-cluster {
-  font-size: 14px;
+  font-size: 15px;
 }
 .variant-stack {
   margin: 28px 0;
