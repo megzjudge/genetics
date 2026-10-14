@@ -680,6 +680,19 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   background: linear-gradient(var(--accent), var(--pink));
   opacity: 0.4;
 }
+.process-timeline::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--pink);
+  opacity: 0.85;
+  transform: translateY(-50%);
+}
 .process-step { position: relative; margin-bottom: 34px; }
 .process-step:last-of-type { margin-bottom: 0; }
 .process-dot {
@@ -691,16 +704,6 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--line-strong);
-}
-.process-dot--end {
-  position: absolute;
-  left: -4px;
-  bottom: -10px;
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 10px solid var(--pink);
 }
 .process-step h4 {
   font-family: var(--mono);
