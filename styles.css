@@ -709,8 +709,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
 }
 .variant-stack-value {
   font-size: 12px;
-  color: var(--faint);
+  color: var(--ink);
   white-space: nowrap;
+  min-width: 90px;
 }
 
 .snp-freq-row--highlight.snp-freq-row--standalone .snp-freq-label { color: var(--body-text); }
