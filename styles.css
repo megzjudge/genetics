@@ -726,8 +726,10 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   gap: 6px 20px;
 }
 .process-codon-grid .process-line {
-  font-size: 12px;
   white-space: nowrap;
+}
+.codon-cluster {
+  font-size: 12px;
 }
 .variant-stack {
   margin: 28px 0;
