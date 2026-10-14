@@ -692,18 +692,18 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--line-strong);
 }
-.process-dot::after {
+.process-step::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 24px;
+  left: -23px;
+  top: 50%;
   width: 0;
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   border-top: 6px solid var(--pink);
   opacity: 0.85;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 .process-step h4 {
   font-family: var(--mono);
@@ -729,7 +729,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   white-space: nowrap;
 }
 .codon-cluster {
-  font-size: 12px;
+  font-size: 13px;
 }
 .variant-stack {
   margin: 28px 0;
