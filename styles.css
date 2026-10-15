@@ -680,8 +680,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   background: linear-gradient(var(--accent), var(--pink));
   opacity: 0.4;
 }
-.process-step { position: relative; margin-bottom: 34px; }
-.process-step:last-of-type { margin-bottom: 0; }
+.process-step { position: relative; padding-bottom: 34px; }
+.process-step:last-of-type { padding-bottom: 0; }
 .process-dot {
   position: absolute;
   left: -30px;
