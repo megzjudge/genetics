@@ -713,13 +713,23 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   color: var(--ink);
   margin: 0 0 10px;
 }
-.process-line {
+.process-timeline .process-line {
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.7;
   color: var(--body-text);
   margin: 0;
 }
+.process-item-list {
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--body-text);
+  gap: 2px 6px;
+}
+.process-item:not(:last-child)::after { content: ","; }
 .process-codon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -731,7 +741,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   margin: 0;
 }
 .codon-cluster {
-  font-size: 15px;
+  font-size: 14px;
 }
 .variant-stack {
   margin: 28px 0;
@@ -1156,6 +1166,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   .basics-hero-inner .hero-acts { margin-top: 36px; }
   .basics-img-mobile-wide { width: 95% !important; }
   .codon-cluster { font-size: inherit; }
+  .process-item-list { flex-direction: column; gap: 4px 0; }
+  .process-item:not(:last-child)::after { content: ""; }
 }
 
 .callout .basics-figure { margin: 52px 0; }
