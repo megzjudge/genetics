@@ -696,7 +696,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--s
   content: "";
   position: absolute;
   left: -23px;
-  top: 50%;
+  top: calc(50% + 11px);
   width: 0;
   height: 0;
   border-left: 4px solid transparent;
